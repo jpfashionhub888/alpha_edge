@@ -21,9 +21,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install dependencies
+            - name: Install dependencies
         run: |
-          pip install websockets>=12.0
           pip install yfinance pandas numpy scikit-learn
           pip install xgboost lightgbm
           pip install ccxt requests beautifulsoup4 ta
@@ -31,6 +30,7 @@ jobs:
           pip install transformers feedparser flask
           pip install alpaca-trade-api
           pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install "websockets>=12.0" --force-reinstall
       - name: List files
         run: |
           ls -la
