@@ -7,10 +7,13 @@ on:
     - cron: '15 20 * * 1-5'
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout code
@@ -21,20 +24,23 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip
-
       - name: Install dependencies
         run: |
           pip install yfinance pandas numpy scikit-learn
           pip install xgboost lightgbm
           pip install ccxt requests beautifulsoup4 ta
           pip install plotly dash python-dotenv schedule
-          pip install transformers feedparser alpaca-trade-api
+          pip install transformers feedparser alpaca-trade-api flask
           pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: List files for debug
+        run: |
+          echo "Files in root:"
+          ls -la
+          echo "Files in data:"
+          ls -la data/ || echo "data folder missing"
+          echo "Files in models:"
+          ls -la models/ || echo "models folder missing"
 
       - name: Run daily scan
         env:
@@ -52,3 +58,4 @@ jobs:
           name: trading-logs
           path: logs/
           retention-days: 7
+          if-no-files-found: ignore
