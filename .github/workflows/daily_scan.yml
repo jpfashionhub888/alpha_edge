@@ -14,17 +14,14 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-            - name: Install dependencies
+      - name: Install dependencies
         run: |
           pip install websockets>=12.0
           pip install yfinance pandas numpy scikit-learn
@@ -34,16 +31,11 @@ jobs:
           pip install transformers feedparser flask
           pip install alpaca-trade-api
           pip install torch --index-url https://download.pytorch.org/whl/cpu
-
-      - name: List files for debug
+      - name: List files
         run: |
-          echo "Files in root:"
           ls -la
-          echo "Files in data:"
-          ls -la data/ || echo "data folder missing"
-          echo "Files in models:"
-          ls -la models/ || echo "models folder missing"
-
+          ls -la data/ || echo "data missing"
+          ls -la models/ || echo "models missing"
       - name: Run daily scan
         env:
           ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
@@ -52,7 +44,6 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           python cloud_scan.py
-
       - name: Upload logs
         uses: actions/upload-artifact@v4
         if: always()
