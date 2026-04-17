@@ -1,0 +1,54 @@
+name: AlphaEdge Daily Scan
+
+on:
+  schedule:
+    - cron: '45 13 * * 1-5'
+    - cron: '30 16 * * 1-5'
+    - cron: '15 20 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip
+
+      - name: Install dependencies
+        run: |
+          pip install yfinance pandas numpy scikit-learn
+          pip install xgboost lightgbm
+          pip install ccxt requests beautifulsoup4 ta
+          pip install plotly dash python-dotenv schedule
+          pip install transformers feedparser alpaca-trade-api
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Run daily scan
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python cloud_scan.py
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: trading-logs
+          path: logs/
+          retention-days: 7

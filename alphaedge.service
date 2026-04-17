@@ -1,0 +1,14 @@
+[Unit]
+Description=AlphaEdge Trading System
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/alpha_edge
+ExecStart=/usr/bin/python3 live.py
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

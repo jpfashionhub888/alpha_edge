@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+secrets.env
+logs/
+saved_models/
+*.zip
+config/secrets.env

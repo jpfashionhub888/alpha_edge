@@ -1,0 +1,163 @@
+# deploy.py
+
+"""
+Cloud Deployment Helper.
+Generates all files needed to deploy on a server.
+"""
+
+import os
+
+
+def generate_deployment_files():
+    """Generate all deployment files."""
+
+    print("\n" + "☁️" * 25)
+    print("CLOUD DEPLOYMENT SETUP")
+    print("☁️" * 25)
+
+    # Requirements file
+    requirements = """
+yfinance
+pandas
+numpy
+scikit-learn
+xgboost
+lightgbm
+ccxt
+requests
+beautifulsoup4
+ta
+plotly
+dash
+python-dotenv
+schedule
+transformers
+torch
+feedparser
+alpaca-trade-api
+flask
+gunicorn
+"""
+
+    with open('requirements.txt', 'w') as f:
+        f.write(requirements.strip())
+
+    print("\n   ✅ requirements.txt created")
+
+    # Systemd service file for auto-start
+    service = """[Unit]
+Description=AlphaEdge Trading System
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/alpha_edge
+ExecStart=/usr/bin/python3 live.py
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
+"""
+
+    with open('alphaedge.service', 'w') as f:
+        f.write(service)
+
+    print("   ✅ alphaedge.service created")
+
+    # Deployment script
+    deploy_script = """#!/bin/bash
+
+echo "🚀 Deploying AlphaEdge..."
+
+# Update system
+apt update && apt upgrade -y
+
+# Install Python
+apt install -y python3 python3-pip python3-venv git
+
+# Create project directory
+mkdir -p /root/alpha_edge
+cd /root/alpha_edge
+
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Copy service file
+cp alphaedge.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable alphaedge
+systemctl start alphaedge
+
+echo "✅ AlphaEdge deployed!"
+echo "Check status: systemctl status alphaedge"
+echo "View logs: journalctl -u alphaedge -f"
+"""
+
+    with open('deploy.sh', 'w') as f:
+        f.write(deploy_script)
+
+    print("   ✅ deploy.sh created")
+
+    # Print instructions
+    print("\n" + "="*60)
+    print("DEPLOYMENT INSTRUCTIONS")
+    print("="*60)
+
+    print("""
+OPTION A: DigitalOcean ($6/month)
+─────────────────────────────────
+1. Go to digitalocean.com
+2. Create account
+3. Create Droplet:
+   - Ubuntu 22.04
+   - Basic plan ($6/month)
+   - Any region close to you
+
+4. SSH into your server:
+   ssh root@YOUR_SERVER_IP
+
+5. Upload your project:
+   scp -r alpha_edge root@YOUR_SERVER_IP:/root/
+
+6. Run deployment:
+   cd /root/alpha_edge
+   bash deploy.sh
+
+7. Your system now runs 24/7!
+   Dashboard: http://YOUR_SERVER_IP:8050
+   Webhook: http://YOUR_SERVER_IP:5000/webhook
+
+
+OPTION B: AWS Free Tier (free for 1 year)
+─────────────────────────────────────────
+1. Go to aws.amazon.com
+2. Create free account
+3. Launch EC2 instance:
+   - Ubuntu 22.04
+   - t2.micro (free tier)
+
+4. Same steps 4-7 as above
+
+
+OPTION C: Railway.app (easiest, $5/month)
+─────────────────────────────────────────
+1. Go to railway.app
+2. Connect your GitHub
+3. Push alpha_edge to GitHub
+4. Railway auto-deploys
+5. Done!
+    """)
+
+    print("="*60)
+    print("All deployment files generated!")
+    print("="*60)
+
+
+if __name__ == "__main__":
+    generate_deployment_files()
