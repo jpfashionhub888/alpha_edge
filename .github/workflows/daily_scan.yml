@@ -24,13 +24,15 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+            - name: Install dependencies
         run: |
+          pip install websockets>=12.0
           pip install yfinance pandas numpy scikit-learn
           pip install xgboost lightgbm
           pip install ccxt requests beautifulsoup4 ta
           pip install plotly dash python-dotenv schedule
-          pip install transformers feedparser alpaca-trade-api flask
+          pip install transformers feedparser flask
+          pip install alpaca-trade-api
           pip install torch --index-url https://download.pytorch.org/whl/cpu
 
       - name: List files for debug
