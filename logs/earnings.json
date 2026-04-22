@@ -1,0 +1,47 @@
+[
+  {
+    "symbol": "MSFT",
+    "date": "2026-04-29",
+    "days_until": 7
+  },
+  {
+    "symbol": "GOOGL",
+    "date": "2026-04-29",
+    "days_until": 7
+  },
+  {
+    "symbol": "AMZN",
+    "date": "2026-04-29",
+    "days_until": 7
+  },
+  {
+    "symbol": "META",
+    "date": "2026-04-29",
+    "days_until": 7
+  },
+  {
+    "symbol": "TSLA",
+    "date": "2026-04-22",
+    "days_until": 0
+  },
+  {
+    "symbol": "V",
+    "date": "2026-04-28",
+    "days_until": 6
+  },
+  {
+    "symbol": "ABBV",
+    "date": "2026-04-29",
+    "days_until": 7
+  },
+  {
+    "symbol": "SOFI",
+    "date": "2026-04-29",
+    "days_until": 7
+  },
+  {
+    "symbol": "HOOD",
+    "date": "2026-04-28",
+    "days_until": 6
+  }
+]

@@ -1,0 +1,57 @@
+{
+  "Technology": {
+    "score": 0.0649810177439557,
+    "flow": "INFLOW",
+    "momentum_21d": 0.12953637012397
+  },
+  "Healthcare": {
+    "score": -0.02327000070727143,
+    "flow": "OUTFLOW",
+    "momentum_21d": 0.007943592336435046
+  },
+  "Financials": {
+    "score": 0.013299083196999814,
+    "flow": "NEUTRAL",
+    "momentum_21d": 0.06149784353857113
+  },
+  "Energy": {
+    "score": -0.026947682698180722,
+    "flow": "OUTFLOW",
+    "momentum_21d": -0.06305554366727961
+  },
+  "Consumer": {
+    "score": 0.03064254117789805,
+    "flow": "INFLOW",
+    "momentum_21d": 0.0803668566417266
+  },
+  "Industrials": {
+    "score": 0.01351925130518881,
+    "flow": "NEUTRAL",
+    "momentum_21d": 0.051456603695893
+  },
+  "Utilities": {
+    "score": -0.014265602044019951,
+    "flow": "NEUTRAL",
+    "momentum_21d": 0.0037963820517381563
+  },
+  "Materials": {
+    "score": 0.04084000435995252,
+    "flow": "INFLOW",
+    "momentum_21d": 0.08874871269007412
+  },
+  "Real Estate": {
+    "score": 0.03196070999295167,
+    "flow": "INFLOW",
+    "momentum_21d": 0.07779418834331042
+  },
+  "Communications": {
+    "score": 0.013143475487639862,
+    "flow": "NEUTRAL",
+    "momentum_21d": 0.039481897025849255
+  },
+  "Staples": {
+    "score": -0.01017890566644043,
+    "flow": "NEUTRAL",
+    "momentum_21d": 0.008130032400021525
+  }
+}
