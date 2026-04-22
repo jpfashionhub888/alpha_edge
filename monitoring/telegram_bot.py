@@ -12,15 +12,8 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-TELEGRAM_TOKEN = os.getenv(
-    'TELEGRAM_BOT_TOKEN',
-    '8483995149:AAGOkl-1hX2pwYwfCbcVNTOwLkEUyhSzekQ'
-)
-TELEGRAM_CHAT_ID = os.getenv(
-    'TELEGRAM_CHAT_ID',
-    '8616636381'
-)
-
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
+TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '')
 
 class TelegramBot:
 
