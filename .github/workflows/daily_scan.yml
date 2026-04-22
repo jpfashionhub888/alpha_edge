@@ -62,7 +62,10 @@ jobs:
           git config --global user.name "AlphaEdge Bot"
           git pull origin main --rebase
           mkdir -p logs
-          git add logs/ || true
+          git add -f logs/paper_trades.json || true
+          git add -f logs/latest_signals.json || true
+          git add -f logs/sectors.json || true
+          git add -f logs/earnings.json || true
           git diff --staged --quiet || git commit -m "Auto: Trading state update $(date -u '+%Y-%m-%d %H:%M UTC')"
           git push origin main || true
         env:
