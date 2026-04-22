@@ -163,24 +163,28 @@ class TelegramBot:
             else 'None'
         )
 
-        pnl_emoji = "🟢" if total_pnl >= 0 else "🔴"
+        pnl_emoji = "UP" if total_pnl >= 0 else "DOWN"
+        pnl_sign = "+" if total_pnl >= 0 else ""
 
         text = (
-            f"📊 <b>DAILY SUMMARY</b>\n"
+            f"<b>DAILY SUMMARY</b>\n"
             f"\n"
-            f"💰 Portfolio: <b>${portfolio_value:,.2f}</b>\n"
-            f"{pnl_emoji} P&L: ${total_pnl:+,.2f}"
-            f" ({total_pct:+.1%})\n"
+            f"Portfolio: <b>${portfolio_value:,.2f}</b>\n"
+            f"P&amp;L: {pnl_emoji} <b>{pnl_sign}${total_pnl:,.2f}"
+            f" ({pnl_sign}{total_pct:.1%})</b>\n"
             f"\n"
-            f"📈 Open Positions:\n"
+            f"<b>Open Positions:</b>\n"
             f"{pos_text}\n"
-            f"🟢 BUY: {buy_text}\n"
-            f"🔴 AVOID: {avoid_text}\n"
+            f"<b>BUY signals:</b> {buy_text}\n"
+            f"<b>AVOID signals:</b> {avoid_text}\n"
             f"\n"
-            f"🕐 {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+            f"AlphaEdge V3 - Automated"
         )
 
-        return self.send_message(text)
+        print(f"   Sending daily summary to Telegram...")
+        result = self.send_message(text)
+        print(f"   Telegram result: {result}")
+        return result
 
     def alert_stop_loss(self, symbol, price, pnl):
         """Alert when stop loss triggers."""
