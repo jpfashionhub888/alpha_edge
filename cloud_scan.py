@@ -21,6 +21,8 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+print("TELEGRAM TOKEN:", os.environ.get("TELEGRAM_BOT_TOKEN"))
+print("TELEGRAM CHAT ID:", os.environ.get("TELEGRAM_CHAT_ID"))
 
 def main():
     now = datetime.now()
