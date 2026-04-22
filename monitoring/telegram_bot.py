@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # PUT YOUR TELEGRAM CREDENTIALS HERE
 # ==========================================
 TELEGRAM_TOKEN = os.getenv(
-    'TELEGRAM_TOKEN',
+    'TELEGRAM_BOT_TOKEN',
     '8483995149:AAGOkl-1hX2pwYwfCbcVNTOwLkEUyhSzekQ'
 )
 TELEGRAM_CHAT_ID = os.getenv(
@@ -120,14 +120,24 @@ class TelegramBot:
         """Send daily portfolio summary."""
 
         # Build positions text
+        # Build positions text
+
         pos_text = ""
         if positions:
             for sym, pos in positions.items():
                 shares = pos.get('shares', 0)
                 entry = pos.get('entry_price', 0)
+                current = pos.get('current_price', entry)
+                pnl = pos.get('pnl', 0.0)
+                pnl_pct = pos.get('pnl_pct', 0.0)
+                p_emoji = "🟢" if pnl >= 0 else "🔴"
+                p_sign = "+" if pnl >= 0 else ""
                 pos_text += (
-                    f"   {sym}: {shares} shares"
-                    f" @ ${entry:.2f}\n"
+                    f"   {p_emoji} {sym}: {shares}sh"
+                    f" | entry ${entry:.2f}"
+                    f" | now ${current:.2f}"
+                    f" | {p_sign}${pnl:.2f}"
+                    f" ({p_sign}{pnl_pct:.1%})\n"
                 )
         else:
             pos_text = "   No open positions\n"
