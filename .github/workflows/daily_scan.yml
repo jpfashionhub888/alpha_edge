@@ -53,6 +53,8 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
+          echo "Token starts with: ${TELEGRAM_BOT_TOKEN:0:10}"
+          echo "Chat ID: $TELEGRAM_CHAT_ID"
           python cloud_scan.py
 
       - name: Save trading state to repository
