@@ -547,18 +547,49 @@ def run_daily_scan():
     # PORTFOLIO SUMMARY
     # ==========================================
     trader.get_summary(current_prices)
+
+    # Update current price in each position
+    for symbol, pos in trader.positions.items():
+        if symbol in current_prices:
+            pos['current_price'] = current_prices[symbol]
+        else:
+            pos['current_price'] = pos['entry_price']
+
     trader.save_state()
 
+    # Calculate total value using CURRENT prices
     total_value = trader.capital + sum(
-        pos.get('shares', 0) * pos.get('entry_price', 0)
-        for pos in trader.positions.values()
+        pos.get('shares', 0) * current_prices.get(
+            symbol, pos.get('entry_price', 0)
+        )
+        for symbol, pos in trader.positions.items()
     )
     total_pnl = total_value - trader.starting_capital
     total_pct = total_pnl / trader.starting_capital
 
+    # Build positions with real P&L for Telegram
+    positions_with_pnl = {}
+    for symbol, pos in trader.positions.items():
+        curr_price = current_prices.get(
+            symbol, pos.get('entry_price', 0)
+        )
+        entry_price = pos.get('entry_price', 0)
+        shares = pos.get('shares', 0)
+        pnl = (curr_price - entry_price) * shares
+        pnl_pct = (
+            (curr_price - entry_price) / entry_price
+            if entry_price > 0 else 0
+        )
+        positions_with_pnl[symbol] = {
+            **pos,
+            'current_price': curr_price,
+            'pnl': pnl,
+            'pnl_pct': pnl_pct,
+        }
+
     telegram.alert_daily_summary(
         total_value, total_pnl, total_pct,
-        trader.positions, dashboard_signals
+        positions_with_pnl, dashboard_signals
     )
 
     print("\n" + "✅" * 25)
