@@ -1,47 +1,62 @@
 [
   {
+    "symbol": "AAPL",
+    "date": "2026-04-30",
+    "days_until": 7
+  },
+  {
     "symbol": "MSFT",
     "date": "2026-04-29",
-    "days_until": 7
+    "days_until": 6
   },
   {
     "symbol": "GOOGL",
     "date": "2026-04-29",
-    "days_until": 7
+    "days_until": 6
   },
   {
     "symbol": "AMZN",
     "date": "2026-04-29",
-    "days_until": 7
+    "days_until": 6
   },
   {
     "symbol": "META",
     "date": "2026-04-29",
-    "days_until": 7
-  },
-  {
-    "symbol": "TSLA",
-    "date": "2026-04-22",
-    "days_until": 0
+    "days_until": 6
   },
   {
     "symbol": "V",
     "date": "2026-04-28",
-    "days_until": 6
+    "days_until": 5
   },
   {
     "symbol": "ABBV",
     "date": "2026-04-29",
+    "days_until": 6
+  },
+  {
+    "symbol": "LLY",
+    "date": "2026-04-30",
+    "days_until": 7
+  },
+  {
+    "symbol": "MRK",
+    "date": "2026-04-30",
     "days_until": 7
   },
   {
     "symbol": "SOFI",
     "date": "2026-04-29",
+    "days_until": 6
+  },
+  {
+    "symbol": "RIVN",
+    "date": "2026-04-30",
     "days_until": 7
   },
   {
     "symbol": "HOOD",
     "date": "2026-04-28",
-    "days_until": 6
+    "days_until": 5
   }
 ]
