@@ -1,8 +1,8 @@
 # monitoring/dashboard.py
 
 """
-AlphaEdge Web Dashboard
-Auto-refreshes every 30 seconds with latest data.
+AlphaEdge Web Dashboard - Upgraded V2
+Matches BharatEdge style with enhanced features.
 """
 
 import json
@@ -15,212 +15,357 @@ from dash.dependencies import Input, Output
 import plotly.graph_objects as go
 
 
-TRADES_FILE = 'logs/paper_trades.json'
-SIGNALS_FILE = 'logs/latest_signals.json'
-SCAN_INFO_FILE = 'logs/scan_info.json'
+TRADES_FILE   = 'logs/paper_trades.json'
+SIGNALS_FILE  = 'logs/latest_signals.json'
+SECTORS_FILE  = 'logs/sectors.json'
+EARNINGS_FILE = 'logs/earnings.json'
+
+COLORS = {
+    'bg'      : '#0a0e1a',
+    'card'    : '#111827',
+    'card2'   : '#1a2235',
+    'border'  : '#1e2d45',
+    'text'    : '#e2e8f0',
+    'text_dim': '#94a3b8',
+    'green'   : '#00ff88',
+    'red'     : '#ff4444',
+    'yellow'  : '#ffd700',
+    'blue'    : '#3b82f6',
+    'orange'  : '#f97316',
+    'accent'  : '#00d4ff',
+}
+
+CARD_STYLE = {
+    'backgroundColor': COLORS['card'],
+    'border'         : f"1px solid {COLORS['border']}",
+    'borderRadius'   : '12px',
+    'padding'        : '20px',
+    'marginBottom'   : '16px',
+}
 
 
 def load_portfolio():
-    """Load saved portfolio state."""
-
     if not os.path.exists(TRADES_FILE):
         return {
-            'capital': 10000.0,
+            'capital'         : 10000.0,
             'starting_capital': 10000.0,
-            'positions': {},
-            'trade_history': [],
+            'positions'       : {},
+            'trade_history'   : [],
         }
-
     with open(TRADES_FILE, 'r') as f:
         return json.load(f)
 
 
 def load_signals():
-    """Load latest signals."""
-
     if not os.path.exists(SIGNALS_FILE):
         return {}
-
     with open(SIGNALS_FILE, 'r') as f:
         return json.load(f)
 
 
-def load_scan_info():
-    """Load scan status info."""
-
-    if not os.path.exists(SCAN_INFO_FILE):
+def load_sectors():
+    if not os.path.exists(SECTORS_FILE):
         return {}
-
-    with open(SCAN_INFO_FILE, 'r') as f:
+    with open(SECTORS_FILE, 'r') as f:
         return json.load(f)
 
 
-def create_app():
-    """Create the Dash web application."""
+def load_earnings():
+    if not os.path.exists(EARNINGS_FILE):
+        return []
+    with open(EARNINGS_FILE, 'r') as f:
+        return json.load(f)
 
+
+def signal_color(signal):
+    return {
+        'BUY'          : COLORS['green'],
+        'AVOID'        : COLORS['red'],
+        'CAUTION'      : COLORS['yellow'],
+        'EARNINGS_HOLD': COLORS['orange'],
+        'HOLD'         : COLORS['text_dim'],
+    }.get(signal, COLORS['text_dim'])
+
+
+def create_app():
     app = Dash(
         __name__,
-        title='AlphaEdge Trading Dashboard'
+        title                       = 'AlphaEdge Dashboard',
+        update_title                = None,
+        suppress_callback_exceptions= True,
     )
 
     app.layout = html.Div(
         style={
-            'backgroundColor': '#0a0a0a',
-            'minHeight': '100vh',
-            'padding': '20px',
-            'fontFamily': 'Courier New, monospace',
-            'color': '#ffffff',
+            'backgroundColor': COLORS['bg'],
+            'minHeight'      : '100vh',
+            'padding'        : '24px',
+            'fontFamily'     : "'Segoe UI', Arial, sans-serif",
+            'color'          : COLORS['text'],
         },
         children=[
+
+            # Auto refresh
+            dcc.Interval(
+                id      ='refresh',
+                interval=60 * 1000,
+                n_intervals=0
+            ),
 
             # Header
             html.Div(
                 style={
-                    'textAlign': 'center',
-                    'marginBottom': '30px',
+                    'backgroundColor': COLORS['card2'],
+                    'border'         : f"1px solid {COLORS['border']}",
+                    'borderRadius'   : '16px',
+                    'padding'        : '24px 32px',
+                    'marginBottom'   : '24px',
+                    'display'        : 'flex',
+                    'justifyContent' : 'space-between',
+                    'alignItems'     : 'center',
                 },
                 children=[
-                    html.H1(
-                        "🚀 AlphaEdge Trading Dashboard",
-                        style={
-                            'color': '#00ff88',
-                            'fontSize': '36px',
-                            'marginBottom': '5px',
-                        }
-                    ),
-                    html.P(
-                        id='last-updated',
-                        style={
-                            'color': '#888888',
-                            'fontSize': '14px',
-                        }
-                    ),
-                    html.P(
-                        id='scan-status',
-                        style={
-                            'color': '#ffaa00',
-                            'fontSize': '12px',
-                        }
-                    ),
+                    html.Div([
+                        html.H1(
+                            "AlphaEdge Trading Dashboard",
+                            style={
+                                'color'       : COLORS['accent'],
+                                'fontSize'    : '28px',
+                                'margin'      : '0',
+                                'fontWeight'  : '700',
+                                'letterSpacing': '1px',
+                            }
+                        ),
+                        html.P(
+                            "AI-Powered US Stock Trading System",
+                            style={
+                                'color'    : COLORS['text_dim'],
+                                'margin'   : '4px 0 0 0',
+                                'fontSize' : '14px',
+                            }
+                        ),
+                    ]),
+                    html.Div([
+                        html.P(
+                            id='last-updated',
+                            style={
+                                'color'    : COLORS['text_dim'],
+                                'fontSize' : '12px',
+                                'margin'   : '0',
+                                'textAlign': 'right',
+                            }
+                        ),
+                        html.Div(
+                            style={
+                                'display'       : 'flex',
+                                'alignItems'    : 'center',
+                                'gap'           : '8px',
+                                'marginTop'     : '4px',
+                            },
+                            children=[
+                                html.Div(
+                                    style={
+                                        'width'          : '8px',
+                                        'height'         : '8px',
+                                        'borderRadius'   : '50%',
+                                        'backgroundColor': COLORS['green'],
+                                    }
+                                ),
+                                html.Span(
+                                    "LIVE",
+                                    style={
+                                        'color'    : COLORS['green'],
+                                        'fontSize' : '12px',
+                                        'fontWeight': '600',
+                                    }
+                                ),
+                            ]
+                        ),
+                    ]),
                 ]
             ),
 
-            # Auto refresh every 30 seconds
-            dcc.Interval(
-                id='refresh',
-                interval=30 * 1000,
-                n_intervals=0
-            ),
-
-            # Summary Cards
+            # Summary Cards Row
             html.Div(
                 id='summary-cards',
                 style={
-                    'display': 'flex',
-                    'justifyContent': 'center',
-                    'gap': '20px',
-                    'marginBottom': '30px',
-                    'flexWrap': 'wrap',
+                    'display'      : 'grid',
+                    'gridTemplateColumns': 'repeat(6, 1fr)',
+                    'gap'          : '16px',
+                    'marginBottom' : '24px',
                 }
             ),
 
             # Charts Row
             html.Div(
                 style={
-                    'display': 'flex',
-                    'gap': '20px',
-                    'marginBottom': '30px',
-                    'flexWrap': 'wrap',
+                    'display'             : 'grid',
+                    'gridTemplateColumns' : '2fr 1fr',
+                    'gap'                 : '16px',
+                    'marginBottom'        : '24px',
                 },
                 children=[
+                    # Portfolio Chart
                     html.Div(
-                        style={
-                            'flex': '1',
-                            'minWidth': '400px',
-                            'backgroundColor': '#1a1a1a',
-                            'borderRadius': '10px',
-                            'padding': '15px',
-                            'border': '1px solid #333',
-                        },
+                        style=CARD_STYLE,
                         children=[
                             html.H3(
-                                "Portfolio Value",
-                                style={'color': '#00ff88'}
+                                "Portfolio Performance",
+                                style={
+                                    'color'       : COLORS['accent'],
+                                    'fontSize'    : '16px',
+                                    'marginTop'   : '0',
+                                    'marginBottom': '16px',
+                                    'letterSpacing': '1px',
+                                }
                             ),
-                            dcc.Graph(id='portfolio-chart'),
+                            dcc.Graph(
+                                id    ='portfolio-chart',
+                                config={'displayModeBar': False},
+                            ),
                         ]
                     ),
+                    # Allocation Chart
                     html.Div(
-                        style={
-                            'flex': '1',
-                            'minWidth': '400px',
-                            'backgroundColor': '#1a1a1a',
-                            'borderRadius': '10px',
-                            'padding': '15px',
-                            'border': '1px solid #333',
-                        },
+                        style=CARD_STYLE,
                         children=[
                             html.H3(
-                                "Position Allocation",
-                                style={'color': '#00ff88'}
+                                "Portfolio Allocation",
+                                style={
+                                    'color'       : COLORS['accent'],
+                                    'fontSize'    : '16px',
+                                    'marginTop'   : '0',
+                                    'marginBottom': '16px',
+                                    'letterSpacing': '1px',
+                                }
                             ),
-                            dcc.Graph(id='allocation-chart'),
+                            dcc.Graph(
+                                id    ='allocation-chart',
+                                config={'displayModeBar': False},
+                            ),
                         ]
                     ),
                 ]
             ),
 
-            # Signals
+            # Sector Rotation + Earnings Row
             html.Div(
                 style={
-                    'backgroundColor': '#1a1a1a',
-                    'borderRadius': '10px',
-                    'padding': '15px',
-                    'marginBottom': '30px',
-                    'border': '1px solid #333',
+                    'display'            : 'grid',
+                    'gridTemplateColumns': '1fr 1fr',
+                    'gap'                : '16px',
+                    'marginBottom'       : '24px',
                 },
                 children=[
-                    html.H3(
-                        "📊 Live Signals",
-                        style={'color': '#00ff88'}
+                    # Sector Rotation
+                    html.Div(
+                        style=CARD_STYLE,
+                        children=[
+                            html.H3(
+                                "Sector Rotation",
+                                style={
+                                    'color'       : COLORS['accent'],
+                                    'fontSize'    : '16px',
+                                    'marginTop'   : '0',
+                                    'marginBottom': '16px',
+                                    'letterSpacing': '1px',
+                                }
+                            ),
+                            html.Div(id='sector-table'),
+                        ]
                     ),
-                    html.Div(id='signals-table'),
+                    # Earnings Calendar
+                    html.Div(
+                        style=CARD_STYLE,
+                        children=[
+                            html.H3(
+                                "Earnings Calendar",
+                                style={
+                                    'color'       : COLORS['accent'],
+                                    'fontSize'    : '16px',
+                                    'marginTop'   : '0',
+                                    'marginBottom': '16px',
+                                    'letterSpacing': '1px',
+                                }
+                            ),
+                            html.Div(id='earnings-table'),
+                        ]
+                    ),
                 ]
             ),
 
-            # Positions
+            # Open Positions
             html.Div(
-                style={
-                    'backgroundColor': '#1a1a1a',
-                    'borderRadius': '10px',
-                    'padding': '15px',
-                    'marginBottom': '30px',
-                    'border': '1px solid #333',
-                },
+                style=CARD_STYLE,
                 children=[
                     html.H3(
-                        "💰 Open Positions",
-                        style={'color': '#00ff88'}
+                        "Open Positions",
+                        style={
+                            'color'       : COLORS['accent'],
+                            'fontSize'    : '16px',
+                            'marginTop'   : '0',
+                            'marginBottom': '16px',
+                            'letterSpacing': '1px',
+                        }
                     ),
                     html.Div(id='positions-table'),
                 ]
             ),
 
-            # Trade History
+            # Live Signals
             html.Div(
-                style={
-                    'backgroundColor': '#1a1a1a',
-                    'borderRadius': '10px',
-                    'padding': '15px',
-                    'marginBottom': '30px',
-                    'border': '1px solid #333',
-                },
+                style=CARD_STYLE,
                 children=[
                     html.H3(
-                        "📋 Trade History",
-                        style={'color': '#00ff88'}
+                        "Live AI Signals (41 Stocks)",
+                        style={
+                            'color'       : COLORS['accent'],
+                            'fontSize'    : '16px',
+                            'marginTop'   : '0',
+                            'marginBottom': '16px',
+                            'letterSpacing': '1px',
+                        }
+                    ),
+                    html.Div(id='signals-table'),
+                ]
+            ),
+
+            # Trade History
+            html.Div(
+                style=CARD_STYLE,
+                children=[
+                    html.H3(
+                        "Trade History",
+                        style={
+                            'color'       : COLORS['accent'],
+                            'fontSize'    : '16px',
+                            'marginTop'   : '0',
+                            'marginBottom': '16px',
+                            'letterSpacing': '1px',
+                        }
                     ),
                     html.Div(id='history-table'),
+                ]
+            ),
+
+            # Footer
+            html.Div(
+                style={
+                    'textAlign' : 'center',
+                    'padding'   : '24px',
+                    'color'     : COLORS['text_dim'],
+                    'fontSize'  : '12px',
+                    'borderTop' : f"1px solid {COLORS['border']}",
+                    'marginTop' : '24px',
+                },
+                children=[
+                    html.P(
+                        "AlphaEdge V3 | "
+                        "4-Model Ensemble (XGB+LGB+RF+LSTM) | "
+                        "Sector Rotation | "
+                        "News Sentiment | "
+                        "Cloud Automated"
+                    ),
                 ]
             ),
         ]
@@ -228,405 +373,587 @@ def create_app():
 
     @app.callback(
         [
-            Output('summary-cards', 'children'),
-            Output('portfolio-chart', 'figure'),
+            Output('summary-cards',    'children'),
+            Output('portfolio-chart',  'figure'),
             Output('allocation-chart', 'figure'),
-            Output('signals-table', 'children'),
-            Output('positions-table', 'children'),
-            Output('history-table', 'children'),
-            Output('last-updated', 'children'),
-            Output('scan-status', 'children'),
+            Output('sector-table',     'children'),
+            Output('earnings-table',   'children'),
+            Output('positions-table',  'children'),
+            Output('signals-table',    'children'),
+            Output('history-table',    'children'),
+            Output('last-updated',     'children'),
         ],
         [Input('refresh', 'n_intervals')]
     )
     def update_dashboard(n):
-        """Update all dashboard components."""
 
         portfolio = load_portfolio()
-        signals = load_signals()
-        scan_info = load_scan_info()
+        signals   = load_signals()
+        sectors   = load_sectors()
+        earnings  = load_earnings()
 
-        capital = portfolio.get('capital', 10000)
-        starting = portfolio.get('starting_capital', 10000)
+        capital   = portfolio.get('capital', 10000)
+        starting  = portfolio.get('starting_capital', 10000)
         positions = portfolio.get('positions', {})
-        history = portfolio.get('trade_history', [])
+        history   = portfolio.get('trade_history', [])
 
-        # Totals
+        # Calculate totals
         position_value = sum(
-            pos.get('shares', 0) * pos.get('entry_price', 0)
+            pos.get('shares', 0) * pos.get(
+                'current_price', pos.get('entry_price', 0)
+            )
             for pos in positions.values()
         )
         total_value = capital + position_value
-        total_pnl = total_value - starting
-        total_pct = (total_pnl / starting) * 100
+        total_pnl   = total_value - starting
+        total_pct   = (total_pnl / starting) * 100
 
-        sells = [
-            t for t in history
-            if t.get('action') == 'SELL'
-        ]
-        wins = len(
-            [t for t in sells if t.get('pnl', 0) > 0]
-        )
-        losses = len(
-            [t for t in sells if t.get('pnl', 0) <= 0]
-        )
+        sells      = [t for t in history if t.get('action') == 'SELL']
+        wins       = len([t for t in sells if t.get('pnl', 0) > 0])
+        losses     = len([t for t in sells if t.get('pnl', 0) <= 0])
         total_closed = wins + losses
-        win_rate = (
-            wins / total_closed * 100
-            if total_closed > 0
-            else 0
-        )
+        win_rate   = wins / total_closed * 100 if total_closed > 0 else 0
+        total_realized_pnl = sum(t.get('pnl', 0) for t in sells)
 
-        # Cards
-        def make_card(title, value, color):
+        # ── Summary Cards ──────────────────────────────────────
+        def make_card(label, value, color, subtitle=None):
             return html.Div(
                 style={
-                    'backgroundColor': '#1a1a1a',
-                    'borderRadius': '10px',
-                    'padding': '20px',
-                    'minWidth': '180px',
-                    'textAlign': 'center',
-                    'border': f'1px solid {color}',
+                    'backgroundColor': COLORS['card'],
+                    'border'         : f"1px solid {color}33",
+                    'borderRadius'   : '12px',
+                    'padding'        : '16px',
+                    'borderTop'      : f"3px solid {color}",
                 },
                 children=[
                     html.P(
-                        title,
+                        label,
                         style={
-                            'color': '#888',
-                            'fontSize': '12px',
-                            'margin': '0',
+                            'color'        : COLORS['text_dim'],
+                            'fontSize'     : '11px',
+                            'margin'       : '0 0 8px 0',
+                            'letterSpacing': '1px',
+                            'textTransform': 'uppercase',
                         }
                     ),
                     html.H2(
                         value,
                         style={
-                            'color': color,
-                            'margin': '5px 0',
-                            'fontSize': '24px',
+                            'color'     : color,
+                            'margin'    : '0',
+                            'fontSize'  : '22px',
+                            'fontWeight': '700',
+                        }
+                    ),
+                    html.P(
+                        subtitle or '',
+                        style={
+                            'color'   : COLORS['text_dim'],
+                            'fontSize': '11px',
+                            'margin'  : '4px 0 0 0',
                         }
                     ),
                 ]
             )
 
-        pnl_color = '#00ff88' if total_pnl >= 0 else '#ff4444'
+        pnl_color = COLORS['green'] if total_pnl >= 0 else COLORS['red']
+        wr_color  = COLORS['green'] if win_rate >= 50 else COLORS['red']
 
         cards = [
             make_card(
-                "TOTAL VALUE",
+                "Total Value",
                 f"${total_value:,.2f}",
-                '#00ff88'
+                COLORS['accent'],
+                f"Started: ${starting:,.2f}"
             ),
             make_card(
-                "CASH",
+                "Cash Available",
                 f"${capital:,.2f}",
-                '#4488ff'
+                COLORS['blue'],
+                f"{capital/total_value*100:.1f}% of portfolio"
             ),
             make_card(
-                "TOTAL P&L",
-                f"${total_pnl:+,.2f} ({total_pct:+.1f}%)",
-                pnl_color
+                "Total P&L",
+                f"${total_pnl:+,.2f}",
+                pnl_color,
+                f"{total_pct:+.2f}% overall"
             ),
             make_card(
-                "POSITIONS",
+                "Realized P&L",
+                f"${total_realized_pnl:+,.2f}",
+                pnl_color,
+                f"From {total_closed} closed trades"
+            ),
+            make_card(
+                "Open Positions",
                 str(len(positions)),
-                '#ffaa00'
+                COLORS['yellow'],
+                f"Max 5 allowed"
             ),
             make_card(
-                "TRADES",
-                str(len(history)),
-                '#aa88ff'
-            ),
-            make_card(
-                "WIN RATE",
+                "Win Rate",
                 f"{win_rate:.0f}%",
-                '#00ff88' if win_rate > 50 else '#ff4444'
+                wr_color,
+                f"{wins}W / {losses}L"
             ),
         ]
 
-        # Portfolio Chart
+        # ── Portfolio Chart ────────────────────────────────────
         values = [starting]
-        dates = ['Start']
+        dates  = ['Start']
 
         for trade in history:
-            pnl = trade.get('pnl', 0)
             if trade.get('action') == 'SELL':
-                values.append(values[-1] + pnl)
-                dates.append(
-                    trade.get('date', '')[:10]
-                )
+                values.append(values[-1] + trade.get('pnl', 0))
+                dates.append(trade.get('date', '')[:10])
 
         values.append(total_value)
         dates.append('Now')
 
+        line_color = COLORS['green'] if values[-1] >= values[0] else COLORS['red']
+        fill_color = 'rgba(0,255,136,0.08)' if values[-1] >= values[0] else 'rgba(255,68,68,0.08)'
+
         portfolio_fig = go.Figure()
         portfolio_fig.add_trace(go.Scatter(
-            x=dates,
-            y=values,
-            mode='lines+markers',
-            line=dict(color='#00ff88', width=2),
-            marker=dict(size=6),
-            fill='tozeroy',
-            fillcolor='rgba(0, 255, 136, 0.1)',
+            x         = dates,
+            y         = values,
+            mode      = 'lines+markers',
+            line      = dict(color=line_color, width=2),
+            marker    = dict(size=6, color=line_color),
+            fill      = 'tozeroy',
+            fillcolor = fill_color,
+            name      = 'Portfolio Value',
         ))
+        portfolio_fig.add_hline(
+            y         = starting,
+            line_dash = 'dash',
+            line_color= COLORS['text_dim'],
+            opacity   = 0.5,
+        )
         portfolio_fig.update_layout(
-            plot_bgcolor='#1a1a1a',
-            paper_bgcolor='#1a1a1a',
-            font=dict(color='#ffffff'),
-            xaxis=dict(gridcolor='#333'),
-            yaxis=dict(gridcolor='#333'),
-            margin=dict(l=40, r=20, t=20, b=40),
-            height=300,
+            plot_bgcolor = COLORS['card'],
+            paper_bgcolor= COLORS['card'],
+            font         = dict(color=COLORS['text'], size=11),
+            xaxis        = dict(
+                gridcolor = COLORS['border'],
+                showgrid  = True,
+            ),
+            yaxis        = dict(
+                gridcolor  = COLORS['border'],
+                showgrid   = True,
+                tickprefix = '$',
+            ),
+            margin       = dict(l=60, r=20, t=10, b=40),
+            height       = 280,
+            showlegend   = False,
         )
 
-        # Allocation Chart
+        # ── Allocation Chart ───────────────────────────────────
         alloc_labels = ['Cash']
         alloc_values = [capital]
-        alloc_colors = ['#4488ff']
+        alloc_colors = [COLORS['blue']]
 
-        colors = [
-            '#00ff88', '#ffaa00', '#ff4444',
-            '#aa88ff', '#ff88aa', '#88ffaa',
+        pie_colors = [
+            COLORS['green'], COLORS['yellow'],
+            COLORS['orange'], COLORS['accent'],
+            '#aa88ff', '#ff88aa',
         ]
 
         for i, (sym, pos) in enumerate(positions.items()):
-            val = (
-                pos.get('shares', 0)
-                * pos.get('entry_price', 0)
+            val = pos.get('shares', 0) * pos.get(
+                'current_price', pos.get('entry_price', 0)
             )
             alloc_labels.append(sym)
             alloc_values.append(val)
-            alloc_colors.append(colors[i % len(colors)])
+            alloc_colors.append(pie_colors[i % len(pie_colors)])
 
         alloc_fig = go.Figure(data=[go.Pie(
-            labels=alloc_labels,
-            values=alloc_values,
-            marker=dict(colors=alloc_colors),
-            hole=0.4,
-            textfont=dict(color='#ffffff'),
+            labels      = alloc_labels,
+            values      = alloc_values,
+            marker      = dict(
+                colors = alloc_colors,
+                line   = dict(color=COLORS['bg'], width=2),
+            ),
+            hole        = 0.5,
+            textfont    = dict(color=COLORS['text'], size=11),
+            textinfo    = 'label+percent',
         )])
         alloc_fig.update_layout(
-            plot_bgcolor='#1a1a1a',
-            paper_bgcolor='#1a1a1a',
-            font=dict(color='#ffffff'),
-            margin=dict(l=20, r=20, t=20, b=20),
-            height=300,
-            showlegend=True,
-            legend=dict(font=dict(color='#ffffff')),
+            plot_bgcolor = COLORS['card'],
+            paper_bgcolor= COLORS['card'],
+            font         = dict(color=COLORS['text']),
+            margin       = dict(l=10, r=10, t=10, b=10),
+            height       = 280,
+            showlegend   = False,
         )
 
-        # Signals Table
+        # ── Sector Rotation Table ──────────────────────────────
+        if sectors:
+            sector_rows = []
+            for name, data in sectors.items():
+                flow  = data.get('flow', 'NEUTRAL')
+                score = data.get('score', 0)
+                mom   = data.get('momentum_21d', 0)
+                color = (
+                    COLORS['green']    if flow == 'INFLOW'
+                    else COLORS['red'] if flow == 'OUTFLOW'
+                    else COLORS['text_dim']
+                )
+                sector_rows.append(
+                    html.Div(
+                        style={
+                            'display'        : 'flex',
+                            'justifyContent' : 'space-between',
+                            'alignItems'     : 'center',
+                            'padding'        : '8px 12px',
+                            'marginBottom'   : '4px',
+                            'backgroundColor': COLORS['card2'],
+                            'borderRadius'   : '8px',
+                            'borderLeft'     : f"3px solid {color}",
+                        },
+                        children=[
+                            html.Span(
+                                name,
+                                style={
+                                    'color'   : COLORS['text'],
+                                    'fontSize': '13px',
+                                    'fontWeight': '600',
+                                }
+                            ),
+                            html.Span(
+                                f"{mom:+.1f}%",
+                                style={
+                                    'color'   : COLORS['green'] if mom >= 0 else COLORS['red'],
+                                    'fontSize': '13px',
+                                }
+                            ),
+                            html.Span(
+                                flow,
+                                style={
+                                    'color'       : color,
+                                    'fontSize'    : '11px',
+                                    'fontWeight'  : '700',
+                                    'letterSpacing': '1px',
+                                }
+                            ),
+                        ]
+                    )
+                )
+            sector_display = html.Div(sector_rows)
+        else:
+            sector_display = html.P(
+                "No sector data yet. Run scanner first.",
+                style={'color': COLORS['text_dim']}
+            )
+
+        # ── Earnings Calendar ──────────────────────────────────
+        if earnings:
+            earn_rows = []
+            for e in earnings:
+                days  = e.get('days_until', 0)
+                color = (
+                    COLORS['red']    if days == 0
+                    else COLORS['yellow'] if days <= 2
+                    else COLORS['text_dim']
+                )
+                label = (
+                    "TODAY!" if days == 0
+                    else "TOMORROW" if days == 1
+                    else f"In {days} days"
+                )
+                earn_rows.append(
+                    html.Div(
+                        style={
+                            'display'        : 'flex',
+                            'justifyContent' : 'space-between',
+                            'padding'        : '8px 12px',
+                            'marginBottom'   : '4px',
+                            'backgroundColor': COLORS['card2'],
+                            'borderRadius'   : '8px',
+                            'borderLeft'     : f"3px solid {color}",
+                        },
+                        children=[
+                            html.Span(
+                                e.get('symbol', ''),
+                                style={
+                                    'color'     : COLORS['text'],
+                                    'fontWeight': '600',
+                                    'fontSize'  : '13px',
+                                }
+                            ),
+                            html.Span(
+                                e.get('date', ''),
+                                style={
+                                    'color'   : COLORS['text_dim'],
+                                    'fontSize': '12px',
+                                }
+                            ),
+                            html.Span(
+                                label,
+                                style={
+                                    'color'     : color,
+                                    'fontSize'  : '12px',
+                                    'fontWeight': '600',
+                                }
+                            ),
+                        ]
+                    )
+                )
+            earnings_display = html.Div(earn_rows)
+        else:
+            earnings_display = html.P(
+                "No earnings this week.",
+                style={'color': COLORS['text_dim']}
+            )
+
+        # ── Open Positions Table ───────────────────────────────
+        if positions:
+            pos_rows = []
+            for sym, pos in positions.items():
+                shares  = pos.get('shares', 0)
+                entry   = pos.get('entry_price', 0)
+                current = pos.get('current_price', entry)
+                pnl     = (current - entry) * shares
+                pnl_pct = (current - entry) / entry * 100 if entry > 0 else 0
+                cost    = pos.get('cost', shares * entry)
+                pos_rows.append({
+                    'Symbol'       : sym,
+                    'Shares'       : shares,
+                    'Entry Price'  : f"${entry:.2f}",
+                    'Current Price': f"${current:.2f}",
+                    'Cost'         : f"${cost:.2f}",
+                    'P&L'          : f"${pnl:+.2f}",
+                    'P&L %'        : f"{pnl_pct:+.2f}%",
+                    'Entry Date'   : pos.get('entry_date', '')[:10],
+                    'Reason'       : pos.get('reason', ''),
+                })
+
+            pos_df = pd.DataFrame(pos_rows)
+            positions_display = dash_table.DataTable(
+                data    = pos_df.to_dict('records'),
+                columns = [{'name': c, 'id': c} for c in pos_df.columns],
+                style_header={
+                    'backgroundColor': COLORS['card2'],
+                    'color'          : COLORS['yellow'],
+                    'fontWeight'     : 'bold',
+                    'border'         : f"1px solid {COLORS['border']}",
+                    'fontSize'       : '12px',
+                    'letterSpacing'  : '1px',
+                },
+                style_cell={
+                    'backgroundColor': COLORS['card'],
+                    'color'          : COLORS['text'],
+                    'border'         : f"1px solid {COLORS['border']}",
+                    'textAlign'      : 'center',
+                    'padding'        : '10px',
+                    'fontSize'       : '13px',
+                },
+                style_data_conditional=[
+                    {
+                        'if'             : {'filter_query': '{P&L} contains "+"'},
+                        'color'          : COLORS['green'],
+                        'column_id'      : 'P&L',
+                        'fontWeight'     : 'bold',
+                    },
+                    {
+                        'if'             : {'filter_query': '{P&L} contains "-"'},
+                        'color'          : COLORS['red'],
+                        'column_id'      : 'P&L',
+                        'fontWeight'     : 'bold',
+                    },
+                ],
+            )
+        else:
+            positions_display = html.P(
+                "No open positions.",
+                style={'color': COLORS['text_dim'], 'padding': '12px'}
+            )
+
+        # ── Signals Table ──────────────────────────────────────
         if signals:
             sig_rows = []
             for sym, data in sorted(
                 signals.items(),
-                key=lambda x: x[1].get('prediction', 0),
-                reverse=True
+                key    = lambda x: x[1].get('prediction', 0),
+                reverse= True
             ):
+                sig = data.get('signal', 'HOLD')
                 sig_rows.append({
-                    'Symbol': sym,
-                    'Signal': data.get('signal', 'HOLD'),
-                    'Prediction': f"{data.get('prediction', 0):.3f}",
-                    'Regime': data.get('regime', ''),
-                    'Sentiment': f"{data.get('sentiment', 0):+.2f}",
-                    'Price': f"${data.get('price', 0):.2f}",
+                    'Symbol'    : sym,
+                    'Signal'    : sig,
+                    'AI Score'  : f"{data.get('prediction', 0):.3f}",
+                    'Regime'    : data.get('regime', ''),
+                    'Sentiment' : f"{data.get('sentiment', 0):+.2f}",
+                    'Sector'    : data.get('sector', ''),
+                    'Price'     : f"${data.get('price', 0):.2f}",
                 })
 
             sig_df = pd.DataFrame(sig_rows)
-            signals_tbl = dash_table.DataTable(
-                data=sig_df.to_dict('records'),
-                columns=[
-                    {'name': c, 'id': c}
-                    for c in sig_df.columns
-                ],
+            signals_display = dash_table.DataTable(
+                data    = sig_df.to_dict('records'),
+                columns = [{'name': c, 'id': c} for c in sig_df.columns],
                 style_header={
-                    'backgroundColor': '#2a2a2a',
-                    'color': '#00ff88',
-                    'fontWeight': 'bold',
-                    'border': '1px solid #444',
+                    'backgroundColor': COLORS['card2'],
+                    'color'          : COLORS['accent'],
+                    'fontWeight'     : 'bold',
+                    'border'         : f"1px solid {COLORS['border']}",
+                    'fontSize'       : '12px',
+                    'letterSpacing'  : '1px',
                 },
                 style_cell={
-                    'backgroundColor': '#1a1a1a',
-                    'color': '#ffffff',
-                    'border': '1px solid #333',
-                    'textAlign': 'center',
-                    'padding': '10px',
+                    'backgroundColor': COLORS['card'],
+                    'color'          : COLORS['text'],
+                    'border'         : f"1px solid {COLORS['border']}",
+                    'textAlign'      : 'center',
+                    'padding'        : '10px',
+                    'fontSize'       : '13px',
                 },
                 style_data_conditional=[
                     {
-                        'if': {
+                        'if'       : {
                             'filter_query': '{Signal} = "BUY"',
-                            'column_id': 'Signal'
+                            'column_id'   : 'Signal',
                         },
-                        'color': '#00ff88',
+                        'color'    : COLORS['green'],
                         'fontWeight': 'bold',
                     },
                     {
-                        'if': {
+                        'if'       : {
                             'filter_query': '{Signal} = "AVOID"',
-                            'column_id': 'Signal'
+                            'column_id'   : 'Signal',
                         },
-                        'color': '#ff4444',
+                        'color'    : COLORS['red'],
                         'fontWeight': 'bold',
                     },
                     {
-                        'if': {
+                        'if'       : {
                             'filter_query': '{Signal} = "CAUTION"',
-                            'column_id': 'Signal'
+                            'column_id'   : 'Signal',
                         },
-                        'color': '#ffaa00',
+                        'color'    : COLORS['yellow'],
+                        'fontWeight': 'bold',
+                    },
+                    {
+                        'if'       : {
+                            'filter_query': '{Signal} = "EARNINGS_HOLD"',
+                            'column_id'   : 'Signal',
+                        },
+                        'color'    : COLORS['orange'],
                         'fontWeight': 'bold',
                     },
                 ],
+                page_size   = 20,
+                sort_action = 'native',
             )
         else:
-            signals_tbl = html.P(
+            signals_display = html.P(
                 "No signals yet. Run scanner first.",
-                style={'color': '#888'}
+                style={'color': COLORS['text_dim'], 'padding': '12px'}
             )
 
-        # Positions Table
-        if positions:
-            pos_rows = []
-            for sym, pos in positions.items():
-                shares = pos.get('shares', 0)
-                entry = pos.get('entry_price', 0)
-                cost = pos.get('cost', shares * entry)
-
-                pos_rows.append({
-                    'Symbol': sym,
-                    'Shares': shares,
-                    'Entry': f"${entry:.2f}",
-                    'Cost': f"${cost:.2f}",
-                    'Date': pos.get('entry_date', '')[:10],
-                    'Reason': pos.get('reason', ''),
-                })
-
-            pos_df = pd.DataFrame(pos_rows)
-            positions_tbl = dash_table.DataTable(
-                data=pos_df.to_dict('records'),
-                columns=[
-                    {'name': c, 'id': c}
-                    for c in pos_df.columns
-                ],
-                style_header={
-                    'backgroundColor': '#2a2a2a',
-                    'color': '#ffaa00',
-                    'fontWeight': 'bold',
-                    'border': '1px solid #444',
-                },
-                style_cell={
-                    'backgroundColor': '#1a1a1a',
-                    'color': '#ffffff',
-                    'border': '1px solid #333',
-                    'textAlign': 'center',
-                    'padding': '10px',
-                },
-            )
-        else:
-            positions_tbl = html.P(
-                "No open positions.",
-                style={'color': '#888'}
-            )
-
-        # History Table
+        # ── Trade History Table ────────────────────────────────
         if history:
             hist_rows = []
-            for trade in reversed(history[-20:]):
+            for trade in reversed(history[-30:]):
                 pnl = trade.get('pnl', 0)
-
                 hist_rows.append({
-                    'Date': trade.get('date', '')[:16],
+                    'Date'  : trade.get('date', '')[:16],
                     'Action': trade.get('action', ''),
                     'Symbol': trade.get('symbol', ''),
                     'Shares': trade.get('shares', 0),
-                    'Price': f"${trade.get('price', 0):.2f}",
-                    'P&L': (
+                    'Price' : f"${trade.get('price', 0):.2f}",
+                    'P&L'   : (
                         f"${pnl:+.2f}"
                         if trade.get('action') == 'SELL'
-                        else ''
+                        else '-'
                     ),
                     'Reason': trade.get('reason', ''),
                 })
 
             hist_df = pd.DataFrame(hist_rows)
-            history_tbl = dash_table.DataTable(
-                data=hist_df.to_dict('records'),
-                columns=[
-                    {'name': c, 'id': c}
-                    for c in hist_df.columns
-                ],
+            history_display = dash_table.DataTable(
+                data    = hist_df.to_dict('records'),
+                columns = [{'name': c, 'id': c} for c in hist_df.columns],
                 style_header={
-                    'backgroundColor': '#2a2a2a',
-                    'color': '#aa88ff',
-                    'fontWeight': 'bold',
-                    'border': '1px solid #444',
+                    'backgroundColor': COLORS['card2'],
+                    'color'          : '#aa88ff',
+                    'fontWeight'     : 'bold',
+                    'border'         : f"1px solid {COLORS['border']}",
+                    'fontSize'       : '12px',
+                    'letterSpacing'  : '1px',
                 },
                 style_cell={
-                    'backgroundColor': '#1a1a1a',
-                    'color': '#ffffff',
-                    'border': '1px solid #333',
-                    'textAlign': 'center',
-                    'padding': '10px',
+                    'backgroundColor': COLORS['card'],
+                    'color'          : COLORS['text'],
+                    'border'         : f"1px solid {COLORS['border']}",
+                    'textAlign'      : 'center',
+                    'padding'        : '10px',
+                    'fontSize'       : '13px',
                 },
                 style_data_conditional=[
                     {
-                        'if': {
+                        'if'       : {
                             'filter_query': '{Action} = "BUY"',
-                            'column_id': 'Action'
+                            'column_id'   : 'Action',
                         },
-                        'color': '#00ff88',
+                        'color'    : COLORS['green'],
+                        'fontWeight': 'bold',
                     },
                     {
-                        'if': {
+                        'if'       : {
                             'filter_query': '{Action} = "SELL"',
-                            'column_id': 'Action'
+                            'column_id'   : 'Action',
                         },
-                        'color': '#ff4444',
+                        'color'    : COLORS['red'],
+                        'fontWeight': 'bold',
+                    },
+                    {
+                        'if'       : {
+                            'filter_query': '{P&L} contains "+"',
+                            'column_id'   : 'P&L',
+                        },
+                        'color'    : COLORS['green'],
+                        'fontWeight': 'bold',
+                    },
+                    {
+                        'if'       : {
+                            'filter_query': '{P&L} contains "-"',
+                            'column_id'   : 'P&L',
+                        },
+                        'color'    : COLORS['red'],
+                        'fontWeight': 'bold',
                     },
                 ],
+                page_size   = 15,
+                sort_action = 'native',
             )
         else:
-            history_tbl = html.P(
+            history_display = html.P(
                 "No trades yet.",
-                style={'color': '#888'}
+                style={'color': COLORS['text_dim'], 'padding': '12px'}
             )
 
-        # Timestamps
-        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        timestamp = f"Dashboard refreshed: {now}"
-
-        last_scan = scan_info.get('last_scan', 'Never')
-        next_min = scan_info.get('next_scan_minutes', 30)
-        n_stocks = scan_info.get('stocks_scanned', 0)
-        n_crypto = scan_info.get('crypto_scanned', 0)
-
-        scan_status = (
-            f"Last scan: {last_scan[:19]}"
-            f" | Stocks: {n_stocks}"
-            f" | Crypto: {n_crypto}"
-            f" | Auto-scan every {next_min} min"
-        )
+        # Timestamp
+        now       = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        timestamp = f"Last updated: {now} | Auto-refresh: 60s"
 
         return (
             cards,
             portfolio_fig,
             alloc_fig,
-            signals_tbl,
-            positions_tbl,
-            history_tbl,
+            sector_display,
+            earnings_display,
+            positions_display,
+            signals_display,
+            history_display,
             timestamp,
-            scan_status,
         )
 
     return app
 
 
 if __name__ == '__main__':
-    print("\n" + "🌐" * 25)
-    print("STARTING ALPHAEDGE DASHBOARD")
-    print("🌐" * 25)
-    print("\nOpen browser: http://localhost:8050")
-    print("Press Ctrl+C to stop\n")
-
+    print("\nStarting AlphaEdge Dashboard...")
+    print("Open browser: http://localhost:8050")
     app = create_app()
     app.run(debug=False, host='0.0.0.0', port=8050)
