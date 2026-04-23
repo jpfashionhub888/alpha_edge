@@ -6,31 +6,31 @@
       "shares": 4,
       "entry_price": 187.02000427246094,
       "entry_date": "2026-04-22T03:09:38.789438",
-      "highest_price": 187.02000427246094,
+      "highest_price": 188.14999389648438,
       "signal": 0.6035235052431827,
       "cost": 748.0800170898438,
       "reason": "uptrend",
-      "current_price": 184.91000366210938
+      "current_price": 188.14999389648438
     },
     "QQQ": {
       "shares": 1,
       "entry_price": 628.5999755859375,
       "entry_date": "2026-04-22T03:09:39.216465",
-      "highest_price": 637.4000244140625,
+      "highest_price": 640.469970703125,
       "signal": 0.6789602286911479,
       "cost": 628.5999755859375,
       "reason": "sideways",
-      "current_price": 637.4000244140625
+      "current_price": 640.469970703125
     },
     "MCD": {
       "shares": 2,
       "entry_price": 303.2200012207031,
       "entry_date": "2026-04-22T03:09:39.628633",
-      "highest_price": 306.260009765625,
+      "highest_price": 306.9599914550781,
       "signal": 0.6016114562854115,
       "cost": 606.4400024414062,
       "reason": "sideways",
-      "current_price": 306.260009765625
+      "current_price": 306.9599914550781
     },
     "JNJ": {
       "shares": 2,
@@ -40,7 +40,7 @@
       "signal": 0.54433923447814,
       "cost": 480.20001220703125,
       "reason": "uptrend",
-      "current_price": 238.6699981689453
+      "current_price": 234.5399932861328
     },
     "NVDA": {
       "shares": 3,
@@ -50,7 +50,7 @@
       "signal": 0.6241953512021852,
       "cost": 589.5299835205078,
       "reason": "sideways",
-      "current_price": 198.8699951171875
+      "current_price": 198.35000610351562
     }
   },
   "trade_history": [
@@ -100,5 +100,5 @@
       "reason": "sideways"
     }
   ],
-  "saved_at": "2026-04-23T01:11:37.180399"
+  "saved_at": "2026-04-23T18:06:07.668839"
 }
