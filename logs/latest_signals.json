@@ -1,6 +1,6 @@
 {
   "AAPL": {
-    "prediction": 0.5046620174712103,
+    "prediction": 0.529300656248357,
     "regime": "sideways",
     "price": 263.3999938964844,
     "sentiment": 0.0,
@@ -8,15 +8,15 @@
     "signal": "HOLD"
   },
   "MSFT": {
-    "prediction": 0.5554838919019993,
+    "prediction": 0.5034422721784882,
     "regime": "sideways",
     "price": 420.260009765625,
     "sentiment": 0.0,
     "sector": "Technology",
-    "signal": "EARNINGS_HOLD"
+    "signal": "HOLD"
   },
   "GOOGL": {
-    "prediction": 0.4796328131196297,
+    "prediction": 0.4339173692511703,
     "regime": "volatile",
     "price": 336.0199890136719,
     "sentiment": 0.0,
@@ -24,7 +24,7 @@
     "signal": "CAUTION"
   },
   "AMZN": {
-    "prediction": 0.14930185141404692,
+    "prediction": 0.1754184413607079,
     "regime": "sideways",
     "price": 249.6999969482422,
     "sentiment": 0.0,
@@ -32,7 +32,7 @@
     "signal": "HOLD"
   },
   "NVDA": {
-    "prediction": 0.44338366550081787,
+    "prediction": 0.509980163085949,
     "regime": "sideways",
     "price": 198.35000610351562,
     "sentiment": 0.0,
@@ -40,7 +40,7 @@
     "signal": "HOLD"
   },
   "META": {
-    "prediction": 0.6152058199786948,
+    "prediction": 0.6194006954281159,
     "regime": "sideways",
     "price": 676.8699951171875,
     "sentiment": 0.0,
@@ -48,7 +48,7 @@
     "signal": "HOLD"
   },
   "TSLA": {
-    "prediction": 0.4486013098632453,
+    "prediction": 0.3456194909393454,
     "regime": "downtrend",
     "price": 388.8999938964844,
     "sentiment": 0.0,
@@ -56,7 +56,7 @@
     "signal": "AVOID"
   },
   "AMD": {
-    "prediction": 0.29744719651912965,
+    "prediction": 0.35775316707350224,
     "regime": "uptrend",
     "price": 278.260009765625,
     "sentiment": 0.0,
@@ -64,7 +64,7 @@
     "signal": "HOLD"
   },
   "NFLX": {
-    "prediction": 0.4449239938036131,
+    "prediction": 0.43434332725414576,
     "regime": "uptrend",
     "price": 107.79000091552734,
     "sentiment": 0.0,
@@ -72,7 +72,7 @@
     "signal": "HOLD"
   },
   "SPY": {
-    "prediction": 0.4093906284200369,
+    "prediction": 0.3998566212415411,
     "regime": "sideways",
     "price": 701.6599731445312,
     "sentiment": 0.0,
@@ -80,7 +80,7 @@
     "signal": "HOLD"
   },
   "QQQ": {
-    "prediction": 0.5972987557787369,
+    "prediction": 0.5974219556398691,
     "regime": "sideways",
     "price": 640.469970703125,
     "sentiment": 0.0,
@@ -88,15 +88,15 @@
     "signal": "BUY"
   },
   "IWM": {
-    "prediction": 0.6745582271741151,
+    "prediction": 0.7104778076103382,
     "regime": "sideways",
     "price": 269.95001220703125,
-    "sentiment": 0.2304918605127725,
+    "sentiment": 0.22388024929290015,
     "sector": "Market",
     "signal": "HOLD"
   },
   "DIA": {
-    "prediction": 0.3639883389124234,
+    "prediction": 0.3522911177935587,
     "regime": "sideways",
     "price": 485.42401123046875,
     "sentiment": 0.0,
@@ -104,7 +104,7 @@
     "signal": "HOLD"
   },
   "JPM": {
-    "prediction": 0.5976439105972038,
+    "prediction": 0.574236143745721,
     "regime": "sideways",
     "price": 309.95001220703125,
     "sentiment": 0.0,
@@ -112,7 +112,7 @@
     "signal": "HOLD"
   },
   "V": {
-    "prediction": 0.3965376359075929,
+    "prediction": 0.38856278056038246,
     "regime": "downtrend",
     "price": 315.1000061035156,
     "sentiment": 0.0,
@@ -120,7 +120,7 @@
     "signal": "AVOID"
   },
   "GS": {
-    "prediction": 0.4801787685183734,
+    "prediction": 0.45552826390817475,
     "regime": "sideways",
     "price": 900.0,
     "sentiment": 0.0,
@@ -128,7 +128,7 @@
     "signal": "HOLD"
   },
   "BAC": {
-    "prediction": 0.5641721585182691,
+    "prediction": 0.5380861904057351,
     "regime": "sideways",
     "price": 53.5099983215332,
     "sentiment": 0.0,
@@ -136,7 +136,7 @@
     "signal": "HOLD"
   },
   "MS": {
-    "prediction": 0.4026765185413192,
+    "prediction": 0.43765202825025135,
     "regime": "sideways",
     "price": 187.32000732421875,
     "sentiment": 0.0,
@@ -144,7 +144,7 @@
     "signal": "HOLD"
   },
   "JNJ": {
-    "prediction": 0.6227436297096061,
+    "prediction": 0.6076581708900803,
     "regime": "sideways",
     "price": 234.5399932861328,
     "sentiment": 0.0,
@@ -152,7 +152,7 @@
     "signal": "HOLD"
   },
   "PFE": {
-    "prediction": 0.5832647474463851,
+    "prediction": 0.5511887686437948,
     "regime": "uptrend",
     "price": 27.219999313354492,
     "sentiment": 0.0,
@@ -160,7 +160,7 @@
     "signal": "BUY"
   },
   "UNH": {
-    "prediction": 0.502126518487545,
+    "prediction": 0.5185258096940436,
     "regime": "sideways",
     "price": 316.3999938964844,
     "sentiment": 0.0,
@@ -168,7 +168,7 @@
     "signal": "HOLD"
   },
   "ABBV": {
-    "prediction": 0.5895587163265468,
+    "prediction": 0.5918506909137726,
     "regime": "sideways",
     "price": 208.99000549316406,
     "sentiment": 0.0,
@@ -176,7 +176,7 @@
     "signal": "HOLD"
   },
   "LLY": {
-    "prediction": 0.5820780119049007,
+    "prediction": 0.6084592040350925,
     "regime": "downtrend",
     "price": 903.989990234375,
     "sentiment": 0.0,
@@ -184,7 +184,7 @@
     "signal": "AVOID"
   },
   "MRK": {
-    "prediction": 0.4799638212130579,
+    "prediction": 0.4895094245285411,
     "regime": "sideways",
     "price": 115.45999908447266,
     "sentiment": 0.0,
@@ -192,7 +192,7 @@
     "signal": "HOLD"
   },
   "WMT": {
-    "prediction": 0.5286895373813176,
+    "prediction": 0.5488077434124866,
     "regime": "sideways",
     "price": 124.81999969482422,
     "sentiment": 0.0,
@@ -200,7 +200,7 @@
     "signal": "HOLD"
   },
   "COST": {
-    "prediction": 0.4528954847586452,
+    "prediction": 0.44973940681034447,
     "regime": "sideways",
     "price": 987.2100219726562,
     "sentiment": 0.0,
@@ -208,47 +208,47 @@
     "signal": "HOLD"
   },
   "HD": {
-    "prediction": 0.6872533869580301,
+    "prediction": 0.7197685613794942,
     "regime": "downtrend",
     "price": 337.1499938964844,
-    "sentiment": 0.025768030616568356,
+    "sentiment": -0.00875776819884777,
     "sector": "Consumer",
     "signal": "AVOID"
   },
   "MCD": {
-    "prediction": 0.7027863361499351,
+    "prediction": 0.5306909439208308,
     "regime": "sideways",
     "price": 306.9599914550781,
-    "sentiment": -0.16447840862427698,
+    "sentiment": 0.0,
     "sector": "Consumer",
     "signal": "HOLD"
   },
   "XOM": {
-    "prediction": 0.8373526808419208,
+    "prediction": 0.827862871149813,
     "regime": "uptrend",
     "price": 151.97999572753906,
-    "sentiment": 0.18432105316862682,
+    "sentiment": 0.17848607687526108,
     "sector": "Energy",
     "signal": "BUY"
   },
   "CVX": {
-    "prediction": 0.7516870469308771,
+    "prediction": 0.7258882613985773,
     "regime": "uptrend",
     "price": 188.14999389648438,
-    "sentiment": 0.12409118485084036,
+    "sentiment": 0.13515343706967542,
     "sector": "Energy",
     "signal": "BUY"
   },
   "OXY": {
-    "prediction": 0.5967923918553862,
+    "prediction": 0.628799239534524,
     "regime": "uptrend",
     "price": 56.869998931884766,
-    "sentiment": 0.0,
+    "sentiment": 0.13280851597822196,
     "sector": "Energy",
     "signal": "BUY"
   },
   "SOFI": {
-    "prediction": 0.47737981254462936,
+    "prediction": 0.47742545621343685,
     "regime": "downtrend",
     "price": 19.030000686645508,
     "sentiment": 0.0,
@@ -256,7 +256,7 @@
     "signal": "AVOID"
   },
   "PLTR": {
-    "prediction": 0.5000542148626287,
+    "prediction": 0.478828576540611,
     "regime": "downtrend",
     "price": 142.75999450683594,
     "sentiment": 0.0,
@@ -264,7 +264,7 @@
     "signal": "AVOID"
   },
   "RIVN": {
-    "prediction": 0.500673030355724,
+    "prediction": 0.47571305856183627,
     "regime": "sideways",
     "price": 16.889999389648438,
     "sentiment": 0.0,
@@ -272,7 +272,7 @@
     "signal": "HOLD"
   },
   "HOOD": {
-    "prediction": 0.453265089946264,
+    "prediction": 0.43864792527903873,
     "regime": "sideways",
     "price": 86.8499984741211,
     "sentiment": 0.0,
@@ -280,7 +280,7 @@
     "signal": "HOLD"
   },
   "MARA": {
-    "prediction": 0.4720142354074543,
+    "prediction": 0.4569346967244774,
     "regime": "sideways",
     "price": 11.550000190734863,
     "sentiment": 0.0,
@@ -288,23 +288,23 @@
     "signal": "HOLD"
   },
   "CRM": {
-    "prediction": 0.6328516518269839,
+    "prediction": 0.6480650160608181,
     "regime": "downtrend",
     "price": 181.22000122070312,
-    "sentiment": -0.12109687214717268,
+    "sentiment": -0.26679352681914514,
     "sector": "Technology",
     "signal": "AVOID"
   },
   "SNOW": {
-    "prediction": 0.6608540552006059,
+    "prediction": 0.6355623767510717,
     "regime": "downtrend",
     "price": 143.5500030517578,
-    "sentiment": 0.1931763991494389,
+    "sentiment": 0.21385172122207127,
     "sector": "Technology",
     "signal": "AVOID"
   },
   "NET": {
-    "prediction": 0.5483873094182363,
+    "prediction": 0.5429573778382117,
     "regime": "sideways",
     "price": 197.3800048828125,
     "sentiment": 0.0,
@@ -312,15 +312,15 @@
     "signal": "HOLD"
   },
   "DDOG": {
-    "prediction": 0.5423625032200313,
+    "prediction": 0.6027986747869899,
     "regime": "sideways",
     "price": 123.47000122070312,
     "sentiment": 0.0,
     "sector": "Technology",
-    "signal": "HOLD"
+    "signal": "BUY"
   },
   "CRWD": {
-    "prediction": 0.6321558095287274,
+    "prediction": 0.6192233743678452,
     "regime": "sideways",
     "price": 418.20001220703125,
     "sentiment": 0.0,
