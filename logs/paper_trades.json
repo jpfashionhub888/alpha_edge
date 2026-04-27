@@ -1,5 +1,5 @@
 {
-  "capital": 8141.530014038086,
+  "capital": 6668.530029296875,
   "starting_capital": 10000.0,
   "positions": {
     "QQQ": {
@@ -31,6 +31,26 @@
       "cost": 589.5299835205078,
       "reason": "sideways",
       "current_price": 202.05999755859375
+    },
+    "NET": {
+      "shares": 4,
+      "entry_price": 204.80999755859375,
+      "entry_date": "2026-04-27T20:25:58.866807",
+      "highest_price": 204.80999755859375,
+      "signal": 0.7063797718196649,
+      "cost": 819.239990234375,
+      "reason": "sideways",
+      "current_price": 204.80999755859375
+    },
+    "OXY": {
+      "shares": 12,
+      "entry_price": 54.47999954223633,
+      "entry_date": "2026-04-27T20:25:59.369732",
+      "highest_price": 54.47999954223633,
+      "signal": 0.6370151303753789,
+      "cost": 653.7599945068359,
+      "reason": "uptrend",
+      "current_price": 54.47999954223633
     }
   },
   "trade_history": [
@@ -100,7 +120,25 @@
       "pnl_pct": -0.039192017588089476,
       "date": "2026-04-27T18:01:52.896904",
       "reason": "stop_loss"
+    },
+    {
+      "action": "BUY",
+      "symbol": "NET",
+      "shares": 4,
+      "price": 204.80999755859375,
+      "cost": 819.239990234375,
+      "date": "2026-04-27T20:25:58.866816",
+      "reason": "sideways"
+    },
+    {
+      "action": "BUY",
+      "symbol": "OXY",
+      "shares": 12,
+      "price": 54.47999954223633,
+      "cost": 653.7599945068359,
+      "date": "2026-04-27T20:25:59.369745",
+      "reason": "uptrend"
     }
   ],
-  "saved_at": "2026-04-27T18:01:53.377872"
+  "saved_at": "2026-04-27T20:25:59.845768"
 }
