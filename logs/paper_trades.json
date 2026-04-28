@@ -1,5 +1,5 @@
 {
-  "capital": 6668.530029296875,
+  "capital": 7272.210021972656,
   "starting_capital": 10000.0,
   "positions": {
     "QQQ": {
@@ -10,17 +10,7 @@
       "signal": 0.6789602286911479,
       "cost": 628.5999755859375,
       "reason": "sideways",
-      "current_price": 646.7899780273438
-    },
-    "MCD": {
-      "shares": 2,
-      "entry_price": 303.2200012207031,
-      "entry_date": "2026-04-22T03:09:39.628633",
-      "highest_price": 311.3599853515625,
-      "signal": 0.6016114562854115,
-      "cost": 606.4400024414062,
-      "reason": "sideways",
-      "current_price": 306.94000244140625
+      "current_price": 644.3300170898438
     },
     "NVDA": {
       "shares": 3,
@@ -30,27 +20,27 @@
       "signal": 0.6241953512021852,
       "cost": 589.5299835205078,
       "reason": "sideways",
-      "current_price": 202.05999755859375
+      "current_price": 199.8800048828125
     },
     "NET": {
       "shares": 4,
       "entry_price": 204.80999755859375,
       "entry_date": "2026-04-27T20:25:58.866807",
-      "highest_price": 204.80999755859375,
+      "highest_price": 207.6699981689453,
       "signal": 0.7063797718196649,
       "cost": 819.239990234375,
       "reason": "sideways",
-      "current_price": 204.80999755859375
+      "current_price": 207.6699981689453
     },
     "OXY": {
       "shares": 12,
       "entry_price": 54.47999954223633,
       "entry_date": "2026-04-27T20:25:59.369732",
-      "highest_price": 54.47999954223633,
+      "highest_price": 56.33000183105469,
       "signal": 0.6370151303753789,
       "cost": 653.7599945068359,
       "reason": "uptrend",
-      "current_price": 54.47999954223633
+      "current_price": 56.33000183105469
     }
   },
   "trade_history": [
@@ -138,7 +128,18 @@
       "cost": 653.7599945068359,
       "date": "2026-04-27T20:25:59.369745",
       "reason": "uptrend"
+    },
+    {
+      "action": "SELL",
+      "symbol": "MCD",
+      "shares": 2,
+      "price": 301.8399963378906,
+      "revenue": 603.6799926757812,
+      "pnl": -2.760009765625,
+      "pnl_pct": -0.0045511670643653985,
+      "date": "2026-04-28T19:17:26.729430",
+      "reason": "trailing_stop"
     }
   ],
-  "saved_at": "2026-04-27T23:20:32.648353"
+  "saved_at": "2026-04-28T19:17:27.452864"
 }

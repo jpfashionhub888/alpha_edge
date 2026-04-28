@@ -2,76 +2,91 @@
   {
     "symbol": "AAPL",
     "date": "2026-04-30",
-    "days_until": 3
+    "days_until": 2
   },
   {
     "symbol": "MSFT",
     "date": "2026-04-29",
-    "days_until": 2
+    "days_until": 1
   },
   {
     "symbol": "GOOGL",
     "date": "2026-04-29",
-    "days_until": 2
+    "days_until": 1
   },
   {
     "symbol": "AMZN",
     "date": "2026-04-29",
-    "days_until": 2
+    "days_until": 1
   },
   {
     "symbol": "META",
     "date": "2026-04-29",
-    "days_until": 2
+    "days_until": 1
+  },
+  {
+    "symbol": "AMD",
+    "date": "2026-05-05",
+    "days_until": 7
   },
   {
     "symbol": "V",
     "date": "2026-04-28",
-    "days_until": 1
+    "days_until": 0
+  },
+  {
+    "symbol": "PFE",
+    "date": "2026-05-05",
+    "days_until": 7
   },
   {
     "symbol": "ABBV",
     "date": "2026-04-29",
-    "days_until": 2
+    "days_until": 1
   },
   {
     "symbol": "LLY",
     "date": "2026-04-30",
-    "days_until": 3
+    "days_until": 2
   },
   {
     "symbol": "MRK",
     "date": "2026-04-30",
-    "days_until": 3
+    "days_until": 2
   },
   {
     "symbol": "XOM",
     "date": "2026-05-01",
-    "days_until": 4
+    "days_until": 3
   },
   {
     "symbol": "CVX",
     "date": "2026-05-01",
-    "days_until": 4
+    "days_until": 3
+  },
+  {
+    "symbol": "OXY",
+    "date": "2026-05-05",
+    "days_until": 7
   },
   {
     "symbol": "SOFI",
     "date": "2026-04-29",
-    "days_until": 2
+    "days_until": 1
   },
   {
     "symbol": "PLTR",
     "date": "2026-05-04",
-    "days_until": 7
+    "days_until": 6
   },
   {
     "symbol": "RIVN",
     "date": "2026-04-30",
-    "days_until": 3
+    "days_until": 2
   },
   {
     "symbol": "HOOD",
     "date": "2026-04-28",
-    "days_until": 1
+    "days_until": 0
   }
 ]
