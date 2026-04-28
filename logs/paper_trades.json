@@ -1,5 +1,5 @@
 {
-  "capital": 7272.210021972656,
+  "capital": 6624.209991455078,
   "starting_capital": 10000.0,
   "positions": {
     "QQQ": {
@@ -41,6 +41,16 @@
       "cost": 653.7599945068359,
       "reason": "uptrend",
       "current_price": 56.33000183105469
+    },
+    "WMT": {
+      "shares": 5,
+      "entry_price": 129.60000610351562,
+      "entry_date": "2026-04-28T20:56:14.456601",
+      "highest_price": 129.60000610351562,
+      "signal": 0.6221501943789042,
+      "cost": 648.0000305175781,
+      "reason": "uptrend",
+      "current_price": 129.60000610351562
     }
   },
   "trade_history": [
@@ -139,7 +149,16 @@
       "pnl_pct": -0.0045511670643653985,
       "date": "2026-04-28T19:17:26.729430",
       "reason": "trailing_stop"
+    },
+    {
+      "action": "BUY",
+      "symbol": "WMT",
+      "shares": 5,
+      "price": 129.60000610351562,
+      "cost": 648.0000305175781,
+      "date": "2026-04-28T20:56:14.456608",
+      "reason": "uptrend"
     }
   ],
-  "saved_at": "2026-04-28T19:17:27.452864"
+  "saved_at": "2026-04-28T20:56:15.034225"
 }
