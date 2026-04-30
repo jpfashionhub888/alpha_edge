@@ -10,7 +10,7 @@
       "signal": 0.6789602286911479,
       "cost": 628.5999755859375,
       "reason": "sideways",
-      "current_price": 655.1099853515625
+      "current_price": 651.4199829101562
     },
     "NVDA": {
       "shares": 3,
@@ -20,7 +20,7 @@
       "signal": 0.6241953512021852,
       "cost": 589.5299835205078,
       "reason": "sideways",
-      "current_price": 202.5
+      "current_price": 199.63999938964844
     },
     "NET": {
       "shares": 4,
@@ -30,27 +30,27 @@
       "signal": 0.7063797718196649,
       "cost": 819.239990234375,
       "reason": "sideways",
-      "current_price": 207.55999755859375
+      "current_price": 205.0
     },
     "OXY": {
       "shares": 12,
       "entry_price": 54.47999954223633,
       "entry_date": "2026-04-27T20:25:59.369732",
-      "highest_price": 57.04999923706055,
+      "highest_price": 57.83000183105469,
       "signal": 0.6370151303753789,
       "cost": 653.7599945068359,
       "reason": "uptrend",
-      "current_price": 57.04999923706055
+      "current_price": 57.83000183105469
     },
     "WMT": {
       "shares": 5,
       "entry_price": 129.60000610351562,
       "entry_date": "2026-04-28T20:56:14.456601",
-      "highest_price": 129.97999572753906,
+      "highest_price": 132.02999877929688,
       "signal": 0.6221501943789042,
       "cost": 648.0000305175781,
       "reason": "uptrend",
-      "current_price": 129.97999572753906
+      "current_price": 132.02999877929688
     }
   },
   "trade_history": [
@@ -160,5 +160,5 @@
       "reason": "uptrend"
     }
   ],
-  "saved_at": "2026-04-29T23:39:42.930888"
+  "saved_at": "2026-04-30T18:05:55.213517"
 }
