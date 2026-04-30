@@ -1,5 +1,10 @@
 [
   {
+    "symbol": "AAPL",
+    "date": "2026-04-30",
+    "days_until": 0
+  },
+  {
     "symbol": "AMD",
     "date": "2026-05-05",
     "days_until": 5
