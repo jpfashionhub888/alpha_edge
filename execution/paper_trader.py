@@ -41,7 +41,7 @@ class PaperTrader:
         return max(shares, 0)
 
     def open_position(self, symbol, price, signal,
-                      reason='signal'):
+                      reason='signal', atr=None):
         """Open a new position."""
 
         if len(self.positions) >= self.max_positions:
@@ -68,14 +68,23 @@ class PaperTrader:
 
         self.capital -= cost
 
+        # Calculate ATR-based stop loss
+        if atr and atr > 0:
+            atr_stop_pct = (2 * atr) / price
+            stop_loss_pct = max(0.02, min(0.08, atr_stop_pct))
+        else:
+            stop_loss_pct = 0.03
+
         self.positions[symbol] = {
-            'shares': shares,
-            'entry_price': price,
-            'entry_date': datetime.now().isoformat(),
-            'highest_price': price,
-            'signal': signal,
-            'cost': cost,
-            'reason': reason,
+            'shares'        : shares,
+            'entry_price'   : price,
+            'entry_date'    : datetime.now().isoformat(),
+            'highest_price' : price,
+            'signal'        : signal,
+            'cost'          : cost,
+            'reason'        : reason,
+            'stop_loss_pct' : stop_loss_pct,
+            'atr'           : atr or 0,
         }
 
         trade = {
@@ -90,9 +99,10 @@ class PaperTrader:
         self.trade_history.append(trade)
 
         print(
-            f"   🟢 BUY {shares} {symbol}"
+            f"   BUY {shares} {symbol}"
             f" @ ${price:.2f}"
             f" (${cost:.2f})"
+            f" | Stop: {stop_loss_pct:.1%}"
         )
 
         return True
@@ -153,8 +163,16 @@ class PaperTrader:
 
         pnl_pct = (current_price - entry) / entry
 
+        # Use position specific ATR stop loss
+        stop_loss = pos.get('stop_loss_pct', stop_loss)
+
         # Stop loss
         if pnl_pct <= -stop_loss:
+            print(
+                f"   STOP LOSS: {symbol} "
+                f"down {pnl_pct:.1%} "
+                f"(limit: -{stop_loss:.1%})"
+            )
             self.close_position(
                 symbol, current_price, 'stop_loss'
             )
