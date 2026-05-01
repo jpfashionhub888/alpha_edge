@@ -361,10 +361,31 @@ def run_daily_scan():
             f" | ${price:.2f}"
         )
 
-        if signal == 'BUY':
-            opened = trader.open_position(
-                symbol, price, combined, reason=regime
+if signal == 'BUY':
+    # Calculate ATR for dynamic stop loss
+    atr = None
+    try:
+        if symbol in stock_data:
+            df_atr = stock_data[symbol].copy()
+            high = df_atr['high']
+            low  = df_atr['low']
+            close= df_atr['close']
+            tr1  = high - low
+            tr2  = abs(high - close.shift(1))
+            tr3  = abs(low - close.shift(1))
+            true_range = pd.concat(
+                [tr1, tr2, tr3], axis=1
+            ).max(axis=1)
+            atr = float(
+                true_range.rolling(14).mean().iloc[-1]
             )
+    except Exception:
+        atr = None
+
+    opened = trader.open_position(
+        symbol, price, combined,
+        reason=regime, atr=atr
+    )
             if opened:
                 telegram.alert_buy_signal(
                     symbol, price, pred,
