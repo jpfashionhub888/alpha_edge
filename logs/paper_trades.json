@@ -1,36 +1,26 @@
 {
-  "capital": 6624.209991455078,
+  "capital": 7909.346084983825,
   "starting_capital": 10000.0,
   "positions": {
     "QQQ": {
       "shares": 1,
       "entry_price": 628.5999755859375,
       "entry_date": "2026-04-22T03:09:39.216465",
-      "highest_price": 663.8800048828125,
+      "highest_price": 664.22998046875,
       "signal": 0.6789602286911479,
       "cost": 628.5999755859375,
       "reason": "sideways",
-      "current_price": 663.8800048828125
-    },
-    "NVDA": {
-      "shares": 3,
-      "entry_price": 196.50999450683594,
-      "entry_date": "2026-04-22T03:09:40.460745",
-      "highest_price": 208.27000427246094,
-      "signal": 0.6241953512021852,
-      "cost": 589.5299835205078,
-      "reason": "sideways",
-      "current_price": 208.27000427246094
+      "current_price": 664.22998046875
     },
     "NET": {
       "shares": 4,
       "entry_price": 204.80999755859375,
       "entry_date": "2026-04-27T20:25:58.866807",
-      "highest_price": 207.6699981689453,
+      "highest_price": 212.36000061035156,
       "signal": 0.7063797718196649,
       "cost": 819.239990234375,
       "reason": "sideways",
-      "current_price": 207.07000732421875
+      "current_price": 212.36000061035156
     },
     "OXY": {
       "shares": 12,
@@ -40,17 +30,7 @@
       "signal": 0.6370151303753789,
       "cost": 653.7599945068359,
       "reason": "uptrend",
-      "current_price": 57.119998931884766
-    },
-    "WMT": {
-      "shares": 5,
-      "entry_price": 129.60000610351562,
-      "entry_date": "2026-04-28T20:56:14.456601",
-      "highest_price": 132.02999877929688,
-      "signal": 0.6221501943789042,
-      "cost": 648.0000305175781,
-      "reason": "uptrend",
-      "current_price": 129.9199981689453
+      "current_price": 57.27000045776367
     }
   },
   "trade_history": [
@@ -158,7 +138,35 @@
       "cost": 648.0000305175781,
       "date": "2026-04-28T20:56:14.456608",
       "reason": "uptrend"
+    },
+    {
+      "action": "SELL",
+      "symbol": "NVDA",
+      "shares": 3,
+      "price": 216.61000061035156,
+      "fill_price": 216.5016956100464,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "revenue": 648.5050868301391,
+      "pnl": 58.97510330963132,
+      "pnl_pct": 0.10173376246527255,
+      "date": "2026-05-04T19:12:49.233995",
+      "reason": "take_profit"
+    },
+    {
+      "action": "SELL",
+      "symbol": "WMT",
+      "shares": 5,
+      "price": 127.58999633789062,
+      "fill_price": 127.52620133972168,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "revenue": 636.6310066986084,
+      "pnl": -11.369023818969708,
+      "pnl_pct": -0.016001579213951046,
+      "date": "2026-05-04T19:12:49.744481",
+      "reason": "trailing_stop"
     }
   ],
-  "saved_at": "2026-05-04T03:08:42.987562"
+  "saved_at": "2026-05-04T19:12:51.280631"
 }
