@@ -4,8 +4,14 @@ __pycache__/
 *.pyo
 .env
 secrets.env
-logs/
 saved_models/
 *.zip
 config/secrets.env
-# Model cache (large files, regenerated automatically)
+
+# Allow logs json files
+logs/*.log
+logs/*.csv
+
+# Allow model cache
+!model_cache/
+!model_cache/*
