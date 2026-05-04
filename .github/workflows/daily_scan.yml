@@ -70,6 +70,7 @@ jobs:
           git add -f logs/sectors.json || true
           git add -f logs/earnings.json || true
           git add -f docs/index.html || true
+          git add -f model_cache/ || true
           git diff --staged --quiet || git commit -m "Auto: Trading state + dashboard update $(date -u '+%Y-%m-%d %H:%M UTC')"
           git push origin main || true
         env:
