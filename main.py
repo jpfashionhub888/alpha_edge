@@ -260,10 +260,13 @@ def run_daily_scan():
                 print(f"   {symbol}: Loading from cache...")
                 selected = cached.get('selected_features', selected)
                 model = TechnicalPredictor(use_lstm=False)
-                model.xgb_model = cached.get('xgb')
-                model.lgb_model = cached.get('lgb')
-                model.rf_model  = cached.get('rf')
-                model.is_trained = True
+                model.models = {
+                    'xgboost'      : cached.get('xgboost'),
+                    'lightgbm'     : cached.get('lightgbm'),
+                    'random_forest': cached.get('random_forest'),
+                }
+                model.feature_names = selected
+                model.trained = True
             else:
                 # Train fresh models
                 print(f"   {symbol}: Training models...")
@@ -273,11 +276,12 @@ def run_daily_scan():
                 # Save to cache
                 try:
                     save_models(symbol, {
-                        'xgb'              : model.xgb_model,
-                        'lgb'              : model.lgb_model,
-                        'rf'               : model.rf_model,
+                        'xgboost'          : model.models.get('xgboost'),
+                        'lightgbm'         : model.models.get('lightgbm'),
+                        'random_forest'    : model.models.get('random_forest'),
                         'selected_features': selected,
                     })
+                    print(f"   {symbol}: Models cached!")
                 except Exception as e:
                     logger.warning(f"Cache save failed for {symbol}: {e}")
 
