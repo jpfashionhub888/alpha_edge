@@ -1,5 +1,5 @@
 {
-  "capital": 7909.346084983825,
+  "capital": 6611.408431434631,
   "starting_capital": 10000.0,
   "positions": {
     "QQQ": {
@@ -31,6 +31,32 @@
       "cost": 653.7599945068359,
       "reason": "uptrend",
       "current_price": 57.27000045776367
+    },
+    "XOM": {
+      "shares": 5,
+      "entry_price": 148.26409744262693,
+      "market_price": 148.19000244140625,
+      "entry_date": "2026-05-04T20:55:54.422541",
+      "highest_price": 148.26409744262693,
+      "signal": 0.7298337435278004,
+      "cost": 742.3204872131347,
+      "reason": "sideways",
+      "stop_loss_pct": 0.05436068362339345,
+      "atr": 4.027854919433594,
+      "current_price": 148.19000244140625
+    },
+    "CVX": {
+      "shares": 3,
+      "entry_price": 184.8723887786865,
+      "market_price": 184.77999877929688,
+      "entry_date": "2026-05-04T20:55:54.900309",
+      "highest_price": 184.8723887786865,
+      "signal": 0.6553073057461999,
+      "cost": 555.6171663360595,
+      "reason": "sideways",
+      "stop_loss_pct": 0.050259003984442566,
+      "atr": 4.643429347446987,
+      "current_price": 184.77999877929688
     }
   },
   "trade_history": [
@@ -166,7 +192,31 @@
       "pnl_pct": -0.016001579213951046,
       "date": "2026-05-04T19:12:49.744481",
       "reason": "trailing_stop"
+    },
+    {
+      "action": "BUY",
+      "symbol": "XOM",
+      "shares": 5,
+      "price": 148.19000244140625,
+      "fill_price": 148.26409744262693,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "cost": 742.3204872131347,
+      "date": "2026-05-04T20:55:54.422550",
+      "reason": "sideways"
+    },
+    {
+      "action": "BUY",
+      "symbol": "CVX",
+      "shares": 3,
+      "price": 184.77999877929688,
+      "fill_price": 184.8723887786865,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "cost": 555.6171663360595,
+      "date": "2026-05-04T20:55:54.900317",
+      "reason": "sideways"
     }
   ],
-  "saved_at": "2026-05-04T19:12:51.280631"
+  "saved_at": "2026-05-04T20:55:55.388298"
 }
