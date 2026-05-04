@@ -1,40 +1,111 @@
 # models/sentiment_model.py
 
+"""
+Financial sentiment analysis.
+Tries to use FinBERT (transformers) for best accuracy.
+Falls back to a keyword-based scorer if torch/transformers
+are unavailable (e.g. Windows DLL issue).
+"""
+
 import pandas as pd
 import numpy as np
-from transformers import pipeline
 import logging
 
 logger = logging.getLogger(__name__)
 
+# Try loading transformers — it depends on torch internally
+TRANSFORMERS_AVAILABLE = False
+try:
+    from transformers import pipeline as hf_pipeline
+    TRANSFORMERS_AVAILABLE = True
+    logger.info("Transformers loaded — FinBERT sentiment enabled")
+except Exception as e:
+    logger.warning(
+        f"Transformers/torch not available ({type(e).__name__}). "
+        f"Using keyword-based sentiment fallback instead."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Keyword-based fallback scorer (no torch needed)
+# ---------------------------------------------------------------------------
+_POSITIVE_WORDS = {
+    'beat', 'beats', 'surpass', 'record', 'growth', 'profit',
+    'gain', 'gains', 'rally', 'surge', 'soar', 'rise', 'rises',
+    'upgrade', 'upgraded', 'buy', 'outperform', 'strong', 'bullish',
+    'positive', 'revenue', 'earnings', 'exceeded', 'higher', 'boost',
+    'partnership', 'deal', 'win', 'launch', 'innovative', 'expand',
+}
+
+_NEGATIVE_WORDS = {
+    'miss', 'misses', 'missed', 'loss', 'losses', 'decline',
+    'fall', 'falls', 'drop', 'drops', 'crash', 'plunge', 'sink',
+    'downgrade', 'downgraded', 'sell', 'underperform', 'weak', 'bearish',
+    'negative', 'lawsuit', 'investigation', 'fraud', 'recall', 'lower',
+    'cut', 'layoff', 'layoffs', 'bankruptcy', 'debt', 'risk', 'warning',
+    'disappointing', 'concern', 'concerns', 'trouble', 'fail', 'fails',
+}
+
+
+def _keyword_sentiment(text):
+    """
+    Simple keyword-based sentiment scorer.
+    Returns float from -1.0 (very negative) to +1.0 (very positive).
+    """
+    if not text:
+        return 0.0
+
+    words = text.lower().split()
+    pos = sum(1 for w in words if w.strip('.,!?;:') in _POSITIVE_WORDS)
+    neg = sum(1 for w in words if w.strip('.,!?;:') in _NEGATIVE_WORDS)
+    total = pos + neg
+
+    if total == 0:
+        return 0.0
+
+    return (pos - neg) / total
+
 
 class SentimentAnalyzer:
     """
-    Financial sentiment analysis using free
-    pretrained FinBERT model. Runs locally.
+    Financial sentiment analysis.
+    Uses FinBERT when torch is available,
+    keyword scoring otherwise.
     """
 
     def __init__(self):
         self.model = None
         self.loaded = False
+        self.using_fallback = not TRANSFORMERS_AVAILABLE
 
     def load_model(self):
-        """Load the sentiment model. First run downloads it."""
+        """Load the FinBERT sentiment model."""
 
         if self.loaded:
+            return
+
+        if not TRANSFORMERS_AVAILABLE:
+            self.using_fallback = True
+            self.loaded = True
+            print("   ⚠️  Using keyword-based sentiment (torch unavailable)")
             return
 
         print("\n   Loading sentiment model...")
         print("   (First run will download ~250MB model)")
 
-        self.model = pipeline(
-            "sentiment-analysis",
-            model="ProsusAI/finbert",
-            top_k=None
-        )
-
-        self.loaded = True
-        print("   ✅ Sentiment model loaded")
+        try:
+            self.model = hf_pipeline(
+                "sentiment-analysis",
+                model="ProsusAI/finbert",
+                top_k=None
+            )
+            self.loaded = True
+            self.using_fallback = False
+            print("   ✅ FinBERT sentiment model loaded")
+        except Exception as e:
+            logger.warning(f"FinBERT load failed: {e}. Using keyword fallback.")
+            self.using_fallback = True
+            self.loaded = True
 
     def analyze_text(self, text):
         """
@@ -48,8 +119,11 @@ class SentimentAnalyzer:
         if not text or len(text.strip()) == 0:
             return 0.0
 
+        # Use keyword fallback if torch isn't available
+        if self.using_fallback:
+            return _keyword_sentiment(text)
+
         try:
-            # Truncate to 512 chars for model limit
             text = text[:512]
             result = self.model(text)[0]
 
@@ -67,7 +141,7 @@ class SentimentAnalyzer:
 
         except Exception as e:
             logger.warning(f"Sentiment error: {e}")
-            return 0.0
+            return _keyword_sentiment(text)
 
     def analyze_articles(self, articles):
         """
@@ -89,11 +163,10 @@ class SentimentAnalyzer:
 
         scores = []
         for article in articles:
-            title = article.get('title', '')
+            title   = article.get('title', '')
             summary = article.get('summary', '')
-            text = f"{title}. {summary}"
-
-            score = self.analyze_text(text)
+            text    = f"{title}. {summary}"
+            score   = self.analyze_text(text)
             scores.append(score)
 
         scores = np.array(scores)
@@ -101,7 +174,7 @@ class SentimentAnalyzer:
 
         positive = np.sum(scores > 0.1) / n
         negative = np.sum(scores < -0.1) / n
-        avg_mag = np.mean(np.abs(scores))
+        avg_mag  = np.mean(np.abs(scores))
 
         return {
             'sentiment_score': float(np.mean(scores)),
@@ -120,7 +193,8 @@ class SentimentAnalyzer:
         if not self.loaded:
             self.load_model()
 
-        print("\n🧠 Analyzing sentiment...")
+        mode = "keyword" if self.using_fallback else "FinBERT"
+        print(f"\n🧠 Analyzing sentiment ({mode})...")
         results = {}
 
         for symbol, articles in news_dict.items():
@@ -129,7 +203,7 @@ class SentimentAnalyzer:
             results[symbol] = sentiment
 
             score = sentiment['sentiment_score']
-            n = sentiment['num_articles']
+            n     = sentiment['num_articles']
 
             if score > 0.1:
                 emoji = "🟢"

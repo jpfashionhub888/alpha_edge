@@ -16,10 +16,11 @@ class EnsembleStrategy:
 
     def __init__(self):
         self.signals = None
+        # FIX: use the correct parameter names that RiskManager.__init__ expects
         self.risk_manager = RiskManager(
-            stop_loss_pct=0.03,
-            take_profit_pct=0.08,
-            trailing_stop_pct=0.025,
+            base_stop_loss=0.03,
+            reward_risk_ratio=2.5,       # 0.08 / 0.03 ≈ 2.5x
+            trailing_stop_multiplier=0.8, # 0.025 / 0.03 ≈ 0.8x
             max_daily_loss=0.02
         )
 

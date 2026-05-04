@@ -15,6 +15,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import json
 import logging
+import pandas as pd  # FIX: was missing, needed for ATR calc
 from datetime import datetime
 
 from data.stock_data import StockDataFetcher
@@ -111,6 +112,62 @@ def get_full_watchlist():
     ]
 
 
+# FIX: extracted duplicate signal logic into a single helper
+def compute_signal(pred, regime, sent_score, sect_mult,
+                   symbol, earnings_symbols):
+    """
+    Compute the final trading signal for a stock.
+    Single source of truth used for printing and dashboard JSON.
+    """
+    combined = (
+        pred * 0.6
+        + (sent_score + 0.5) * 0.2
+        + (sect_mult - 0.5) * 0.2
+    )
+
+    signal = 'HOLD'
+    if regime == 'uptrend' and combined > 0.55:
+        signal = 'BUY'
+    elif regime == 'uptrend' and pred > 0.52:
+        signal = 'BUY'
+    elif regime == 'downtrend':
+        signal = 'AVOID'
+    elif regime == 'volatile':
+        signal = 'CAUTION'
+
+    if sect_mult > 1.1 and signal == 'HOLD':
+        if pred > 0.55 and regime == 'sideways':
+            signal = 'BUY'
+
+    if sect_mult < 0.8 and signal == 'BUY':
+        signal = 'HOLD'
+
+    if symbol in earnings_symbols and signal == 'BUY':
+        signal = 'EARNINGS_HOLD'
+
+    return signal, combined
+
+
+def calc_atr(stock_data, symbol):
+    """Calculate 14-period ATR for a symbol. Returns None on failure."""
+    try:
+        if symbol not in stock_data:
+            return None
+        df_atr = stock_data[symbol].copy()
+        high  = df_atr['high']
+        low   = df_atr['low']
+        close = df_atr['close']
+        tr1 = high - low
+        tr2 = abs(high - close.shift(1))
+        tr3 = abs(low  - close.shift(1))
+        true_range = pd.concat(
+            [tr1, tr2, tr3], axis=1
+        ).max(axis=1)
+        return float(true_range.rolling(14).mean().iloc[-1])
+    except Exception:
+        return None
+
+
 def run_daily_scan():
     """Run the complete daily trading scan."""
 
@@ -202,13 +259,8 @@ def run_daily_scan():
             regime = latest['regime'].iloc[0]
             price = latest['close'].iloc[0]
 
-            # Get sector signal
-            sector_mult = sector_analyzer.get_sector_signal(
-                symbol
-            )
-            sector = sector_analyzer.get_sector_for_stock(
-                symbol
-            )
+            sector_mult = sector_analyzer.get_sector_signal(symbol)
+            sector = sector_analyzer.get_sector_for_stock(symbol)
 
             stock_signals[symbol] = {
                 'prediction': pred,
@@ -219,9 +271,7 @@ def run_daily_scan():
             }
 
         except Exception as e:
-            logger.warning(
-                f"Error processing {symbol}: {e}"
-            )
+            logger.warning(f"Error processing {symbol}: {e}")
 
     # ==========================================
     # PHASE 2: CRYPTO
@@ -262,11 +312,7 @@ def run_daily_scan():
 
     try:
         all_news = news_fetcher.fetch_all(top_symbols)
-        sentiments = (
-            sentiment_analyzer.get_sentiment_for_stocks(
-                all_news
-            )
-        )
+        sentiments = sentiment_analyzer.get_sentiment_for_stocks(all_news)
     except Exception as e:
         logger.warning(f"Sentiment error: {e}")
 
@@ -281,52 +327,28 @@ def run_daily_scan():
     print(f"\n📊 Stock Signals ({n_stocks} stocks):")
     print("-"*65)
 
+    dashboard_signals = {}
+
     for symbol, data in sorted(
         stock_signals.items(),
         key=lambda x: x[1]['prediction'],
         reverse=True
     ):
-        pred = data['prediction']
-        regime = data['regime']
-        price = data['price']
-        sector = data['sector']
+        pred      = data['prediction']
+        regime    = data['regime']
+        price     = data['price']
+        sector    = data['sector']
         sect_mult = data['sector_multiplier']
 
         sent_score = 0.0
         if symbol in sentiments:
-            sent_score = (
-                sentiments[symbol]['sentiment_score']
-            )
+            sent_score = sentiments[symbol]['sentiment_score']
 
-        # Combined score with sector rotation
-        combined = (
-            pred * 0.6
-            + (sent_score + 0.5) * 0.2
-            + (sect_mult - 0.5) * 0.2
+        # FIX: single helper replaces both duplicated signal blocks
+        signal, combined = compute_signal(
+            pred, regime, sent_score, sect_mult,
+            symbol, earnings_symbols
         )
-
-        signal = 'HOLD'
-        if regime == 'uptrend' and combined > 0.55:
-            signal = 'BUY'
-        elif regime == 'uptrend' and pred > 0.52:
-            signal = 'BUY'
-        elif regime == 'downtrend':
-            signal = 'AVOID'
-        elif regime == 'volatile':
-            signal = 'CAUTION'
-
-        # Sector boost/penalty
-        if sect_mult > 1.1 and signal == 'HOLD':
-            if pred > 0.55 and regime == 'sideways':
-                signal = 'BUY'
-
-        if sect_mult < 0.8 and signal == 'BUY':
-            signal = 'HOLD'
-
-        # Earnings override
-        if symbol in earnings_symbols:
-            if signal == 'BUY':
-                signal = 'EARNINGS_HOLD'
 
         if signal == 'BUY':
             emoji = "🟢"
@@ -361,45 +383,36 @@ def run_daily_scan():
             f" | ${price:.2f}"
         )
 
-if signal == 'BUY':
-    # Calculate ATR for dynamic stop loss
-    atr = None
-    try:
-        if symbol in stock_data:
-            df_atr = stock_data[symbol].copy()
-            high = df_atr['high']
-            low  = df_atr['low']
-            close= df_atr['close']
-            tr1  = high - low
-            tr2  = abs(high - close.shift(1))
-            tr3  = abs(low - close.shift(1))
-            true_range = pd.concat(
-                [tr1, tr2, tr3], axis=1
-            ).max(axis=1)
-            atr = float(
-                true_range.rolling(14).mean().iloc[-1]
+        # FIX: BUY action is now correctly inside the for-loop
+        if signal == 'BUY':
+            atr = calc_atr(stock_data, symbol)
+            opened = trader.open_position(
+                symbol, price, combined,
+                reason=regime, atr=atr
             )
-    except Exception:
-        atr = None
-
-    opened = trader.open_position(
-        symbol, price, combined,
-        reason=regime, atr=atr
-    )
             if opened:
                 telegram.alert_buy_signal(
-                    symbol, price, pred,
-                    regime, sent_score
+                    symbol, price, pred, regime, sent_score
                 )
+
+        # Build dashboard entry here — no second loop needed
+        dashboard_signals[symbol] = {
+            'prediction': float(pred),
+            'regime': regime,
+            'price': float(price),
+            'sentiment': float(sent_score),
+            'sector': sector,
+            'signal': signal,
+        }
 
     print("\n🪙 Crypto Signals:")
     print("-"*60)
 
     if len(crypto_signals) > 0:
         for symbol, data in crypto_signals.items():
-            pred = data['prediction']
+            pred   = data['prediction']
             regime = data['regime']
-            price = data['price']
+            price  = data['price']
 
             signal = 'HOLD'
             if regime == 'uptrend' and pred > 0.52:
@@ -407,12 +420,7 @@ if signal == 'BUY':
             elif regime == 'downtrend':
                 signal = 'AVOID'
 
-            if signal == 'BUY':
-                emoji = "🟢"
-            elif signal == 'AVOID':
-                emoji = "🔴"
-            else:
-                emoji = "⚪"
+            emoji = "🟢" if signal == 'BUY' else ("🔴" if signal == 'AVOID' else "⚪")
 
             print(
                 f"   {emoji} {symbol:10s}"
@@ -430,6 +438,15 @@ if signal == 'BUY':
                     telegram.alert_buy_signal(
                         symbol, price, pred, regime, 0.0
                     )
+
+            dashboard_signals[symbol] = {
+                'prediction': float(pred),
+                'regime': regime,
+                'price': float(price),
+                'sentiment': 0.0,
+                'sector': 'Crypto',
+                'signal': signal,
+            }
     else:
         print("   No crypto signals generated")
 
@@ -450,100 +467,24 @@ if signal == 'BUY':
         print("\n   Checking stop loss / take profit...")
         for symbol in list(trader.positions.keys()):
             if symbol in current_prices:
-                pos = trader.positions.get(symbol, {})
+                pos   = trader.positions.get(symbol, {})
                 entry = pos.get('entry_price', 0)
 
-                trader.update_position(
-                    symbol, current_prices[symbol]
-                )
+                trader.update_position(symbol, current_prices[symbol])
 
                 if symbol not in trader.positions:
                     exit_price = current_prices[symbol]
-                    pnl = (
-                        (exit_price - entry)
-                        * pos.get('shares', 0)
-                    )
+                    pnl = (exit_price - entry) * pos.get('shares', 0)
                     if pnl < 0:
-                        telegram.alert_stop_loss(
-                            symbol, exit_price, pnl
-                        )
+                        telegram.alert_stop_loss(symbol, exit_price, pnl)
                     else:
-                        telegram.alert_take_profit(
-                            symbol, exit_price, pnl
-                        )
+                        telegram.alert_take_profit(symbol, exit_price, pnl)
     else:
         print("\n   No open positions to manage")
 
     # ==========================================
     # SAVE FOR DASHBOARD
     # ==========================================
-    dashboard_signals = {}
-
-    for symbol, data in stock_signals.items():
-        pred = data['prediction']
-        regime = data['regime']
-        price = data['price']
-        sector = data['sector']
-        sect_mult = data['sector_multiplier']
-
-        sent_score = 0.0
-        if symbol in sentiments:
-            sent_score = (
-                sentiments[symbol]['sentiment_score']
-            )
-
-        combined = (
-            pred * 0.6
-            + (sent_score + 0.5) * 0.2
-            + (sect_mult - 0.5) * 0.2
-        )
-
-        signal = 'HOLD'
-        if regime == 'uptrend' and combined > 0.55:
-            signal = 'BUY'
-        elif regime == 'uptrend' and pred > 0.52:
-            signal = 'BUY'
-        elif regime == 'downtrend':
-            signal = 'AVOID'
-        elif regime == 'volatile':
-            signal = 'CAUTION'
-
-        if sect_mult > 1.1 and signal == 'HOLD':
-            if pred > 0.55 and regime == 'sideways':
-                signal = 'BUY'
-
-        if sect_mult < 0.8 and signal == 'BUY':
-            signal = 'HOLD'
-
-        if symbol in earnings_symbols:
-            if signal == 'BUY':
-                signal = 'EARNINGS_HOLD'
-
-        dashboard_signals[symbol] = {
-            'prediction': float(pred),
-            'regime': regime,
-            'price': float(price),
-            'sentiment': float(sent_score),
-            'sector': sector,
-            'signal': signal,
-        }
-
-    for symbol, data in crypto_signals.items():
-        signal = 'HOLD'
-        if data['regime'] == 'uptrend' and data['prediction'] > 0.52:
-            signal = 'BUY'
-        elif data['regime'] == 'downtrend':
-            signal = 'AVOID'
-
-        dashboard_signals[symbol] = {
-            'prediction': float(data['prediction']),
-            'regime': data['regime'],
-            'price': float(data['price']),
-            'sentiment': 0.0,
-            'sector': 'Crypto',
-            'signal': signal,
-        }
-
     os.makedirs('logs', exist_ok=True)
 
     with open('logs/latest_signals.json', 'w') as f:
@@ -569,16 +510,13 @@ if signal == 'BUY':
     # ==========================================
     trader.get_summary(current_prices)
 
-    # Update current price in each position
     for symbol, pos in trader.positions.items():
-        if symbol in current_prices:
-            pos['current_price'] = current_prices[symbol]
-        else:
-            pos['current_price'] = pos['entry_price']
+        pos['current_price'] = current_prices.get(
+            symbol, pos['entry_price']
+        )
 
     trader.save_state()
 
-    # Calculate total value using CURRENT prices
     total_value = trader.capital + sum(
         pos.get('shares', 0) * current_prices.get(
             symbol, pos.get('entry_price', 0)
@@ -588,16 +526,13 @@ if signal == 'BUY':
     total_pnl = total_value - trader.starting_capital
     total_pct = total_pnl / trader.starting_capital
 
-    # Build positions with real P&L for Telegram
     positions_with_pnl = {}
     for symbol, pos in trader.positions.items():
-        curr_price = current_prices.get(
-            symbol, pos.get('entry_price', 0)
-        )
+        curr_price  = current_prices.get(symbol, pos.get('entry_price', 0))
         entry_price = pos.get('entry_price', 0)
-        shares = pos.get('shares', 0)
-        pnl = (curr_price - entry_price) * shares
-        pnl_pct = (
+        shares      = pos.get('shares', 0)
+        pnl         = (curr_price - entry_price) * shares
+        pnl_pct     = (
             (curr_price - entry_price) / entry_price
             if entry_price > 0 else 0
         )
@@ -620,9 +555,6 @@ if signal == 'BUY':
     n_s = len(stock_signals)
     n_c = len(crypto_signals)
     n_e = len(earnings_soon)
-    n_m = len([
-        s for s in stock_signals.values()
-    ])
 
     print(f"\nScanned: {n_s} stocks + {n_c} crypto")
     print(f"Earnings this week: {n_e} stocks")

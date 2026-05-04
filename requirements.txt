@@ -1,9 +1,9 @@
 yfinance
-pandas
-numpy
-scikit-learn
-xgboost
-lightgbm
+pandas>=2.0.0
+numpy>=1.26.0
+scikit-learn>=1.3.0
+xgboost>=2.0.0
+lightgbm>=4.0.0
 ccxt
 requests
 beautifulsoup4
@@ -13,8 +13,8 @@ dash
 python-dotenv
 schedule
 transformers
-torch
 feedparser
 alpaca-trade-api
 flask
 gunicorn
+joblib

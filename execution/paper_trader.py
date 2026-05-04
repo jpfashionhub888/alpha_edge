@@ -15,16 +15,21 @@ class PaperTrader:
     Simulated trading engine. Tracks all trades,
     positions and P&L as if trading real money.
     Saves state to disk so you can stop and resume.
+    Includes slippage and commission for realistic results.
     """
 
     def __init__(self, starting_capital=10000.0,
                  max_position_pct=0.15,
                  max_positions=5,
+                 slippage_pct=0.0005,   # 0.05% slippage per fill
+                 commission=1.0,         # $1 flat commission per trade
                  log_file='logs/paper_trades.json'):
         self.starting_capital = starting_capital
         self.capital = starting_capital
         self.max_position_pct = max_position_pct
         self.max_positions = max_positions
+        self.slippage_pct = slippage_pct
+        self.commission = commission
         self.log_file = log_file
 
         self.positions = {}
@@ -57,11 +62,14 @@ class PaperTrader:
         if shares == 0:
             return False
 
-        cost = shares * price
+        # Apply slippage: buy at slightly above market price
+        fill_price = price * (1 + self.slippage_pct)
+        cost = shares * fill_price + self.commission
 
         if cost > self.capital:
-            shares = int(self.capital * 0.95 / price)
-            cost = shares * price
+            shares = int((self.capital * 0.95 - self.commission) / fill_price)
+            fill_price = price * (1 + self.slippage_pct)
+            cost = shares * fill_price + self.commission
 
         if shares == 0:
             return False
@@ -69,6 +77,7 @@ class PaperTrader:
         self.capital -= cost
 
         # Calculate ATR-based stop loss
+        # FIX: removed duplicate block that was copy-pasted here
         if atr and atr > 0:
             atr_stop_pct = (2 * atr) / price
             stop_loss_pct = max(0.02, min(0.08, atr_stop_pct))
@@ -77,9 +86,10 @@ class PaperTrader:
 
         self.positions[symbol] = {
             'shares'        : shares,
-            'entry_price'   : price,
+            'entry_price'   : fill_price,   # actual fill after slippage
+            'market_price'  : price,         # raw market price
             'entry_date'    : datetime.now().isoformat(),
-            'highest_price' : price,
+            'highest_price' : fill_price,
             'signal'        : signal,
             'cost'          : cost,
             'reason'        : reason,
@@ -88,13 +98,16 @@ class PaperTrader:
         }
 
         trade = {
-            'action': 'BUY',
-            'symbol': symbol,
-            'shares': shares,
-            'price': price,
-            'cost': cost,
-            'date': datetime.now().isoformat(),
-            'reason': reason,
+            'action'      : 'BUY',
+            'symbol'      : symbol,
+            'shares'      : shares,
+            'price'       : price,
+            'fill_price'  : fill_price,
+            'slippage_pct': self.slippage_pct,
+            'commission'  : self.commission,
+            'cost'        : cost,
+            'date'        : datetime.now().isoformat(),
+            'reason'      : reason,
         }
         self.trade_history.append(trade)
 
@@ -116,22 +129,28 @@ class PaperTrader:
         pos = self.positions[symbol]
         shares = pos['shares']
         entry = pos['entry_price']
-        revenue = shares * price
+
+        # Apply slippage: sell at slightly below market price
+        fill_price = price * (1 - self.slippage_pct)
+        revenue = shares * fill_price - self.commission
         pnl = revenue - pos['cost']
-        pnl_pct = (price - entry) / entry
+        pnl_pct = (fill_price - entry) / entry
 
         self.capital += revenue
 
         trade = {
-            'action': 'SELL',
-            'symbol': symbol,
-            'shares': shares,
-            'price': price,
-            'revenue': revenue,
-            'pnl': pnl,
-            'pnl_pct': pnl_pct,
-            'date': datetime.now().isoformat(),
-            'reason': reason,
+            'action'      : 'SELL',
+            'symbol'      : symbol,
+            'shares'      : shares,
+            'price'       : price,
+            'fill_price'  : fill_price,
+            'slippage_pct': self.slippage_pct,
+            'commission'  : self.commission,
+            'revenue'     : revenue,
+            'pnl'         : pnl,
+            'pnl_pct'     : pnl_pct,
+            'date'        : datetime.now().isoformat(),
+            'reason'      : reason,
         }
         self.trade_history.append(trade)
 
