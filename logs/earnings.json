@@ -2,41 +2,41 @@
   {
     "symbol": "AMD",
     "date": "2026-05-05",
-    "days_until": 2
+    "days_until": 1
   },
   {
     "symbol": "PFE",
     "date": "2026-05-05",
-    "days_until": 2
+    "days_until": 1
   },
   {
     "symbol": "MCD",
     "date": "2026-05-07",
-    "days_until": 4
+    "days_until": 3
   },
   {
     "symbol": "OXY",
     "date": "2026-05-05",
-    "days_until": 2
+    "days_until": 1
   },
   {
     "symbol": "PLTR",
     "date": "2026-05-04",
-    "days_until": 1
+    "days_until": 0
   },
   {
     "symbol": "MARA",
     "date": "2026-05-07",
-    "days_until": 4
+    "days_until": 3
   },
   {
     "symbol": "NET",
     "date": "2026-05-07",
-    "days_until": 4
+    "days_until": 3
   },
   {
     "symbol": "DDOG",
     "date": "2026-05-07",
-    "days_until": 4
+    "days_until": 3
   }
 ]
