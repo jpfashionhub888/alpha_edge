@@ -30,6 +30,7 @@ from execution.paper_trader import PaperTrader
 from monitoring.telegram_bot import TelegramBot
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import mutual_info_classif
+from model_cache import save_models, load_models, is_cache_valid
 
 logging.basicConfig(
     level=logging.INFO,
@@ -251,8 +252,34 @@ def run_daily_scan():
                 f for f, m in zip(feature_names, mask) if m
             ]
 
-            model = TechnicalPredictor(use_lstm=True)
-            model.train(X_train[selected], y_train)
+            # Check model cache first
+            cached = load_models(symbol)
+
+            if cached:
+                # Use cached models (instant!)
+                print(f"   {symbol}: Loading from cache...")
+                selected = cached.get('selected_features', selected)
+                model = TechnicalPredictor(use_lstm=False)
+                model.xgb_model = cached.get('xgb')
+                model.lgb_model = cached.get('lgb')
+                model.rf_model  = cached.get('rf')
+                model.is_trained = True
+            else:
+                # Train fresh models
+                print(f"   {symbol}: Training models...")
+                model = TechnicalPredictor(use_lstm=True)
+                model.train(X_train[selected], y_train)
+
+                # Save to cache
+                try:
+                    save_models(symbol, {
+                        'xgb'              : model.xgb_model,
+                        'lgb'              : model.lgb_model,
+                        'rf'               : model.rf_model,
+                        'selected_features': selected,
+                    })
+                except Exception as e:
+                    logger.warning(f"Cache save failed for {symbol}: {e}")
 
             latest = df.iloc[-1:]
             pred = model.predict(latest[selected])[0]

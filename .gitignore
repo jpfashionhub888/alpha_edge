@@ -8,3 +8,5 @@ logs/
 saved_models/
 *.zip
 config/secrets.env
+# Model cache (large files, regenerated automatically)
+model_cache/
