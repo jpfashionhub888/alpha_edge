@@ -259,9 +259,11 @@ def run_daily_scan():
     # Models train on recent data only
     # Retrains every 30 days (see model_cache.py)
 
+    # Fetch 2 years for indicator calculations
+    # Walk-forward training uses last 6 months only
     stock_fetcher = StockDataFetcher(
         watchlist=stock_watchlist,
-        lookback_days=180  # 6 months rolling window
+        lookback_days=730  # 2 years for indicators
     )
 
     stock_data = stock_fetcher.fetch_all()
