@@ -3,7 +3,7 @@
     "prediction": 0.8929166091493071,
     "regime": "sideways",
     "price": 150.55999755859375,
-    "sentiment": 0.022876953497967298,
+    "sentiment": 0.01998320993081462,
     "sector": "Energy",
     "signal": "HOLD"
   },
@@ -11,7 +11,7 @@
     "prediction": 0.7417364608469693,
     "regime": "uptrend",
     "price": 208.5,
-    "sentiment": 0.02557382857225634,
+    "sentiment": 0.12822541266990203,
     "sector": "Technology",
     "signal": "EARNINGS_HOLD"
   },
@@ -19,7 +19,7 @@
     "prediction": 0.7152318780262494,
     "regime": "downtrend",
     "price": 141.17999267578125,
-    "sentiment": -0.06520269791750859,
+    "sentiment": -0.06283710353380563,
     "sector": "Technology",
     "signal": "AVOID"
   },
@@ -27,7 +27,7 @@
     "prediction": 0.7148700475700069,
     "regime": "downtrend",
     "price": 142.55999755859375,
-    "sentiment": 0.04796587298624218,
+    "sentiment": 0.04877498750694287,
     "sector": "Technology",
     "signal": "AVOID"
   },
@@ -35,7 +35,7 @@
     "prediction": 0.7022346532012889,
     "regime": "uptrend",
     "price": 58.61000061035156,
-    "sentiment": -0.07948251030942861,
+    "sentiment": -0.07961881356701876,
     "sector": "Energy",
     "signal": "EARNINGS_HOLD"
   },
@@ -43,7 +43,7 @@
     "prediction": 0.6900414945542546,
     "regime": "sideways",
     "price": 16.139999389648438,
-    "sentiment": -0.03599754278917634,
+    "sentiment": -0.0171076137076823,
     "sector": "Consumer",
     "signal": "BUY"
   },
@@ -51,7 +51,7 @@
     "prediction": 0.6882261387948359,
     "regime": "sideways",
     "price": 671.3400268554688,
-    "sentiment": -0.1706944023268205,
+    "sentiment": -0.13870832321205825,
     "sector": "Communications",
     "signal": "HOLD"
   },
@@ -344,7 +344,7 @@
     "signal": "HOLD"
   },
   "SOL/USD": {
-    "prediction": 0.46729094388304326,
+    "prediction": 0.43337314757175116,
     "regime": "sideways",
     "price": 83.05,
     "sentiment": 0.0,
