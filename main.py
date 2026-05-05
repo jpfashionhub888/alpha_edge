@@ -654,7 +654,7 @@ def run_daily_scan():
 
     print(f"\nScanned: {n_s} stocks + {n_c} crypto")
     print(f"Earnings this week: {n_e} stocks")
-    print(f"Models: 4 per stock (XGB+LGB+RF+LSTM)")
+    print(f"5 per stock (XGB+LGB+RF+CatBoost+LSTM)")
     print("\nTo view dashboard:")
     print("   python run_dashboard.py")
     print("   Open http://localhost:8050\n")
