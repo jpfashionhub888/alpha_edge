@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install yfinance pandas numpy scikit-learn
-          pip install xgboost lightgbm
+          pip install xgboost lightgbm catboost
           pip install ccxt requests beautifulsoup4 ta
           pip install plotly dash python-dotenv schedule
           pip install transformers feedparser flask
