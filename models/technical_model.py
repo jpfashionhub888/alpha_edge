@@ -168,7 +168,6 @@ class TechnicalPredictor:
         # Excellent with categorical + numerical features
         # ==========================================
         try:
-            from catboost import CatBoostClassifier
             cat_model = CatBoostClassifier(
                 iterations    = 200,
                 depth         = 4,
