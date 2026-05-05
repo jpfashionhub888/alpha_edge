@@ -8,7 +8,7 @@
     "signal": "HOLD"
   },
   "ETH/USD": {
-    "prediction": 0.39635866324525454,
+    "prediction": 0.3706826003440708,
     "regime": "uptrend",
     "price": 2256.8,
     "sentiment": 0.0,
@@ -16,7 +16,7 @@
     "signal": "HOLD"
   },
   "SOL/USD": {
-    "prediction": 0.44340107959862957,
+    "prediction": 0.47057066913403806,
     "regime": "sideways",
     "price": 83.05,
     "sentiment": 0.0,
