@@ -17,13 +17,14 @@ import json
 import logging
 import pandas as pd  # FIX: was missing, needed for ATR calc
 from datetime import datetime
-
 from data.stock_data import StockDataFetcher
 from data.news_data import NewsFetcher
 from data.feature_engine import FeatureEngine
 from models.technical_model import TechnicalPredictor
 from models.sentiment_model import SentimentAnalyzer
 from models.regime_detector import RegimeDetector
+from market_regime import MarketRegimeFilter
+from multi_timeframe import MultiTimeframeAnalyzer
 from models.crypto_predictor import CryptoPredictor
 from models.sector_rotation import SectorRotation
 from execution.paper_trader import PaperTrader
@@ -213,6 +214,22 @@ def run_daily_scan():
         lookback_days=730
     )
     stock_data = stock_fetcher.fetch_all()
+    # Initialize Multi-Timeframe Analyzer
+    print("\n1b. Running Multi-Timeframe Analysis...")
+    mtf_analyzer = MultiTimeframeAnalyzer()
+    mtf_scores = {}
+
+    for symbol in list(stock_data.keys()):
+        try:
+            score = mtf_analyzer.get_mtf_score(symbol)
+            mtf_scores[symbol] = score
+            if score > 0:
+                print(f"   {symbol}: MTF score {score:.0%} BULLISH")
+        except Exception as e:
+            mtf_scores[symbol] = 0.5
+            logger.warning(f"MTF failed for {symbol}: {e}")
+
+    print(f"\n   MTF complete: {sum(1 for s in mtf_scores.values() if s > 0)} bullish stocks")
 
     print("\n1b. Training 4-model ensemble per stock...")
     engine = FeatureEngine()
@@ -418,8 +435,16 @@ def run_daily_scan():
         )
 
         # FIX: BUY action is now correctly inside the for-loop
-        if signal == 'BUY':
+        if signal == 'BUY' and market_regime['can_trade']:
+            # Multi-timeframe confirmation
+            mtf_score = mtf_scores.get(symbol, 0.5)
+            if mtf_score < 0.5:
+                print(f"   {symbol}: BUY blocked by MTF filter (score: {mtf_score:.0%})")
+                signal = 'MTF_HOLD'
+                continue
+
             atr = calc_atr(stock_data, symbol)
+
             opened = trader.open_position(
                 symbol, price, combined,
                 reason=regime, atr=atr
