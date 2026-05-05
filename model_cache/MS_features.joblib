@@ -1,1 +1,1 @@
-["price_vs_ma50", "price_vs_ma200", "macd", "ichimoku_a", "ichimoku_b", "rsi_14", "rsi_21", "stoch_k", "williams_r", "bb_high", "bb_low", "bb_width", "atr", "atr_ratio", "volatility_10d", "volatility_21d", "volatility_63d", "month", "dxy_level", "gld_level"]
+["price_vs_ma50", "price_vs_ma200", "price_volume_corr", "macd", "ichimoku_a", "ichimoku_b", "rsi_14", "rsi_21", "stoch_k", "williams_r", "bb_high", "bb_low", "bb_width", "atr", "atr_ratio", "volatility_10d", "volatility_21d", "volatility_63d", "dxy_level", "gld_level"]
