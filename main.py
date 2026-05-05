@@ -264,7 +264,9 @@ def run_daily_scan():
                     'xgboost'      : cached.get('xgboost'),
                     'lightgbm'     : cached.get('lightgbm'),
                     'random_forest': cached.get('random_forest'),
+                    'catboost'     : cached.get('catboost'),
                 }
+
                 model.feature_names = selected
                 model.trained = True
             else:
@@ -279,6 +281,7 @@ def run_daily_scan():
                         'xgboost'          : model.models.get('xgboost'),
                         'lightgbm'         : model.models.get('lightgbm'),
                         'random_forest'    : model.models.get('random_forest'),
+                        'catboost'         : model.models.get('catboost'),
                         'selected_features': selected,
                     })
                     print(f"   {symbol}: Models cached!")
