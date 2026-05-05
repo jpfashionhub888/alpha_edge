@@ -278,7 +278,7 @@ def run_daily_scan():
             feature_names = engine.get_feature_names()
             df = regime_detector.detect(df)
 
-            if len(df) < 200:
+            if len(df) < 100:
                 continue
 
             split = len(df) - 30
@@ -289,6 +289,10 @@ def run_daily_scan():
             walk_forward_days = 180  # 6 months
             train_start = max(0, split - walk_forward_days)
             train = df.iloc[train_start:split]
+
+            # Safety check - need enough training data
+            if len(train) < 100:
+                train = df.iloc[:split]  # fallback to full data
 
             X_train = train[feature_names]
             y_train = train['target']
