@@ -10,7 +10,7 @@
       "signal": 0.6789602286911479,
       "cost": 628.5999755859375,
       "reason": "sideways",
-      "current_price": 628.5999755859375
+      "current_price": 657.5499877929688
     },
     "NET": {
       "shares": 4,
@@ -20,7 +20,7 @@
       "signal": 0.7063797718196649,
       "cost": 819.239990234375,
       "reason": "sideways",
-      "current_price": 204.80999755859375
+      "current_price": 208.5
     },
     "OXY": {
       "shares": 12,
@@ -30,7 +30,7 @@
       "signal": 0.6370151303753789,
       "cost": 653.7599945068359,
       "reason": "uptrend",
-      "current_price": 54.47999954223633
+      "current_price": 58.61000061035156
     },
     "XOM": {
       "shares": 5,
@@ -43,7 +43,7 @@
       "reason": "sideways",
       "stop_loss_pct": 0.05436068362339345,
       "atr": 4.027854919433594,
-      "current_price": 148.26409744262693
+      "current_price": 150.55999755859375
     },
     "CVX": {
       "shares": 3,
@@ -56,7 +56,7 @@
       "reason": "sideways",
       "stop_loss_pct": 0.050259003984442566,
       "atr": 4.643429347446987,
-      "current_price": 184.8723887786865
+      "current_price": 188.36000061035156
     }
   },
   "trade_history": [
@@ -218,5 +218,5 @@
       "reason": "sideways"
     }
   ],
-  "saved_at": "2026-05-05T23:09:26.457524"
+  "saved_at": "2026-05-05T23:19:49.466193"
 }
