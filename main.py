@@ -200,6 +200,50 @@ def run_daily_scan():
     sector_scores = sector_analyzer.analyze()
 
     # ==========================================
+    # MARKET REGIME FILTER
+    # ==========================================
+    print("\n" + "="*60)
+    print("MARKET REGIME FILTER")
+    print("="*60)
+
+    regime_filter = MarketRegimeFilter()
+    market_regime = regime_filter.analyze()
+
+    if not market_regime['can_trade']:
+        print(f"\n   CASH MODE ACTIVATED!")
+        print(f"   Reason: {market_regime['reason']}")
+        print(f"   No new BUY signals will be executed")
+
+    # ==========================================
+    # MULTI-TIMEFRAME ANALYSIS
+    # ==========================================
+    print("\n" + "="*60)
+    print("MULTI-TIMEFRAME ANALYSIS")
+    print("="*60)
+
+    mtf_analyzer = MultiTimeframeAnalyzer()
+    mtf_scores = {}
+
+    if market_regime['can_trade']:
+        print("\n   Checking timeframe alignment...")
+        for symbol in stock_watchlist:
+            try:
+                score = mtf_analyzer.get_mtf_score(symbol)
+                mtf_scores[symbol] = score
+                if score > 0:
+                    print(f"   {symbol}: MTF {score:.0%} BULLISH")
+            except Exception as e:
+                mtf_scores[symbol] = 0.5
+                logger.warning(f"MTF failed for {symbol}: {e}")
+
+        bullish = sum(1 for s in mtf_scores.values() if s > 0)
+        print(f"\n   MTF complete: {bullish}/{len(stock_watchlist)} bullish")
+    else:
+        print("\n   Skipping MTF (CASH MODE active)")
+        for symbol in stock_watchlist:
+            mtf_scores[symbol] = 0.5
+
+    # ==========================================
     # PHASE 1: STOCK ANALYSIS
     # ==========================================
     print("\n" + "="*60)
@@ -214,22 +258,6 @@ def run_daily_scan():
         lookback_days=730
     )
     stock_data = stock_fetcher.fetch_all()
-    # Initialize Multi-Timeframe Analyzer
-    print("\n1b. Running Multi-Timeframe Analysis...")
-    mtf_analyzer = MultiTimeframeAnalyzer()
-    mtf_scores = {}
-
-    for symbol in list(stock_data.keys()):
-        try:
-            score = mtf_analyzer.get_mtf_score(symbol)
-            mtf_scores[symbol] = score
-            if score > 0:
-                print(f"   {symbol}: MTF score {score:.0%} BULLISH")
-        except Exception as e:
-            mtf_scores[symbol] = 0.5
-            logger.warning(f"MTF failed for {symbol}: {e}")
-
-    print(f"\n   MTF complete: {sum(1 for s in mtf_scores.values() if s > 0)} bullish stocks")
 
     print("\n1b. Training 4-model ensemble per stock...")
     engine = FeatureEngine()
