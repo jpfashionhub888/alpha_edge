@@ -63,7 +63,7 @@ def is_cache_valid(symbol):
         return False
 
     # Check all model files exist
-    for model_name in ['xgboost', 'lightgbm', 'random_forest']:
+    for model_name in ['xgboost', 'lightgbm', 'random_forest', 'catboost']:
         path = get_cache_path(symbol, model_name)
         if not os.path.exists(path):
             return False
@@ -123,7 +123,7 @@ def load_models(symbol):
     try:
         models = {}
 
-        for name in ['xgboost', 'lightgbm', 'random_forest']:
+        for model_name in ['xgboost', 'lightgbm', 'random_forest', 'catboost']:
             path = get_cache_path(symbol, name)
             models[name] = joblib.load(path)
 

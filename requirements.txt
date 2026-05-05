@@ -18,3 +18,4 @@ alpaca-trade-api
 flask
 gunicorn
 joblib
+catboost==1.2.5

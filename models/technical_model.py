@@ -9,6 +9,7 @@ Four models vote together for maximum accuracy.
 import numpy as np
 import xgboost as xgb
 import lightgbm as lgb
+from catboost import CatBoostClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.calibration import CalibratedClassifierCV
 from models.lstm_model import LSTMPredictor
@@ -79,6 +80,25 @@ class TechnicalPredictor:
             logger.warning(f"XGBoost training failed: {e}")
 
         # ==========================================
+        # MODEL 4: CatBoost
+        # Excellent with categorical features
+        # ==========================================
+        try:
+            cat_model = CatBoostClassifier(
+                iterations    = 200,
+                depth         = 4,
+                learning_rate = 0.01,
+                random_seed   = 42,
+                verbose       = 0,
+                thread_count  = 1,
+            )
+            cat_model.fit(X, y)
+            self.models['catboost'] = cat_model
+            logger.info("CatBoost model trained successfully")
+        except Exception as e:
+            logger.warning(f"CatBoost training failed: {e}")
+
+        # ==========================================
         # MODEL 2: LightGBM
         # ==========================================
         try:
@@ -143,9 +163,28 @@ class TechnicalPredictor:
             logger.warning(
                 f"Random Forest training failed: {e}"
             )
+        # ==========================================
+        # MODEL 4: CatBoost
+        # Excellent with categorical + numerical features
+        # ==========================================
+        try:
+            from catboost import CatBoostClassifier
+            cat_model = CatBoostClassifier(
+                iterations    = 200,
+                depth         = 4,
+                learning_rate = 0.01,
+                random_seed   = 42,
+                verbose       = 0,
+                thread_count  = 1,
+            )
+            cat_model.fit(X, y)
+            self.models['catboost'] = cat_model
+            logger.info("CatBoost model trained successfully")
+        except Exception as e:
+            logger.warning(f"CatBoost training failed: {e}")
 
         # ==========================================
-        # MODEL 4: LSTM Neural Network
+        # MODEL 5: LSTM Neural Network
         # ==========================================
         if self.use_lstm and len(X) >= 50:
             try:
