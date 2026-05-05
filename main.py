@@ -25,6 +25,7 @@ from models.sentiment_model import SentimentAnalyzer
 from models.regime_detector import RegimeDetector
 from market_regime import MarketRegimeFilter
 from multi_timeframe import MultiTimeframeAnalyzer
+from correlation_filter import CorrelationFilter
 from models.crypto_predictor import CryptoPredictor
 from models.sector_rotation import SectorRotation
 from execution.paper_trader import PaperTrader
@@ -208,6 +209,7 @@ def run_daily_scan():
 
     regime_filter = MarketRegimeFilter()
     market_regime = regime_filter.analyze()
+    corr_filter = CorrelationFilter(max_per_sector=2)
 
     if not market_regime['can_trade']:
         print(f"\n   CASH MODE ACTIVATED!")
@@ -471,8 +473,15 @@ def run_daily_scan():
                 signal = 'MTF_HOLD'
                 continue
 
-            atr = calc_atr(stock_data, symbol)
+            # Correlation/Sector filter
+            if not corr_filter.can_add_position(
+                symbol, trader.positions
+            ):
+                print(f"   {symbol}: BUY blocked by correlation filter")
+                signal = 'CORR_HOLD'
+                continue
 
+            atr = calc_atr(stock_data, symbol)
             opened = trader.open_position(
                 symbol, price, combined,
                 reason=regime, atr=atr
