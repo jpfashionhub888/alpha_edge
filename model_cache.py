@@ -123,9 +123,14 @@ def load_models(symbol):
     try:
         models = {}
 
-        for model_name in ['xgboost', 'lightgbm', 'random_forest', 'catboost']:
-            path = get_cache_path(symbol, name)
-            models[name] = joblib.load(path)
+        model_names = ['xgboost', 'lightgbm', 'random_forest', 'catboost']
+        for model_name in model_names:
+            path = get_cache_path(symbol, model_name)
+            if os.path.exists(path):
+                models[model_name] = joblib.load(path)
+            else:
+                logger.warning(f"Cache file missing: {path}")
+                return None
 
         # Load feature list
         feat_path = get_cache_path(symbol, 'features')
