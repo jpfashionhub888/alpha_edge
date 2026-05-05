@@ -255,10 +255,15 @@ def run_daily_scan():
     n = len(stock_watchlist)
     print(f"\n1a. Fetching data for {n} stocks...")
 
+    # Walk-forward: Use rolling 6-month window
+    # Models train on recent data only
+    # Retrains every 30 days (see model_cache.py)
+
     stock_fetcher = StockDataFetcher(
         watchlist=stock_watchlist,
-        lookback_days=730
+        lookback_days=180  # 6 months rolling window
     )
+
     stock_data = stock_fetcher.fetch_all()
 
     print("\n1b. Training 4-model ensemble per stock...")
@@ -277,7 +282,13 @@ def run_daily_scan():
                 continue
 
             split = len(df) - 30
-            train = df.iloc[:split]
+
+            # Walk-forward: Train on last 6 months only
+            # Keeps models current and relevant
+            # Full data still used for indicators
+            walk_forward_days = 180  # 6 months
+            train_start = max(0, split - walk_forward_days)
+            train = df.iloc[train_start:split]
 
             X_train = train[feature_names]
             y_train = train['target']
