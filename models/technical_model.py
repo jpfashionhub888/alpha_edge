@@ -80,25 +80,6 @@ class TechnicalPredictor:
             logger.warning(f"XGBoost training failed: {e}")
 
         # ==========================================
-        # MODEL 4: CatBoost
-        # Excellent with categorical features
-        # ==========================================
-        try:
-            cat_model = CatBoostClassifier(
-                iterations    = 200,
-                depth         = 4,
-                learning_rate = 0.01,
-                random_seed   = 42,
-                verbose       = 0,
-                thread_count  = 1,
-            )
-            cat_model.fit(X, y)
-            self.models['catboost'] = cat_model
-            logger.info("CatBoost model trained successfully")
-        except Exception as e:
-            logger.warning(f"CatBoost training failed: {e}")
-
-        # ==========================================
         # MODEL 2: LightGBM
         # ==========================================
         try:
