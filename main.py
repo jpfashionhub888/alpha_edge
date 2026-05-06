@@ -500,17 +500,33 @@ def run_daily_scan():
                 signal = 'CORR_HOLD'
                 continue
 
+            # GPT-4 Style Veto Agent Review
+            veto_result = veto_agent.review_signal(
+                symbol            = symbol,
+                price             = price,
+                prediction        = pred,
+                regime            = regime,
+                sentiment         = sent_score,
+                sector            = sector,
+                market_regime     = market_regime['regime'],
+                mtf_score         = mtf_scores.get(symbol, 0.5),
+                current_positions = trader.positions,
+                vix               = market_regime.get('vix', 20),
+            )
+
+            if veto_result['decision'] == 'VETO':
+                print(
+                    f"   {symbol}: VETOED by AI - "
+                    f"{veto_result['reason']}"
+                )
+                signal = 'VETOED'
+                continue
+
             atr = calc_atr(stock_data, symbol)
             opened = trader.open_position(
-                veto_result = veto_agent.review_signal(...)
                 symbol, price, combined,
                 reason=regime, atr=atr
             )
-            if opened:
-                telegram.alert_buy_signal(
-                    symbol, price, pred, regime, sent_score
-                )
-
         # Build dashboard entry here — no second loop needed
         dashboard_signals[symbol] = {
             'prediction': float(pred),
