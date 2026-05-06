@@ -16,6 +16,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import json
 import logging
 import pandas as pd  # FIX: was missing, needed for ATR calc
+from veto_agent import VetoAgent
 from datetime import datetime
 from data.stock_data import StockDataFetcher
 from data.news_data import NewsFetcher
@@ -210,6 +211,7 @@ def run_daily_scan():
     regime_filter = MarketRegimeFilter()
     market_regime = regime_filter.analyze()
     corr_filter = CorrelationFilter(max_per_sector=2)
+    veto_agent = VetoAgent()
 
     if not market_regime['can_trade']:
         print(f"\n   CASH MODE ACTIVATED!")
@@ -500,6 +502,7 @@ def run_daily_scan():
 
             atr = calc_atr(stock_data, symbol)
             opened = trader.open_position(
+                veto_result = veto_agent.review_signal(...)
                 symbol, price, combined,
                 reason=regime, atr=atr
             )

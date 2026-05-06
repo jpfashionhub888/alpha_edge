@@ -19,3 +19,4 @@ flask
 gunicorn
 joblib
 catboost==1.2.5
+groq==0.9.0
