@@ -3,7 +3,7 @@
     "prediction": 0.8801192743178236,
     "regime": "sideways",
     "price": 229.85000610351562,
-    "sentiment": 0.16246568328545738,
+    "sentiment": 0.14633393544499995,
     "sector": "Healthcare",
     "signal": "HOLD"
   },
@@ -11,7 +11,7 @@
     "prediction": 0.825934694173707,
     "regime": "sideways",
     "price": 154.3300018310547,
-    "sentiment": 0.08478942614747212,
+    "sentiment": 0.06773904974882801,
     "sector": "Energy",
     "signal": "HOLD"
   },
@@ -19,7 +19,7 @@
     "prediction": 0.8088286992300878,
     "regime": "sideways",
     "price": 26.700000762939453,
-    "sentiment": 0.2787512632887484,
+    "sentiment": 0.27820823844522236,
     "sector": "Healthcare",
     "signal": "HOLD"
   },
@@ -27,7 +27,7 @@
     "prediction": 0.7855837256868587,
     "regime": "downtrend",
     "price": 139.11000061035156,
-    "sentiment": 0.0017457841393336945,
+    "sentiment": -0.04886749487470936,
     "sector": "Technology",
     "signal": "AVOID"
   },
@@ -35,7 +35,7 @@
     "prediction": 0.7068978773054544,
     "regime": "downtrend",
     "price": 136.47000122070312,
-    "sentiment": 0.011170222823108946,
+    "sentiment": 0.039208244364191264,
     "sector": "Technology",
     "signal": "AVOID"
   },
@@ -43,7 +43,7 @@
     "prediction": 0.6926049896824323,
     "regime": "uptrend",
     "price": 204.97000122070312,
-    "sentiment": 0.18749357914102488,
+    "sentiment": -0.08892255705605084,
     "sector": "Technology",
     "signal": "EARNINGS_HOLD"
   },
@@ -312,7 +312,7 @@
     "signal": "HOLD"
   },
   "ETH/USD": {
-    "prediction": 0.41361082470273103,
+    "prediction": 0.39054098792474257,
     "regime": "uptrend",
     "price": 2316.89,
     "sentiment": 0.0,
