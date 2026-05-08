@@ -3,7 +3,7 @@
     "prediction": 0.8825086071935049,
     "regime": "sideways",
     "price": 227.19000244140625,
-    "sentiment": 0.15904226933718857,
+    "sentiment": 0.15920092418456255,
     "sector": "Healthcare",
     "signal": "HOLD"
   },
@@ -11,7 +11,7 @@
     "prediction": 0.865801701652175,
     "regime": "sideways",
     "price": 152.75,
-    "sentiment": -0.024271004522840183,
+    "sentiment": -0.031176418191202544,
     "sector": "Energy",
     "signal": "HOLD"
   },
@@ -19,7 +19,7 @@
     "prediction": 0.8610373439898118,
     "regime": "sideways",
     "price": 26.329999923706055,
-    "sentiment": 0.31074884720146656,
+    "sentiment": 0.3072219795632091,
     "sector": "Healthcare",
     "signal": "HOLD"
   },
@@ -27,7 +27,7 @@
     "prediction": 0.738450826640645,
     "regime": "downtrend",
     "price": 141.0,
-    "sentiment": 0.08282307725907727,
+    "sentiment": 0.0758446912933141,
     "sector": "Technology",
     "signal": "AVOID"
   },
@@ -35,7 +35,7 @@
     "prediction": 0.7107448945408675,
     "regime": "sideways",
     "price": 190.6300048828125,
-    "sentiment": 0.07961190939263514,
+    "sentiment": 0.1216836847892278,
     "sector": "Energy",
     "signal": "HOLD"
   },
@@ -296,7 +296,7 @@
     "signal": "HOLD"
   },
   "BTC/USD": {
-    "prediction": 0.3020549477775809,
+    "prediction": 0.1807130662782328,
     "regime": "uptrend",
     "price": 78558.89,
     "sentiment": 0.0,
