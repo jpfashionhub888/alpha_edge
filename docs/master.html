@@ -128,6 +128,38 @@
         }
     </style>
 </head>
+<script>
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('installBtn').style.display = 'inline-block';
+});
+
+function installApp() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((result) => {
+            if (result.outcome === 'accepted') {
+                console.log('App installed!');
+            }
+            deferredPrompt = null;
+        });
+    }
+}
+
+if (window.matchMedia('(display-mode: standalone)').matches) {
+    document.querySelector('.install-banner').innerHTML =
+        '<span style="color:#00ff88">✅ App installed! Running in standalone mode.</span>';
+}
+<script>
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/alpha_edge/sw.js')
+        .then(() => console.log('Service Worker registered'))
+        .catch(err => console.log('SW error:', err));
+}
+</script>
 <body>
 
 <div class="install-banner">
@@ -136,6 +168,22 @@
     <span style="color:#94a3b8;font-size:12px;margin-left:12px">
         Tap browser menu → "Add to Home Screen" to install as app 📱
     </span>
+</div><div class="install-banner">
+    <span class="live-dot"></span>
+    <span style="color:#00ff88;font-weight:600">ALL SYSTEMS LIVE</span>
+    <br><br>
+    <span style="color:#94a3b8;font-size:13px">
+        📱 <strong style="color:#00d4ff">Install as App:</strong>
+        Android: tap ⋮ menu → "Add to Home Screen" |
+        iPhone: tap Share → "Add to Home Screen"
+    </span>
+    <br><br>
+    <button id="installBtn" onclick="installApp()"
+        style="display:none;background:#00d4ff;color:#0a0e1a;
+        border:none;padding:10px 24px;border-radius:8px;
+        font-weight:700;font-size:14px;cursor:pointer">
+        📱 INSTALL APP
+    </button>
 </div>
 
 <div class="header">
