@@ -17,6 +17,7 @@ import json
 import logging
 import pandas as pd  # FIX: was missing, needed for ATR calc
 from veto_agent import VetoAgent
+from insider_tracker import InsiderTracker
 from datetime import datetime
 from data.stock_data import StockDataFetcher
 from data.news_data import NewsFetcher
@@ -212,6 +213,11 @@ def run_daily_scan():
     market_regime = regime_filter.analyze()
     corr_filter = CorrelationFilter(max_per_sector=2)
     veto_agent = VetoAgent()
+    insider_tracker = InsiderTracker()
+    print("\n   Loading insider trading data...")
+    insider_scores = insider_tracker.get_bulk_scores(
+        stock_watchlist, days_back=30
+    )
 
     if not market_regime['can_trade']:
         print(f"\n   CASH MODE ACTIVATED!")
@@ -449,6 +455,13 @@ def run_daily_scan():
             pred, regime, sent_score, sect_mult,
             symbol, earnings_symbols
         )
+
+        # Boost signal with insider trading data
+        insider_score = insider_scores.get(symbol, 0.0)
+        if insider_score > 0:
+            combined = min(combined + insider_score, 1.0)
+            if insider_score >= 0.10:
+                print(f"   {symbol}: +{insider_score:.2f} insider boost!")
 
         if signal == 'BUY':
             emoji = "🟢"
