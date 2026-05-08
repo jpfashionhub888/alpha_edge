@@ -1,0 +1,39 @@
+{
+    "name": "Trading Empire",
+    "short_name": "TradeEmpire",
+    "description": "Global AI Trading System - AlphaEdge + BharatEdge + CryptoEdge",
+    "start_url": "/alpha_edge/master.html",
+    "display": "standalone",
+    "background_color": "#0a0e1a",
+    "theme_color": "#00d4ff",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "AlphaEdge",
+            "url": "https://jpfashionhub888.github.io/alpha_edge",
+            "description": "US Stock Trading"
+        },
+        {
+            "name": "BharatEdge",
+            "url": "https://jpfashionhub888.github.io/bharat-edge",
+            "description": "Indian Stock Trading"
+        },
+        {
+            "name": "CryptoEdge",
+            "url": "https://jpfashionhub888.github.io/crypto_edge",
+            "description": "Crypto Trading 24/7"
+        }
+    ]
+}
