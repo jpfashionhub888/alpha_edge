@@ -4,56 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0a0e1a">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="Trading Empire">
-    <link rel="manifest" href="manifest.json">
     <title>Trading Empire - Global AI Trading</title>
+    <link rel="manifest" href="manifest.json">
     <style>
-        * {{ margin:0; padding:0; box-sizing:border-box; }}
-        body {{
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
             background:#0a0e1a;
             color:#e2e8f0;
             font-family:'Segoe UI',Arial,sans-serif;
             min-height:100vh;
             padding:20px;
-        }}
-        .header {{
+        }
+        .header {
             text-align:center;
             padding:30px 20px;
             margin-bottom:30px;
-        }}
-        .header h1 {{
+        }
+        .header h1 {
             color:#00d4ff;
             font-size:28px;
             font-weight:700;
             letter-spacing:2px;
-        }}
-        .header p {{
+        }
+        .header p {
             color:#94a3b8;
             font-size:14px;
             margin-top:8px;
-        }}
-        .live-dot {{
+        }
+        .live-dot {
             width:8px;height:8px;
             border-radius:50%;
             background:#00ff88;
             display:inline-block;
             margin-right:6px;
             animation:pulse 2s infinite;
-        }}
-        @keyframes pulse {{
-            0%,100% {{ opacity:1; }}
-            50% {{ opacity:0.3; }}
-        }}
-        .systems {{
+        }
+        @keyframes pulse {
+            0%,100% { opacity:1; }
+            50% { opacity:0.3; }
+        }
+        .systems {
             display:grid;
             grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
             gap:20px;
             max-width:1000px;
             margin:0 auto 30px;
-        }}
-        .system-card {{
+        }
+        .system-card {
             background:#111827;
             border:1px solid #1e2d45;
             border-radius:16px;
@@ -62,48 +59,39 @@
             color:#e2e8f0;
             transition:transform 0.2s;
             display:block;
-        }}
-        .system-card:hover {{
-            transform:translateY(-4px);
-        }}
-        .system-icon {{
-            font-size:48px;
-            margin-bottom:16px;
-        }}
-        .system-name {{
-            font-size:20px;
-            font-weight:700;
-            margin-bottom:8px;
-        }}
-        .system-desc {{
+        }
+        .system-card:hover { transform:translateY(-4px); }
+        .system-icon { font-size:48px; margin-bottom:16px; }
+        .system-name { font-size:20px; font-weight:700; margin-bottom:8px; }
+        .system-desc {
             color:#94a3b8;
             font-size:13px;
             margin-bottom:16px;
             line-height:1.5;
-        }}
-        .system-stats {{
+        }
+        .system-stats {
             display:grid;
             grid-template-columns:1fr 1fr;
             gap:8px;
-        }}
-        .stat {{
+        }
+        .stat {
             background:#1a2235;
             border-radius:8px;
             padding:8px 12px;
             font-size:12px;
-        }}
-        .stat-label {{
+        }
+        .stat-label {
             color:#94a3b8;
             font-size:10px;
             text-transform:uppercase;
             letter-spacing:1px;
-        }}
-        .stat-value {{
+        }
+        .stat-value {
             font-weight:700;
             font-size:14px;
             margin-top:2px;
-        }}
-        .view-btn {{
+        }
+        .view-btn {
             display:block;
             text-align:center;
             background:#1e2d45;
@@ -114,8 +102,17 @@
             font-size:13px;
             font-weight:600;
             letter-spacing:1px;
-        }}
-        .footer {{
+        }
+        .install-banner {
+            background:#1a2235;
+            border:1px solid #00d4ff33;
+            border-radius:12px;
+            padding:16px 24px;
+            text-align:center;
+            margin:0 auto 24px;
+            max-width:1000px;
+        }
+        .footer {
             text-align:center;
             color:#94a3b8;
             font-size:12px;
@@ -124,51 +121,39 @@
             margin-top:20px;
             max-width:1000px;
             margin:20px auto 0;
-        }}
-        .install-banner {{
-            background:#1a2235;
-            border:1px solid #00d4ff33;
-            border-radius:12px;
-            padding:16px 24px;
-            text-align:center;
-            margin:0 auto 24px;
-            max-width:1000px;
-        }}
-        @media(max-width:600px) {{
-            .header h1 {{ font-size:22px; }}
-            .systems {{ grid-template-columns:1fr; }}
-        }}
+        }
+        @media(max-width:600px) {
+            .header h1 { font-size:22px; }
+            .systems { grid-template-columns:1fr; }
+        }
     </style>
 </head>
 <body>
 
-<!-- INSTALL BANNER -->
 <div class="install-banner">
     <span class="live-dot"></span>
     <span style="color:#00ff88;font-weight:600">ALL SYSTEMS LIVE</span>
     <span style="color:#94a3b8;font-size:12px;margin-left:12px">
-        Tap browser menu → "Add to Home Screen" to install as app
+        Tap browser menu → "Add to Home Screen" to install as app 📱
     </span>
 </div>
 
-<!-- HEADER -->
 <div class="header">
     <h1>🌍 Trading Empire</h1>
     <p>Global AI Trading System | 99 Assets | 3 Markets | 24/7 Automated</p>
 </div>
 
-<!-- SYSTEM CARDS -->
 <div class="systems">
 
-    <!-- AlphaEdge -->
-    <a class="system-card" href="https://jpfashionhub888.github.io/alpha_edge"
+    <a class="system-card"
+       href="https://jpfashionhub888.github.io/alpha_edge"
        style="border-top:3px solid #3b82f6">
         <div class="system-icon">🇺🇸</div>
         <div class="system-name" style="color:#3b82f6">AlphaEdge</div>
         <div class="system-desc">
             US Stock Market Trading System<br>
-            41 stocks | NYSE & NASDAQ<br>
-            Scans 3x daily (ET hours)
+            41 stocks | NYSE and NASDAQ<br>
+            Scans 3x daily during ET hours
         </div>
         <div class="system-stats">
             <div class="stat">
@@ -191,15 +176,15 @@
         <div class="view-btn">VIEW DASHBOARD →</div>
     </a>
 
-    <!-- BharatEdge -->
-    <a class="system-card" href="https://jpfashionhub888.github.io/bharat-edge"
+    <a class="system-card"
+       href="https://jpfashionhub888.github.io/bharat-edge"
        style="border-top:3px solid #f97316">
         <div class="system-icon">🇮🇳</div>
         <div class="system-name" style="color:#f97316">BharatEdge</div>
         <div class="system-desc">
             Indian Stock Market Trading System<br>
             48 NSE stocks | Nifty 50 universe<br>
-            Scans 3x daily (IST hours)
+            Scans 3x daily during IST hours
         </div>
         <div class="system-stats">
             <div class="stat">
@@ -222,8 +207,8 @@
         <div class="view-btn">VIEW DASHBOARD →</div>
     </a>
 
-    <!-- CryptoEdge -->
-    <a class="system-card" href="https://jpfashionhub888.github.io/crypto_edge"
+    <a class="system-card"
+       href="https://jpfashionhub888.github.io/crypto_edge"
        style="border-top:3px solid #a855f7">
         <div class="system-icon">🌐</div>
         <div class="system-name" style="color:#a855f7">CryptoEdge</div>
@@ -255,12 +240,13 @@
 
 </div>
 
-<!-- FOOTER -->
 <div class="footer">
     <p>
         Trading Empire | AlphaEdge + BharatEdge + CryptoEdge<br>
         99 Assets Monitored | AI-Powered | $0 Cost | GitHub Actions<br>
-        <span style="color:#00ff88">All systems automated. No daily effort required.</span>
+        <span style="color:#00ff88">
+            All systems automated. No daily effort required.
+        </span>
     </p>
 </div>
 
