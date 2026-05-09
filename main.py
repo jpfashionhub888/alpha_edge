@@ -36,6 +36,7 @@ from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import mutual_info_classif
 from model_cache import save_models, load_models, is_cache_valid
 from critic_agent import CriticAgent
+from risk_circuit_breaker import RiskCircuitBreaker
 
 logging.basicConfig(
     level=logging.INFO,
@@ -221,6 +222,30 @@ def run_daily_scan():
 
     regime_filter = MarketRegimeFilter()
     market_regime = regime_filter.analyze()
+    # ==========================================
+    # RISK CIRCUIT BREAKER CHECK
+    # ==========================================
+    print("\n" + "="*60)
+    print("RISK CIRCUIT BREAKER")
+    print("="*60)
+
+    circuit_breaker = RiskCircuitBreaker()
+    portfolio_value = trader.capital + sum(
+        pos.get('shares', 0) * pos.get(
+            'current_price', pos.get('entry_price', 0)
+        )
+        for pos in trader.positions.values()
+    )
+
+    circuit_triggered = circuit_breaker.check(
+        current_value    = portfolio_value,
+        starting_capital = trader.starting_capital,
+        telegram         = telegram,
+    )
+
+    if circuit_triggered:
+        market_regime['can_trade'] = False
+        print("   Trading suspended by circuit breaker!")
     corr_filter = CorrelationFilter(max_per_sector=2)
     veto_agent = VetoAgent()
     insider_tracker = InsiderTracker()
