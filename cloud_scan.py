@@ -28,13 +28,12 @@ def main():
     now = datetime.now()
     day = now.strftime('%A')
 
-if day == 'Saturday':
-    print("Saturday - Market closed.")
-    return
+    if day == 'Saturday':
+        print("Saturday - Market closed.")
+        return
 
-# Sunday is allowed to run for the Critic Agent Report
+    # Sunday allowed for Critic Agent Report
     print(f"\nAlphaEdge Cloud Scan - {now}")
-
     try:
         from main import run_daily_scan
         run_daily_scan()
