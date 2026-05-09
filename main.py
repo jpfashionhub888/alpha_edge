@@ -36,6 +36,7 @@ from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import mutual_info_classif
 from model_cache import save_models, load_models, is_cache_valid
 from critic_agent import CriticAgent
+from performance_analytics import PerformanceAnalytics
 from risk_circuit_breaker import RiskCircuitBreaker
 
 logging.basicConfig(
@@ -190,6 +191,13 @@ def run_daily_scan():
     telegram = TelegramBot()
 
     stock_watchlist = get_full_watchlist()
+    # ==========================================
+    # WEEKLY PERFORMANCE REPORT
+    # ==========================================
+    analytics = PerformanceAnalytics()
+    if analytics.should_run_today():
+        print("\n   Sending Weekly Empire Performance Report...")
+        analytics.send_report(telegram)
 
     # Sunday Critic Review
     critic = CriticAgent()
