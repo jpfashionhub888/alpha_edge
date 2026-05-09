@@ -35,6 +35,7 @@ from monitoring.telegram_bot import TelegramBot
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import mutual_info_classif
 from model_cache import save_models, load_models, is_cache_valid
+from critic_agent import CriticAgent
 
 logging.basicConfig(
     level=logging.INFO,
@@ -188,6 +189,15 @@ def run_daily_scan():
     telegram = TelegramBot()
 
     stock_watchlist = get_full_watchlist()
+
+    # Sunday Critic Review
+    critic = CriticAgent()
+    critic.run_weekly_review(
+        trade_history    = history,
+        portfolio_value  = total_value,
+        starting_capital = trader.starting_capital,
+        telegram_bot     = telegram,
+    )
 
     # ==========================================
     # PHASE 0: EARNINGS + SECTOR ROTATION
