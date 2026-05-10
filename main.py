@@ -191,29 +191,7 @@ def run_daily_scan():
     telegram = TelegramBot()
 
     stock_watchlist = get_full_watchlist()
-    # ==========================================
-    # WEEKLY PERFORMANCE REPORT
-    # ==========================================
-    analytics = PerformanceAnalytics()
-    if analytics.should_run_today():
-        print("\n   Sending Weekly Empire Performance Report...")
-        analytics.send_report(telegram)
-
-    # Sunday Critic Review
-    critic = CriticAgent()
-    # Calculate safe portfolio value
-    safe_total = trader.capital + sum(
-        pos.get('shares', 0) * pos.get(
-            'current_price', pos.get('entry_price', 0)
-        )
-        for pos in trader.positions.values()
-    )
-    critic.run_weekly_review(
-        trade_history    = trader.trade_history,
-        portfolio_value  = safe_total,
-        starting_capital = trader.starting_capital,
-        telegram_bot     = telegram,
-    )
+    
     # ==========================================
     # PHASE 0: EARNINGS + SECTOR ROTATION
     # ==========================================
@@ -756,6 +734,24 @@ def run_daily_scan():
     print("\nTo view dashboard:")
     print("   python run_dashboard.py")
     print("   Open http://localhost:8050\n")
+
+    # ==========================================
+    # WEEKLY PERFORMANCE REPORT + CRITIC REVIEW
+    # ==========================================
+    analytics = PerformanceAnalytics()
+    if analytics.should_run_today():
+        print("\n   Sending Weekly Empire Performance Report...")
+        analytics.send_report(telegram)
+
+    # Sunday Critic Review
+    critic    = CriticAgent()
+    safe_total = total_value
+    critic.run_weekly_review(
+        trade_history    = trader.trade_history,
+        portfolio_value  = safe_total,
+        starting_capital = trader.starting_capital,
+        telegram_bot     = telegram,
+    )
 
 
 if __name__ == "__main__":

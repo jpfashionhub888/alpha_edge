@@ -168,7 +168,7 @@ class PaperTrader:
     def update_position(self, symbol, current_price,
                         stop_loss=0.03,
                         take_profit=0.08,
-                        trailing_stop=0.025):
+                        trailing_stop=0.035):
         """Check stop loss, take profit, trailing stop."""
 
         if symbol not in self.positions:
