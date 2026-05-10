@@ -36,7 +36,7 @@ jobs:
           pip install ccxt requests beautifulsoup4 ta
           pip install plotly dash python-dotenv schedule
           pip install transformers feedparser flask
-          pip install alpaca-trade-api
+          pip install alpaca-trade-api groq
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install "websockets>=12.0" --force-reinstall
 
