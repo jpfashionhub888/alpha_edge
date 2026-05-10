@@ -3,7 +3,7 @@
     "prediction": 0.8825086071935049,
     "regime": "sideways",
     "price": 227.19000244140625,
-    "sentiment": 0.14904356339684455,
+    "sentiment": 0.1280492930869821,
     "sector": "Healthcare",
     "signal": "HOLD"
   },
@@ -11,15 +11,15 @@
     "prediction": 0.865801701652175,
     "regime": "sideways",
     "price": 152.75,
-    "sentiment": -0.03929284792096215,
+    "sentiment": 0.07298416657832221,
     "sector": "Energy",
     "signal": "HOLD"
   },
   "PFE": {
-    "prediction": 0.8610373439898118,
+    "prediction": 0.8613220937249542,
     "regime": "sideways",
-    "price": 26.329999923706055,
-    "sentiment": 0.3021406329998916,
+    "price": 25.902435302734375,
+    "sentiment": 0.3142544313989304,
     "sector": "Healthcare",
     "signal": "HOLD"
   },
@@ -27,7 +27,7 @@
     "prediction": 0.738450826640645,
     "regime": "downtrend",
     "price": 141.0,
-    "sentiment": 0.07160126731138337,
+    "sentiment": 0.10241021925790442,
     "sector": "Technology",
     "signal": "AVOID"
   },
@@ -35,7 +35,7 @@
     "prediction": 0.7107448945408675,
     "regime": "sideways",
     "price": 190.6300048828125,
-    "sentiment": 0.11812656655092724,
+    "sentiment": 0.11786763797710209,
     "sector": "Energy",
     "signal": "HOLD"
   },
@@ -104,7 +104,7 @@
     "signal": "HOLD"
   },
   "HD": {
-    "prediction": 0.47414203985307557,
+    "prediction": 0.4748447509634072,
     "regime": "downtrend",
     "price": 323.8800048828125,
     "sentiment": 0.0,
@@ -266,7 +266,7 @@
   "WMT": {
     "prediction": 0.23539940692809938,
     "regime": "uptrend",
-    "price": 131.60000610351562,
+    "price": 131.34933471679688,
     "sentiment": 0.0,
     "sector": "Staples",
     "signal": "HOLD"
@@ -296,25 +296,25 @@
     "signal": "HOLD"
   },
   "BTC/USD": {
-    "prediction": 0.18083586963225826,
+    "prediction": 0.31541115079522225,
     "regime": "uptrend",
-    "price": 78558.89,
+    "price": 80907.72,
     "sentiment": 0.0,
     "sector": "Crypto",
     "signal": "HOLD"
   },
   "ETH/USD": {
-    "prediction": 0.4116032363105472,
+    "prediction": 0.4711452468422372,
     "regime": "uptrend",
-    "price": 2322.5,
+    "price": 2360.5,
     "sentiment": 0.0,
     "sector": "Crypto",
     "signal": "HOLD"
   },
   "SOL/USD": {
-    "prediction": 0.47853986080918476,
+    "prediction": 0.45907534827196894,
     "regime": "sideways",
-    "price": 83.91,
+    "price": 86.27,
     "sentiment": 0.0,
     "sector": "Crypto",
     "signal": "HOLD"
