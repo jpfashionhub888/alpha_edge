@@ -201,13 +201,19 @@ def run_daily_scan():
 
     # Sunday Critic Review
     critic = CriticAgent()
+    # Calculate safe portfolio value
+    safe_total = trader.capital + sum(
+        pos.get('shares', 0) * pos.get(
+            'current_price', pos.get('entry_price', 0)
+        )
+        for pos in trader.positions.values()
+    )
     critic.run_weekly_review(
         trade_history    = trader.trade_history,
-        portfolio_value  = total_value,
+        portfolio_value  = safe_total,
         starting_capital = trader.starting_capital,
         telegram_bot     = telegram,
     )
-
     # ==========================================
     # PHASE 0: EARNINGS + SECTOR ROTATION
     # ==========================================
