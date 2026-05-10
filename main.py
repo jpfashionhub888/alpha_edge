@@ -202,7 +202,7 @@ def run_daily_scan():
     # Sunday Critic Review
     critic = CriticAgent()
     critic.run_weekly_review(
-        trade_history    = history,
+        trade_history    = trader.trade_history,
         portfolio_value  = total_value,
         starting_capital = trader.starting_capital,
         telegram_bot     = telegram,
