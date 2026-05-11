@@ -10,7 +10,7 @@
       "signal": 0.6789602286911479,
       "cost": 628.5999755859375,
       "reason": "sideways",
-      "current_price": 674.1500244140625
+      "current_price": 672.8800048828125
     },
     "XOM": {
       "shares": 5,
@@ -23,7 +23,7 @@
       "reason": "sideways",
       "stop_loss_pct": 0.05436068362339345,
       "atr": 4.027854919433594,
-      "current_price": 152.75
+      "current_price": 153.69000244140625
     },
     "CVX": {
       "shares": 3,
@@ -36,7 +36,7 @@
       "reason": "sideways",
       "stop_loss_pct": 0.050259003984442566,
       "atr": 4.643429347446987,
-      "current_price": 190.6300048828125
+      "current_price": 192.27999877929688
     }
   },
   "trade_history": [
@@ -226,5 +226,5 @@
       "reason": "trailing_stop"
     }
   ],
-  "saved_at": "2026-05-10T15:41:30.798638"
+  "saved_at": "2026-05-11T19:25:22.541424"
 }
