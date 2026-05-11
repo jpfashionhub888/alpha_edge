@@ -589,15 +589,9 @@ def generate_dashboard():
             '<p class="text-gray-500 text-sm text-center py-4">'
             'No BUY signals today</p>'
         )
-                            </div>
-                            <span class="text-xs text-emerald-400">{int(d.get('prediction',0)*100)}%</span>
-                        </div>
-                    </div>
-                </div>
-            </div>""" for sym, d in buy_signals[:5]]) or '<p class="text-gray-500 text-sm text-center py-4">No BUY signals today</p>'}
+            {buy_signals_html}
         </div>
     </div>
-
     <!-- POSITIONS TAB -->
     <div id="content-positions" class="hidden">
         <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
