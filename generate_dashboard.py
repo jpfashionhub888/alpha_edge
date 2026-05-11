@@ -566,7 +566,7 @@ def generate_dashboard():
                 </div>
                 <div class="flex items-center gap-3">
                     <div class="text-right">
-                        <div class="font-mono text-sm text-white">${d.get('price', 0):.2f}</div>
+                    <div class="font-mono text-sm text-white">${round(d.get('price', 0), 2)}</div>
                         <div class="text-xs text-gray-400">{d.get('regime', '')}</div>
                     </div>
                     <div class="w-24">
