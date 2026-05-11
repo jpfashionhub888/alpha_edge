@@ -561,33 +561,34 @@ def generate_dashboard():
     # Buy signals quick view HTML
     buy_signals_html = ''
     for sym, d in buy_signals[:5]:
-        price    = round(d.get('price', 0), 2)
-        sector   = d.get('sector', '')
-        regime   = d.get('regime', '')
-        ml_pct   = int(d.get('prediction', 0) * 100)
-        buy_signals_html += f"""
-        <div class="flex items-center justify-between py-2 border-b border-gray-800/50">
-            <div>
-                <span class="font-bold text-white">{sym}</span>
-                <span class="text-gray-400 text-xs ml-2">{sector}</span>
-            </div>
-            <div class="flex items-center gap-3">
-                <div class="text-right">
-                    <div class="font-mono text-sm text-white">${price}</div>
-                    <div class="text-xs text-gray-400">{regime}</div>
-                </div>
-                <div class="w-24">
-                    <div class="flex items-center gap-1">
-                        <div class="flex-1 bg-gray-700 rounded-full h-1.5">
-                            <div class="h-1.5 rounded-full bg-emerald-500" style="width:{ml_pct}%"></div>
-                        </div>
-                        <span class="text-xs text-emerald-400">{ml_pct}%</span>
-                    </div>
-                </div>
-            </div>
-        </div>"""
+        price  = round(d.get('price', 0), 2)
+        sector = d.get('sector', '')
+        regime = d.get('regime', '')
+        ml_pct = int(d.get('prediction', 0) * 100)
+        buy_signals_html += (
+            f'<div class="flex items-center justify-between py-2 '
+            f'border-b border-gray-800/50">'
+            f'<div><span class="font-bold text-white">{sym}</span>'
+            f'<span class="text-gray-400 text-xs ml-2">{sector}</span></div>'
+            f'<div class="flex items-center gap-3">'
+            f'<div class="text-right">'
+            f'<div class="font-mono text-sm text-white">${price}</div>'
+            f'<div class="text-xs text-gray-400">{regime}</div>'
+            f'</div>'
+            f'<div class="w-24">'
+            f'<div class="flex items-center gap-1">'
+            f'<div class="flex-1 bg-gray-700 rounded-full h-1.5">'
+            f'<div class="h-1.5 rounded-full bg-emerald-500" '
+            f'style="width:{ml_pct}%"></div>'
+            f'</div>'
+            f'<span class="text-xs text-emerald-400">{ml_pct}%</span>'
+            f'</div></div></div></div>'
+        )
     if not buy_signals_html:
-        buy_signals_html = '<p class="text-gray-500 text-sm text-center py-4">No BUY signals today</p>'
+        buy_signals_html = (
+            '<p class="text-gray-500 text-sm text-center py-4">'
+            'No BUY signals today</p>'
+        )
                             </div>
                             <span class="text-xs text-emerald-400">{int(d.get('prediction',0)*100)}%</span>
                         </div>
