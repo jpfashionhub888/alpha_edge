@@ -11,7 +11,7 @@
     "prediction": 0.8664942802183502,
     "regime": "sideways",
     "price": 153.69000244140625,
-    "sentiment": 0.06291138186452934,
+    "sentiment": 0.06515907412279903,
     "sector": "Energy",
     "signal": "HOLD"
   },
@@ -19,7 +19,7 @@
     "prediction": 0.8634733594275429,
     "regime": "sideways",
     "price": 25.872920989990234,
-    "sentiment": 0.2741473167701516,
+    "sentiment": 0.2754430186624328,
     "sector": "Healthcare",
     "signal": "HOLD"
   },
@@ -27,7 +27,7 @@
     "prediction": 0.6887843565876538,
     "regime": "sideways",
     "price": 14.510000228881836,
-    "sentiment": 0.2055194642291301,
+    "sentiment": 0.19939457460173537,
     "sector": "Consumer",
     "signal": "HOLD"
   },
@@ -35,7 +35,7 @@
     "prediction": 0.6625917804609379,
     "regime": "sideways",
     "price": 192.27999877929688,
-    "sentiment": 0.1983961446210742,
+    "sentiment": 0.21068470738828182,
     "sector": "Energy",
     "signal": "HOLD"
   },
@@ -43,7 +43,7 @@
     "prediction": 0.6030294306146027,
     "regime": "downtrend",
     "price": 144.2100067138672,
-    "sentiment": 0.1452613833927266,
+    "sentiment": 0.14803768328080574,
     "sector": "Technology",
     "signal": "AVOID"
   },
@@ -336,7 +336,7 @@
     "signal": "BUY"
   },
   "SOL/USD": {
-    "prediction": 0.5280261809249798,
+    "prediction": 0.5276289074175682,
     "regime": "sideways",
     "price": 89.15,
     "sentiment": 0.0,
