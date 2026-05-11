@@ -169,51 +169,75 @@ class PaperTrader:
                         stop_loss=0.03,
                         take_profit=0.08,
                         trailing_stop=0.035):
-        """Check stop loss, take profit, trailing stop."""
 
         if symbol not in self.positions:
             return
 
-        pos = self.positions[symbol]
+        pos   = self.positions[symbol]
         entry = pos['entry_price']
+
+        # Use ATR stop if available
+        stop_loss = pos.get('stop_loss_pct', stop_loss)
 
         if current_price > pos['highest_price']:
             pos['highest_price'] = current_price
 
         pnl_pct = (current_price - entry) / entry
 
-        # Use position specific ATR stop loss
-        stop_loss = pos.get('stop_loss_pct', stop_loss)
-
         # Stop loss
         if pnl_pct <= -stop_loss:
-            print(
-                f"   STOP LOSS: {symbol} "
-                f"down {pnl_pct:.1%} "
-                f"(limit: -{stop_loss:.1%})"
-            )
-            self.close_position(
-                symbol, current_price, 'stop_loss'
-            )
+            print(f"   STOP LOSS: {symbol} down {pnl_pct:.1%}")
+            self.close_position(symbol, current_price, 'stop_loss')
             return
 
-        # Take profit
+        # PARTIAL EXIT at 5% gain (NEW from Claude V4!)
+        if pnl_pct >= 0.05 and not pos.get('partial_exit_done'):
+            shares_to_sell = pos['shares'] // 2
+            if shares_to_sell > 0:
+                print(f"   PARTIAL EXIT: {symbol} up {pnl_pct:.1%} - selling 50%")
+                partial_revenue = shares_to_sell * current_price
+                partial_pnl     = shares_to_sell * (current_price - entry)
+                self.capital   += partial_revenue
+                pos['shares']  -= shares_to_sell
+                pos['cost']     = pos['shares'] * entry
+                pos['partial_exit_done'] = True
+                self.trade_history.append({
+                    'action' : 'PARTIAL_SELL',
+                    'symbol' : symbol,
+                    'shares' : shares_to_sell,
+                    'price'  : current_price,
+                    'revenue': partial_revenue,
+                    'pnl'    : partial_pnl,
+                    'pnl_pct': pnl_pct,
+                    'date'   : datetime.now().isoformat(),
+                    'reason' : 'partial_exit_5pct',
+                })
+                print(f"   Locked in: +${partial_pnl:.2f}")
+            return
+
+        # Full take profit at 8%
         if pnl_pct >= take_profit:
-            self.close_position(
-                symbol, current_price, 'take_profit'
-            )
+            print(f"   TAKE PROFIT: {symbol} up {pnl_pct:.1%}")
+            self.close_position(symbol, current_price, 'take_profit')
             return
 
         # Trailing stop
-        drop = (
-            (pos['highest_price'] - current_price)
-            / pos['highest_price']
-        )
-        if drop >= trailing_stop:
-            self.close_position(
-                symbol, current_price, 'trailing_stop'
-            )
+        drop = (pos['highest_price'] - current_price) / pos['highest_price']
+        if drop >= trailing_stop and pnl_pct > 0:
+            print(f"   TRAILING STOP: {symbol} dropped {drop:.1%} from high")
+            self.close_position(symbol, current_price, 'trailing_stop')
             return
+
+        # TIME-BASED STOP (NEW from Claude V4!)
+        try:
+            entry_date = datetime.fromisoformat(pos.get('entry_date', ''))
+            days_held  = (datetime.now() - entry_date).days
+            if days_held >= 10 and abs(pnl_pct) < 0.02:
+                print(f"   TIME STOP: {symbol} flat after {days_held} days")
+                self.close_position(symbol, current_price, 'time_stop')
+                return
+        except Exception:
+            pass
 
     def get_portfolio_value(self, current_prices):
         """Calculate total portfolio value."""
