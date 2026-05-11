@@ -19,7 +19,7 @@
     "prediction": 0.8634733594275429,
     "regime": "sideways",
     "price": 25.872920989990234,
-    "sentiment": 0.27838746194795866,
+    "sentiment": 0.2741473167701516,
     "sector": "Healthcare",
     "signal": "HOLD"
   },
@@ -27,7 +27,7 @@
     "prediction": 0.6887843565876538,
     "regime": "sideways",
     "price": 14.510000228881836,
-    "sentiment": 0.1536799000530708,
+    "sentiment": 0.2055194642291301,
     "sector": "Consumer",
     "signal": "HOLD"
   },
@@ -336,7 +336,7 @@
     "signal": "BUY"
   },
   "SOL/USD": {
-    "prediction": 0.5246370302710678,
+    "prediction": 0.5280261809249798,
     "regime": "sideways",
     "price": 89.15,
     "sentiment": 0.0,
