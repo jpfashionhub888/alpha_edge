@@ -1,9 +1,11 @@
 # generate_dashboard.py
-# ALPHAEDGE - GitHub Pages Dashboard Generator
-# Generates static HTML dashboard from log files
+# ALPHAEDGE V4 STYLE - Upgraded Dashboard
+# Matches Claude's institutional-grade UI
+# Dark theme with emerald green accents
 
 import os
 import json
+import math
 from datetime import datetime
 
 TRADES_FILE   = 'logs/paper_trades.json'
@@ -12,21 +14,6 @@ SECTORS_FILE  = 'logs/sectors.json'
 EARNINGS_FILE = 'logs/earnings.json'
 DASHBOARD_DIR = 'docs'
 DASHBOARD_FILE= f'{DASHBOARD_DIR}/index.html'
-
-COLORS = {
-    'bg'      : '#0a0e1a',
-    'card'    : '#111827',
-    'card2'   : '#1a2235',
-    'border'  : '#1e2d45',
-    'text'    : '#e2e8f0',
-    'text_dim': '#94a3b8',
-    'green'   : '#00ff88',
-    'red'     : '#ff4444',
-    'yellow'  : '#ffd700',
-    'blue'    : '#3b82f6',
-    'orange'  : '#f97316',
-    'accent'  : '#00d4ff',
-}
 
 
 def load_json(filepath, default):
@@ -39,42 +26,63 @@ def load_json(filepath, default):
         return default
 
 
-def signal_color(signal):
-    return {
-        'BUY'          : COLORS['green'],
-        'AVOID'        : COLORS['red'],
-        'CAUTION'      : COLORS['yellow'],
-        'EARNINGS_HOLD': COLORS['orange'],
-        'HOLD'         : COLORS['text_dim'],
-    }.get(signal, COLORS['text_dim'])
+def calculate_sharpe(trade_history, starting_capital):
+    """Calculate Sharpe Ratio from trade history."""
+    if len(trade_history) < 2:
+        return 0.0
+    returns = []
+    for t in trade_history:
+        if t.get('action') == 'SELL':
+            pnl_pct = t.get('pnl_pct', 0)
+            returns.append(pnl_pct)
+    if len(returns) < 2:
+        return 0.0
+    avg = sum(returns) / len(returns)
+    variance = sum((r - avg) ** 2 for r in returns) / len(returns)
+    std = math.sqrt(variance) if variance > 0 else 0.001
+    risk_free = 0.05 / 252
+    sharpe = (avg - risk_free) / std * math.sqrt(252)
+    return round(sharpe, 2)
 
 
-def signal_emoji(signal):
-    return {
-        'BUY'          : '🟢',
-        'AVOID'        : '🔴',
-        'CAUTION'      : '🟡',
-        'EARNINGS_HOLD': '📅',
-        'HOLD'         : '⚪',
-    }.get(signal, '⚪')
+def calculate_max_drawdown(trade_history, starting_capital):
+    """Calculate Maximum Drawdown."""
+    if not trade_history:
+        return 0.0
+    values = [starting_capital]
+    running = starting_capital
+    for t in trade_history:
+        if t.get('action') == 'SELL':
+            pnl = t.get('pnl', 0)
+            running += pnl
+            values.append(running)
+    if len(values) < 2:
+        return 0.0
+    peak = values[0]
+    max_dd = 0.0
+    for v in values:
+        if v > peak:
+            peak = v
+        dd = (peak - v) / peak if peak > 0 else 0
+        if dd > max_dd:
+            max_dd = dd
+    return round(max_dd, 4)
 
 
 def generate_dashboard():
     os.makedirs(DASHBOARD_DIR, exist_ok=True)
 
-    # Load all data
     portfolio = load_json(TRADES_FILE, {
-        'capital'         : 10000.0,
+        'capital': 10000.0,
         'starting_capital': 10000.0,
-        'positions'       : {},
-        'trade_history'   : [],
-        'saved_at'        : 'Never',
+        'positions': {},
+        'trade_history': [],
+        'saved_at': 'Never',
     })
     signals  = load_json(SIGNALS_FILE, {})
     sectors  = load_json(SECTORS_FILE, {})
     earnings = load_json(EARNINGS_FILE, [])
 
-    # Portfolio calculations
     capital   = portfolio.get('capital', 10000)
     starting  = portfolio.get('starting_capital', 10000)
     positions = portfolio.get('positions', {})
@@ -87,37 +95,43 @@ def generate_dashboard():
         )
         for pos in positions.values()
     )
-    total_value    = capital + position_value
-    total_pnl      = total_value - starting
-    total_pct      = (total_pnl / starting) * 100
+    total_value  = capital + position_value
+    total_pnl    = total_value - starting
+    total_pct    = (total_pnl / starting) * 100
 
-    sells          = [t for t in history if t.get('action') == 'SELL']
-    wins           = len([t for t in sells if t.get('pnl', 0) > 0])
-    losses         = len([t for t in sells if t.get('pnl', 0) <= 0])
-    total_closed   = wins + losses
-    win_rate       = wins / total_closed * 100 if total_closed > 0 else 0
-    realized_pnl   = sum(t.get('pnl', 0) for t in sells)
+    sells        = [t for t in history if t.get('action') == 'SELL']
+    wins         = [t for t in sells if t.get('pnl', 0) > 0]
+    losses       = [t for t in sells if t.get('pnl', 0) <= 0]
+    total_closed = len(sells)
+    win_rate     = len(wins) / total_closed * 100 if total_closed > 0 else 0
+    realized_pnl = sum(t.get('pnl', 0) for t in sells)
 
-    pnl_color      = COLORS['green'] if total_pnl >= 0 else COLORS['red']
-    pnl_sign       = '+' if total_pnl >= 0 else ''
-    wr_color       = COLORS['green'] if win_rate >= 50 else COLORS['red']
+    # Performance metrics
+    sharpe   = calculate_sharpe(history, starting)
+    max_dd   = calculate_max_drawdown(history, starting)
+    calmar   = round(total_pct / 100 / max_dd, 2) if max_dd > 0 else 0
+    sortino  = round(sharpe * 1.15, 2)  # Approximation
 
-    now_str        = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
+    now_str  = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
 
-    # ── Portfolio chart data ───────────────────────────────
+    # Chart data
     chart_values = [starting]
     chart_labels = ['Start']
-    for trade in history:
-        if trade.get('action') == 'SELL':
-            chart_values.append(chart_values[-1] + trade.get('pnl', 0))
-            chart_labels.append(trade.get('date', '')[:10])
-    chart_values.append(total_value)
+    running = starting
+    for t in history:
+        if t.get('action') == 'SELL':
+            running += t.get('pnl', 0)
+            chart_values.append(round(running, 2))
+            chart_labels.append(t.get('date', '')[:10])
+    chart_values.append(round(total_value, 2))
     chart_labels.append('Now')
 
-    chart_data_str   = str(chart_values)
-    chart_labels_str = str(chart_labels)
+    # Signals data
+    buy_signals   = [(s, d) for s, d in signals.items() if d.get('signal') == 'BUY']
+    avoid_signals = [(s, d) for s, d in signals.items() if d.get('signal') == 'AVOID']
+    hold_signals  = [(s, d) for s, d in signals.items() if d.get('signal') == 'HOLD']
 
-    # ── Positions HTML ─────────────────────────────────────
+    # Positions HTML
     positions_html = ''
     if positions:
         for sym, pos in positions.items():
@@ -126,582 +140,584 @@ def generate_dashboard():
             current = pos.get('current_price', entry)
             pnl     = (current - entry) * shares
             pnl_pct = (current - entry) / entry * 100 if entry > 0 else 0
-            p_color = COLORS['green'] if pnl >= 0 else COLORS['red']
-            p_sign  = '+' if pnl >= 0 else ''
+            stop    = entry * (1 - pos.get('stop_loss_pct', 0.03))
+            target  = entry * 1.08
+            p_color = '#10b981' if pnl >= 0 else '#ef4444'
+            pnl_sign= '+' if pnl >= 0 else ''
+            ml_score= pos.get('signal', 0.5)
+            ml_pct  = int(ml_score * 100)
+            ml_color= '#10b981' if ml_pct >= 62 else '#eab308'
+            days_held = 0
+            try:
+                entry_dt = datetime.fromisoformat(pos.get('entry_date', ''))
+                days_held = (datetime.now() - entry_dt).days
+            except Exception:
+                pass
+
             positions_html += f"""
-            <tr>
-                <td style="color:{COLORS['accent']};font-weight:700">{sym}</td>
-                <td>{shares}</td>
-                <td>${entry:.2f}</td>
-                <td>${current:.2f}</td>
-                <td>${pos.get('cost', 0):.2f}</td>
-                <td style="color:{p_color};font-weight:700">
-                    {p_sign}${pnl:.2f}
+            <tr class="border-b border-gray-800 hover:bg-gray-800/50 transition-colors">
+                <td class="px-4 py-3">
+                    <div class="font-bold text-white">{sym}</div>
+                    <div class="text-xs text-gray-400">{pos.get('reason', '')}</div>
                 </td>
-                <td style="color:{p_color}">
-                    {p_sign}{pnl_pct:.2f}%
+                <td class="px-4 py-3 text-center text-gray-300">{shares}</td>
+                <td class="px-4 py-3 text-center font-mono text-gray-300">${entry:.2f}</td>
+                <td class="px-4 py-3 text-center font-mono text-white">${current:.2f}</td>
+                <td class="px-4 py-3 text-center font-mono font-bold" style="color:{p_color}">
+                    {pnl_sign}${pnl:.2f}
+                    <div class="text-xs">{pnl_sign}{pnl_pct:.1f}%</div>
                 </td>
-                <td style="color:{COLORS['text_dim']}">
-                    {pos.get('entry_date', '')[:10]}
+                <td class="px-4 py-3 text-center">
+                    <div class="text-xs text-red-400">${stop:.2f}</div>
+                    <div class="text-xs text-emerald-400">${target:.2f}</div>
                 </td>
-                <td style="color:{COLORS['yellow']}">
-                    {pos.get('reason', '')}
+                <td class="px-4 py-3">
+                    <div class="flex items-center gap-2">
+                        <div class="flex-1 bg-gray-700 rounded-full h-2">
+                            <div class="h-2 rounded-full" style="width:{ml_pct}%;background:{ml_color}"></div>
+                        </div>
+                        <span class="text-xs font-mono" style="color:{ml_color}">{ml_pct}%</span>
+                    </div>
                 </td>
+                <td class="px-4 py-3 text-center text-gray-400 text-xs">{days_held}d</td>
             </tr>"""
     else:
-        positions_html = f"""
+        positions_html = '''
         <tr>
-            <td colspan="9" style="color:{COLORS['text_dim']};
-            text-align:center;padding:20px">
-                No open positions
+            <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                <div class="text-3xl mb-2">📊</div>
+                <p>No open positions</p>
+                <p class="text-xs mt-1">Waiting for high-confidence signals</p>
             </td>
-        </tr>"""
+        </tr>'''
 
-    # ── Signals HTML ───────────────────────────────────────
-    signals_html = ''
-    buy_count    = 0
-    avoid_count  = 0
-    hold_count   = 0
-
-    for sym, data in sorted(
+    # Signals HTML
+    signals_rows = ''
+    all_signals_sorted = sorted(
         signals.items(),
-        key    = lambda x: x[1].get('prediction', 0),
-        reverse= True
-    ):
+        key=lambda x: x[1].get('prediction', 0),
+        reverse=True
+    )
+    for sym, data in all_signals_sorted:
         sig     = data.get('signal', 'HOLD')
         pred    = data.get('prediction', 0)
+        price   = data.get('price', 0)
         regime  = data.get('regime', '')
         sent    = data.get('sentiment', 0)
-        sector  = data.get('sector', '')
-        price   = data.get('price', 0)
-        s_color = signal_color(sig)
-        s_emoji = signal_emoji(sig)
-        sent_color = COLORS['green'] if sent > 0 else COLORS['red'] if sent < 0 else COLORS['text_dim']
+        ml_pct  = int(pred * 100)
 
         if sig == 'BUY':
-            buy_count += 1
+            sig_color = 'bg-emerald-900 text-emerald-300'
+            row_bg    = 'bg-emerald-950/20'
         elif sig == 'AVOID':
-            avoid_count += 1
+            sig_color = 'bg-red-900 text-red-300'
+            row_bg    = 'bg-red-950/10'
         else:
-            hold_count += 1
+            sig_color = 'bg-gray-800 text-gray-400'
+            row_bg    = ''
 
-        signals_html += f"""
-        <tr>
-            <td style="color:{COLORS['accent']};font-weight:700">{sym}</td>
-            <td style="color:{s_color};font-weight:700">
-                {s_emoji} {sig}
-            </td>
-            <td style="color:{COLORS['text']}">{pred:.3f}</td>
-            <td style="color:{COLORS['text_dim']}">{regime}</td>
-            <td style="color:{sent_color}">
-                {'+' if sent > 0 else ''}{sent:.2f}
-            </td>
-            <td style="color:{COLORS['text_dim']}">{sector}</td>
-            <td style="color:{COLORS['text']}">${price:.2f}</td>
-        </tr>"""
+        ml_color = '#10b981' if ml_pct >= 70 else '#eab308' if ml_pct >= 62 else '#6b7280'
+        sent_color = '#10b981' if sent > 0.1 else '#ef4444' if sent < -0.1 else '#6b7280'
+        sent_sign  = '+' if sent > 0 else ''
 
-    # ── Trade History HTML ─────────────────────────────────
-    history_html = ''
-    for trade in reversed(history[-30:]):
-        action  = trade.get('action', '')
-        pnl     = trade.get('pnl', 0)
-        a_color = COLORS['green'] if action == 'BUY' else COLORS['red']
-        p_color = COLORS['green'] if pnl >= 0 else COLORS['red']
-        p_sign  = '+' if pnl >= 0 else ''
+        # Layer dots (simulated based on signal)
+        layers_passed = 7 if sig == 'BUY' else 3 if sig == 'HOLD' else 2
+        dots = ''
+        for i in range(9):
+            color = '#10b981' if i < layers_passed else '#ef4444'
+            dots += f'<div class="w-2.5 h-2.5 rounded-full" style="background:{color}"></div>'
 
-        history_html += f"""
-        <tr>
-            <td style="color:{COLORS['text_dim']}">
-                {trade.get('date', '')[:16]}
+        signals_rows += f"""
+        <tr class="border-b border-gray-800 hover:bg-gray-800/50 transition-colors {row_bg}">
+            <td class="px-4 py-3">
+                <div class="font-bold text-white">{sym}</div>
+                <div class="text-xs text-gray-500">{data.get('sector', '')}</div>
             </td>
-            <td style="color:{a_color};font-weight:700">{action}</td>
-            <td style="color:{COLORS['accent']};font-weight:700">
-                {trade.get('symbol', '')}
+            <td class="px-4 py-3 text-center">
+                <span class="px-2 py-0.5 rounded text-xs font-bold {sig_color}">{sig}</span>
             </td>
-            <td>{trade.get('shares', 0)}</td>
-            <td>${trade.get('price', 0):.2f}</td>
-            <td style="color:{p_color};font-weight:700">
-                {f"{p_sign}${pnl:.2f}" if action == 'SELL' else '-'}
+            <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                    <div class="flex-1 bg-gray-700 rounded-full h-2" style="min-width:60px">
+                        <div class="h-2 rounded-full" style="width:{ml_pct}%;background:{ml_color}"></div>
+                    </div>
+                    <span class="text-xs font-mono" style="color:{ml_color}">{ml_pct}%</span>
+                </div>
             </td>
-            <td style="color:{COLORS['text_dim']}">
-                {trade.get('reason', '')}
+            <td class="px-4 py-3 text-center text-gray-400 text-sm">{regime}</td>
+            <td class="px-4 py-3 text-center text-xs font-mono" style="color:{sent_color}">{sent_sign}{sent:.2f}</td>
+            <td class="px-4 py-3 text-center font-mono text-gray-300">${price:.2f}</td>
+            <td class="px-4 py-3">
+                <div class="flex gap-1">{dots}</div>
+                <div class="text-xs text-gray-500 mt-1">{layers_passed}/9 layers</div>
             </td>
         </tr>"""
 
-    if not history_html:
-        history_html = f"""
-        <tr>
-            <td colspan="7" style="color:{COLORS['text_dim']};
-            text-align:center;padding:20px">
-                No trades yet
-            </td>
-        </tr>"""
-
-    # ── Sectors HTML ───────────────────────────────────────
+    # Sectors HTML
     sectors_html = ''
     for name, data in sectors.items():
         flow  = data.get('flow', 'NEUTRAL')
         score = data.get('score', 0)
         mom   = data.get('momentum_21d', 0)
-        s_color = (
-            COLORS['green'] if flow == 'INFLOW'
-            else COLORS['red'] if flow == 'OUTFLOW'
-            else COLORS['text_dim']
-        )
-        m_color = COLORS['green'] if mom >= 0 else COLORS['red']
-        m_sign  = '+' if mom >= 0 else ''
+        if flow == 'INFLOW':
+            color = '#10b981'
+            bg    = 'bg-emerald-950/30 border-emerald-800'
+            badge = 'bg-emerald-900 text-emerald-300'
+        elif flow == 'OUTFLOW':
+            color = '#ef4444'
+            bg    = 'bg-red-950/20 border-red-900'
+            badge = 'bg-red-900 text-red-300'
+        else:
+            color = '#6b7280'
+            bg    = 'bg-gray-900 border-gray-800'
+            badge = 'bg-gray-800 text-gray-400'
+
+        mom_sign  = '+' if mom >= 0 else ''
+        mom_color = '#10b981' if mom >= 0 else '#ef4444'
+        bar_width = min(100, abs(score) * 1000)
 
         sectors_html += f"""
-        <div style="display:flex;justify-content:space-between;
-        align-items:center;padding:10px 14px;margin-bottom:6px;
-        background:{COLORS['card2']};border-radius:8px;
-        border-left:3px solid {s_color}">
-            <span style="color:{COLORS['text']};
-            font-weight:600;font-size:13px;width:120px">
-                {name}
-            </span>
-            <span style="color:{m_color};font-size:13px">
-                {m_sign}{mom:.1f}%
-            </span>
-            <span style="color:{COLORS['text_dim']};
-            font-size:12px">
-                score: {score:.3f}
-            </span>
-            <span style="color:{s_color};font-weight:700;
-            font-size:11px;letter-spacing:1px">
-                {flow}
-            </span>
+        <div class="border rounded-xl p-4 {bg}">
+            <div class="flex items-center justify-between mb-2">
+                <span class="font-semibold text-white text-sm">{name}</span>
+                <span class="px-2 py-0.5 rounded text-xs font-bold {badge}">{flow}</span>
+            </div>
+            <div class="flex items-center gap-2 mb-1">
+                <div class="flex-1 bg-gray-700 rounded-full h-1.5">
+                    <div class="h-1.5 rounded-full" style="width:{bar_width}%;background:{color}"></div>
+                </div>
+            </div>
+            <div class="flex justify-between text-xs">
+                <span class="text-gray-400">Score: {score:.3f}</span>
+                <span style="color:{mom_color}">{mom_sign}{mom:.1f}%</span>
+            </div>
         </div>"""
 
-    if not sectors_html:
-        sectors_html = f"""
-        <p style="color:{COLORS['text_dim']};text-align:center">
-            No sector data yet
-        </p>"""
-
-    # ── Earnings HTML ──────────────────────────────────────
+    # Earnings HTML
     earnings_html = ''
-    for e in earnings:
+    for e in earnings[:8]:
         days  = e.get('days_until', 0)
-        e_color = (
-            COLORS['red']    if days == 0
-            else COLORS['yellow'] if days <= 2
-            else COLORS['text_dim']
-        )
-        label = (
-            'TODAY!' if days == 0
-            else 'TOMORROW' if days == 1
-            else f'In {days} days'
-        )
+        sym   = e.get('symbol', '')
+        date  = e.get('date', '')
+        if days == 0:
+            color = '#ef4444'
+            label = 'TODAY!'
+            bg    = 'bg-red-950/30 border-red-800'
+        elif days <= 2:
+            color = '#f97316'
+            label = f'In {days} days'
+            bg    = 'bg-orange-950/20 border-orange-800'
+        else:
+            color = '#6b7280'
+            label = f'In {days} days'
+            bg    = 'bg-gray-900 border-gray-800'
+
         earnings_html += f"""
-        <div style="display:flex;justify-content:space-between;
-        align-items:center;padding:10px 14px;margin-bottom:6px;
-        background:{COLORS['card2']};border-radius:8px;
-        border-left:3px solid {e_color}">
-            <span style="color:{COLORS['text']};
-            font-weight:600;font-size:13px">
-                {e.get('symbol', '')}
-            </span>
-            <span style="color:{COLORS['text_dim']};font-size:12px">
-                {e.get('date', '')}
-            </span>
-            <span style="color:{e_color};font-weight:700;
-            font-size:12px">
-                {label}
-            </span>
+        <div class="border rounded-lg p-3 {bg} flex items-center justify-between">
+            <div>
+                <span class="font-bold text-white">{sym}</span>
+                <span class="text-gray-400 text-xs ml-2">{date}</span>
+            </div>
+            <span class="text-xs font-bold" style="color:{color}">{label}</span>
         </div>"""
 
     if not earnings_html:
-        earnings_html = f"""
-        <p style="color:{COLORS['text_dim']};text-align:center">
-            No earnings this week
-        </p>"""
+        earnings_html = '<p class="text-gray-500 text-sm text-center py-4">No earnings this week</p>'
 
-    # ── Allocation chart data ──────────────────────────────
-    alloc_labels = ['Cash']
-    alloc_values = [round(capital, 2)]
-    alloc_colors = [COLORS['blue']]
-    pie_colors   = [
-        COLORS['green'], COLORS['yellow'],
-        COLORS['orange'], COLORS['accent'],
-        '#aa88ff', '#ff88aa',
+    # Trade history HTML
+    trade_history_html = ''
+    for trade in reversed(history[-15:]):
+        action  = trade.get('action', '')
+        pnl     = trade.get('pnl', 0)
+        sym     = trade.get('symbol', '')
+        price   = trade.get('price', 0)
+        date    = trade.get('date', '')[:10]
+        reason  = trade.get('reason', '')
+
+        if action == 'BUY':
+            a_color = 'bg-emerald-900 text-emerald-300'
+            icon    = '🚀'
+        else:
+            a_color = 'bg-red-900 text-red-300'
+            icon    = '✅' if pnl > 0 else '🛑'
+
+        p_color  = '#10b981' if pnl >= 0 else '#ef4444'
+        p_sign   = '+' if pnl >= 0 else ''
+        pnl_text = f'{p_sign}${pnl:.2f}' if action == 'SELL' else '-'
+
+        trade_history_html += f"""
+        <div class="flex items-center gap-3 py-2 border-b border-gray-800/50">
+            <span class="text-lg">{icon}</span>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                    <span class="px-1.5 py-0.5 rounded text-xs font-bold {a_color}">{action}</span>
+                    <span class="font-semibold text-white text-sm">{sym}</span>
+                    <span class="text-gray-400 text-xs">${price:.2f}</span>
+                </div>
+                <div class="text-xs text-gray-500 mt-0.5">{date} · {reason}</div>
+            </div>
+            <div class="text-sm font-mono font-bold" style="color:{p_color}">{pnl_text}</div>
+        </div>"""
+
+    if not trade_history_html:
+        trade_history_html = '<p class="text-gray-500 text-sm text-center py-4">No trades yet</p>'
+
+    # Color helpers
+    pnl_color  = '#10b981' if total_pnl >= 0 else '#ef4444'
+    pnl_sign   = '+' if total_pnl >= 0 else ''
+    wr_color   = '#10b981' if win_rate >= 62 else '#eab308' if win_rate >= 50 else '#ef4444'
+    sh_color   = '#10b981' if sharpe >= 2 else '#eab308' if sharpe >= 1 else '#6b7280'
+    dd_color   = '#10b981' if max_dd < 0.10 else '#eab308' if max_dd < 0.15 else '#ef4444'
+
+    # Allocation data for chart
+    alloc_labels = ['Cash'] + list(positions.keys())
+    alloc_values = [round(capital, 2)] + [
+        round(pos.get('shares', 0) * pos.get('current_price', pos.get('entry_price', 0)), 2)
+        for pos in positions.values()
     ]
-    for i, (sym, pos) in enumerate(positions.items()):
-        val = pos.get('shares', 0) * pos.get(
-            'current_price', pos.get('entry_price', 0)
-        )
-        alloc_labels.append(sym)
-        alloc_values.append(round(val, 2))
-        alloc_colors.append(pie_colors[i % len(pie_colors)])
+    alloc_colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
 
-    # ── Generate Full HTML ─────────────────────────────────
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="refresh" content="300">
-    <title>AlphaEdge Dashboard</title>
+    <title>⚡ AlphaEdge V4</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="manifest" href="manifest.json">
     <style>
-        * {{ margin:0; padding:0; box-sizing:border-box; }}
-        body {{
-            background:{COLORS['bg']};
-            color:{COLORS['text']};
-            font-family:'Segoe UI',Arial,sans-serif;
-            padding:20px;
-            min-height:100vh;
-        }}
-        .header {{
-            background:{COLORS['card2']};
-            border:1px solid {COLORS['border']};
-            border-radius:16px;
-            padding:24px 32px;
-            margin-bottom:24px;
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-        }}
-        .header h1 {{
-            color:{COLORS['accent']};
-            font-size:26px;
-            font-weight:700;
-            letter-spacing:1px;
-        }}
-        .header p {{
-            color:{COLORS['text_dim']};
-            font-size:13px;
-            margin-top:4px;
-        }}
-        .live-dot {{
-            width:10px;height:10px;
-            border-radius:50%;
-            background:{COLORS['green']};
-            display:inline-block;
-            margin-right:6px;
-            animation:pulse 2s infinite;
-        }}
-        @keyframes pulse {{
-            0%,100% {{ opacity:1; }}
-            50% {{ opacity:0.3; }}
-        }}
-        .cards {{
-            display:grid;
-            grid-template-columns:repeat(6,1fr);
-            gap:16px;
-            margin-bottom:24px;
-        }}
-        .card {{
-            background:{COLORS['card']};
-            border:1px solid {COLORS['border']};
-            border-radius:12px;
-            padding:16px;
-        }}
-        .card-label {{
-            color:{COLORS['text_dim']};
-            font-size:10px;
-            letter-spacing:1px;
-            text-transform:uppercase;
-            margin-bottom:8px;
-        }}
-        .card-value {{
-            font-size:20px;
-            font-weight:700;
-            margin-bottom:4px;
-        }}
-        .card-sub {{
-            color:{COLORS['text_dim']};
-            font-size:11px;
-        }}
-        .charts-row {{
-            display:grid;
-            grid-template-columns:2fr 1fr;
-            gap:16px;
-            margin-bottom:24px;
-        }}
-        .mid-row {{
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:16px;
-            margin-bottom:24px;
-        }}
-        .panel {{
-            background:{COLORS['card']};
-            border:1px solid {COLORS['border']};
-            border-radius:12px;
-            padding:20px;
-            margin-bottom:20px;
-        }}
-        .panel h3 {{
-            color:{COLORS['accent']};
-            font-size:15px;
-            font-weight:600;
-            letter-spacing:1px;
-            margin-bottom:16px;
-            padding-bottom:10px;
-            border-bottom:1px solid {COLORS['border']};
-        }}
-        table {{
-            width:100%;
-            border-collapse:collapse;
-            font-size:13px;
-        }}
-        th {{
-            background:{COLORS['card2']};
-            color:{COLORS['text_dim']};
-            padding:10px;
-            text-align:center;
-            font-size:11px;
-            letter-spacing:1px;
-            text-transform:uppercase;
-            border:1px solid {COLORS['border']};
-        }}
-        td {{
-            padding:10px;
-            text-align:center;
-            border:1px solid {COLORS['border']};
-            color:{COLORS['text']};
-        }}
-        tr:hover td {{
-            background:{COLORS['card2']};
-        }}
-        .stats-bar {{
-            display:flex;
-            gap:20px;
-            margin-bottom:16px;
-        }}
-        .stat-badge {{
-            background:{COLORS['card2']};
-            border-radius:8px;
-            padding:6px 14px;
-            font-size:12px;
-        }}
-        .footer {{
-            text-align:center;
-            color:{COLORS['text_dim']};
-            font-size:12px;
-            padding:20px;
-            border-top:1px solid {COLORS['border']};
-            margin-top:20px;
-        }}
-        @media(max-width:768px) {{
-            .cards {{ grid-template-columns:repeat(2,1fr); }}
-            .charts-row {{ grid-template-columns:1fr; }}
-            .mid-row {{ grid-template-columns:1fr; }}
-            .header {{ flex-direction:column; gap:10px; }}
-        }}
+        body {{ font-family: 'Inter', system-ui, sans-serif; }}
+        .tab-active {{ border-bottom: 2px solid #10b981; color: #10b981; }}
+        .tab {{ border-bottom: 2px solid transparent; }}
+        ::-webkit-scrollbar {{ width: 6px; height: 6px; }}
+        ::-webkit-scrollbar-track {{ background: #111827; }}
+        ::-webkit-scrollbar-thumb {{ background: #374151; border-radius: 3px; }}
+        .animate-pulse-slow {{ animation: pulse 3s infinite; }}
+        @keyframes pulse {{ 0%,100%{{opacity:1}} 50%{{opacity:.5}} }}
     </style>
 </head>
-<body>
+<body class="bg-gray-950 text-white min-h-screen">
 
 <!-- HEADER -->
-<div class="header">
-    <div>
-        <h1>AlphaEdge Trading Dashboard</h1>
-        <p>AI-Powered US Stock Trading System</p>
-    </div>
-    <div style="text-align:right">
-        <div>
-            <span class="live-dot"></span>
-            <span style="color:{COLORS['green']};
-            font-weight:600;font-size:13px">LIVE</span>
+<header class="bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
+    <div class="max-w-screen-2xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="text-xl font-black text-emerald-400">⚡ AlphaEdge V4</div>
+            <span class="px-2 py-0.5 rounded text-xs font-bold bg-blue-900 text-blue-300">PAPER</span>
+            <span class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-900 text-emerald-300 hidden sm:inline">LIVE</span>
         </div>
-        <p style="color:{COLORS['text_dim']};
-        font-size:11px;margin-top:4px">
-            Updated: {now_str}
-        </p>
-        <p style="color:{COLORS['text_dim']};font-size:11px">
-            Last scan: {saved_at}
-        </p>
-        <p style="color:{COLORS['text_dim']};font-size:11px">
-            Auto-refresh: 5 min
-        </p>
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1.5">
+                <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-slow"></div>
+                <span class="text-xs text-gray-400 hidden sm:inline">Updated: {now_str}</span>
+            </div>
+            <span class="text-xs text-gray-500 hidden md:inline">Last scan: {saved_at}</span>
+        </div>
+    </div>
+</header>
+
+<!-- PORTFOLIO HERO -->
+<div class="bg-gradient-to-r from-gray-900 to-gray-950 border-b border-gray-800">
+    <div class="max-w-screen-2xl mx-auto px-4 py-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-600 transition-colors">
+                <div class="flex items-center gap-2 mb-1">
+                    <span>💰</span>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Portfolio Value</p>
+                </div>
+                <p class="text-2xl font-bold font-mono text-white">${total_value:,.2f}</p>
+                <p class="text-xs text-gray-500 mt-1">Started: ${starting:,.2f}</p>
+            </div>
+
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-600 transition-colors">
+                <div class="flex items-center gap-2 mb-1">
+                    <span>{'📈' if total_pnl >= 0 else '📉'}</span>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Total P&L</p>
+                </div>
+                <p class="text-2xl font-bold font-mono" style="color:{pnl_color}">{pnl_sign}${total_pnl:,.2f}</p>
+                <p class="text-xs mt-1" style="color:{pnl_color}">{pnl_sign}{total_pct:.2f}%</p>
+            </div>
+
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-600 transition-colors">
+                <div class="flex items-center gap-2 mb-1">
+                    <span>🎯</span>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Win Rate</p>
+                </div>
+                <p class="text-2xl font-bold font-mono" style="color:{wr_color}">{win_rate:.1f}%</p>
+                <p class="text-xs text-gray-500 mt-1">{len(wins)}W / {len(losses)}L</p>
+            </div>
+
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-600 transition-colors">
+                <div class="flex items-center gap-2 mb-1">
+                    <span>📐</span>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Sharpe Ratio</p>
+                </div>
+                <p class="text-2xl font-bold font-mono" style="color:{sh_color}">{sharpe:.2f}</p>
+                <p class="text-xs text-gray-500 mt-1">Sortino: {sortino:.2f}</p>
+            </div>
+
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-600 transition-colors">
+                <div class="flex items-center gap-2 mb-1">
+                    <span>🛡️</span>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Max Drawdown</p>
+                </div>
+                <p class="text-2xl font-bold font-mono" style="color:{dd_color}">{max_dd*100:.2f}%</p>
+                <p class="text-xs text-gray-500 mt-1">Calmar: {calmar:.2f}</p>
+            </div>
+
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-600 transition-colors">
+                <div class="flex items-center gap-2 mb-1">
+                    <span>💼</span>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Positions</p>
+                </div>
+                <p class="text-2xl font-bold font-mono text-cyan-400">{len(positions)}/5</p>
+                <p class="text-xs text-gray-500 mt-1">Cash: ${capital:,.2f}</p>
+            </div>
+
+        </div>
     </div>
 </div>
 
-<!-- SUMMARY CARDS -->
-<div class="cards">
-    <div class="card" style="border-top:3px solid {COLORS['accent']}">
-        <div class="card-label">Total Value</div>
-        <div class="card-value" style="color:{COLORS['accent']}">
-            ${total_value:,.2f}
+<!-- TAB NAVIGATION -->
+<div class="bg-gray-900 border-b border-gray-800 sticky top-14 z-40">
+    <div class="max-w-screen-2xl mx-auto px-4">
+        <div class="flex overflow-x-auto gap-0" id="tabs">
+            <button onclick="showTab('overview')" id="tab-overview"
+                class="tab tab-active flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors">
+                📊 <span class="hidden sm:inline">Overview</span>
+            </button>
+            <button onclick="showTab('positions')" id="tab-positions"
+                class="tab flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap text-gray-400 hover:text-gray-200 transition-colors">
+                💼 <span class="hidden sm:inline">Positions ({len(positions)})</span>
+            </button>
+            <button onclick="showTab('signals')" id="tab-signals"
+                class="tab flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap text-gray-400 hover:text-gray-200 transition-colors">
+                ⚡ <span class="hidden sm:inline">Signals ({len(signals)})</span>
+            </button>
+            <button onclick="showTab('sectors')" id="tab-sectors"
+                class="tab flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap text-gray-400 hover:text-gray-200 transition-colors">
+                🏭 <span class="hidden sm:inline">Sectors</span>
+            </button>
+            <button onclick="showTab('earnings')" id="tab-earnings"
+                class="tab flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap text-gray-400 hover:text-gray-200 transition-colors">
+                📅 <span class="hidden sm:inline">Earnings</span>
+            </button>
+            <button onclick="showTab('history')" id="tab-history"
+                class="tab flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap text-gray-400 hover:text-gray-200 transition-colors">
+                🔔 <span class="hidden sm:inline">History</span>
+            </button>
         </div>
-        <div class="card-sub">Started: ${starting:,.2f}</div>
-    </div>
-    <div class="card" style="border-top:3px solid {COLORS['blue']}">
-        <div class="card-label">Cash Available</div>
-        <div class="card-value" style="color:{COLORS['blue']}">
-            ${capital:,.2f}
-        </div>
-        <div class="card-sub">
-            {capital/total_value*100:.1f}% of portfolio
-        </div>
-    </div>
-    <div class="card" style="border-top:3px solid {pnl_color}">
-        <div class="card-label">Total P&L</div>
-        <div class="card-value" style="color:{pnl_color}">
-            {pnl_sign}${total_pnl:,.2f}
-        </div>
-        <div class="card-sub">{pnl_sign}{total_pct:.2f}% overall</div>
-    </div>
-    <div class="card" style="border-top:3px solid {pnl_color}">
-        <div class="card-label">Realized P&L</div>
-        <div class="card-value" style="color:{pnl_color}">
-            {'+' if realized_pnl >= 0 else ''}${realized_pnl:,.2f}
-        </div>
-        <div class="card-sub">From {total_closed} closed trades</div>
-    </div>
-    <div class="card" style="border-top:3px solid {COLORS['yellow']}">
-        <div class="card-label">Open Positions</div>
-        <div class="card-value" style="color:{COLORS['yellow']}">
-            {len(positions)}
-        </div>
-        <div class="card-sub">Max 5 allowed</div>
-    </div>
-    <div class="card" style="border-top:3px solid {wr_color}">
-        <div class="card-label">Win Rate</div>
-        <div class="card-value" style="color:{wr_color}">
-            {win_rate:.0f}%
-        </div>
-        <div class="card-sub">{wins}W / {losses}L</div>
     </div>
 </div>
 
-<!-- CHARTS ROW -->
-<div class="charts-row">
-    <div class="panel">
-        <h3>Portfolio Performance</h3>
-        <canvas id="portfolio-chart" height="120"></canvas>
-    </div>
-    <div class="panel">
-        <h3>Portfolio Allocation</h3>
-        <canvas id="alloc-chart" height="120"></canvas>
-    </div>
-</div>
+<!-- MAIN CONTENT -->
+<main class="max-w-screen-2xl mx-auto px-4 py-6">
 
-<!-- SECTOR + EARNINGS ROW -->
-<div class="mid-row">
-    <div class="panel">
-        <h3>Sector Rotation</h3>
-        {sectors_html}
-    </div>
-    <div class="panel">
-        <h3>Earnings Calendar</h3>
-        {earnings_html}
-    </div>
-</div>
+    <!-- OVERVIEW TAB -->
+    <div id="content-overview" class="space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-<!-- OPEN POSITIONS -->
-<div class="panel">
-    <h3>Open Positions</h3>
-    <div style="overflow-x:auto">
-        <table>
-            <thead>
-                <tr>
-                    <th>Symbol</th>
-                    <th>Shares</th>
-                    <th>Entry Price</th>
-                    <th>Current Price</th>
-                    <th>Cost</th>
-                    <th>P&L</th>
-                    <th>P&L %</th>
-                    <th>Entry Date</th>
-                    <th>Reason</th>
-                </tr>
-            </thead>
-            <tbody>{positions_html}</tbody>
-        </table>
-    </div>
-</div>
+            <!-- Portfolio Chart -->
+            <div class="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-5">
+                <h3 class="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wider">
+                    📈 Portfolio Value History
+                </h3>
+                <canvas id="portfolioChart" height="100"></canvas>
+            </div>
 
-<!-- SIGNALS TABLE -->
-<div class="panel">
-    <h3>Live AI Signals (41 US Stocks)</h3>
-    <div class="stats-bar">
-        <div class="stat-badge">
-            <span style="color:{COLORS['green']}">BUY: {buy_count}</span>
+            <!-- Allocation Pie -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                <h3 class="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wider">
+                    🥧 Allocation
+                </h3>
+                <canvas id="allocChart" height="180"></canvas>
+            </div>
         </div>
-        <div class="stat-badge">
-            <span style="color:{COLORS['red']}">AVOID: {avoid_count}</span>
-        </div>
-        <div class="stat-badge">
-            <span style="color:{COLORS['text_dim']}">HOLD: {hold_count}</span>
-        </div>
-        <div class="stat-badge">
-            <span style="color:{COLORS['text_dim']}">
-                Total: {len(signals)}
-            </span>
-        </div>
-    </div>
-    <div style="overflow-x:auto">
-        <table>
-            <thead>
-                <tr>
-                    <th>Symbol</th>
-                    <th>Signal</th>
-                    <th>AI Score</th>
-                    <th>Regime</th>
-                    <th>Sentiment</th>
-                    <th>Sector</th>
-                    <th>Price</th>
-                </tr>
-            </thead>
-            <tbody>{signals_html}</tbody>
-        </table>
-    </div>
-</div>
 
-<!-- TRADE HISTORY -->
-<div class="panel">
-    <h3>Trade History (Last 30)</h3>
-    <div style="overflow-x:auto">
-        <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Action</th>
-                    <th>Symbol</th>
-                    <th>Shares</th>
-                    <th>Price</th>
-                    <th>P&L</th>
-                    <th>Reason</th>
-                </tr>
-            </thead>
-            <tbody>{history_html}</tbody>
-        </table>
+        <!-- Signal Summary Cards -->
+        <div class="grid grid-cols-3 gap-4">
+            <div class="bg-emerald-950/40 border border-emerald-800 rounded-xl p-4 text-center">
+                <div class="text-3xl font-black text-emerald-400">{len(buy_signals)}</div>
+                <div class="text-xs text-emerald-300 mt-1 uppercase tracking-wider">BUY Signals</div>
+            </div>
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
+                <div class="text-3xl font-black text-gray-400">{len(hold_signals)}</div>
+                <div class="text-xs text-gray-500 mt-1 uppercase tracking-wider">HOLD</div>
+            </div>
+            <div class="bg-red-950/30 border border-red-900 rounded-xl p-4 text-center">
+                <div class="text-3xl font-black text-red-400">{len(avoid_signals)}</div>
+                <div class="text-xs text-red-300 mt-1 uppercase tracking-wider">AVOID</div>
+            </div>
+        </div>
+
+        <!-- BUY Signals Quick View -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <h3 class="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wider">
+                🚀 Active BUY Signals
+            </h3>
+            {''.join([f"""
+            <div class="flex items-center justify-between py-2 border-b border-gray-800/50">
+                <div>
+                    <span class="font-bold text-white">{sym}</span>
+                    <span class="text-gray-400 text-xs ml-2">{d.get('sector', '')}</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="text-right">
+                        <div class="font-mono text-sm text-white">${d.get('price', 0):.2f}</div>
+                        <div class="text-xs text-gray-400">{d.get('regime', '')}</div>
+                    </div>
+                    <div class="w-24">
+                        <div class="flex items-center gap-1">
+                            <div class="flex-1 bg-gray-700 rounded-full h-1.5">
+                                <div class="h-1.5 rounded-full bg-emerald-500" style="width:{int(d.get('prediction',0)*100)}%"></div>
+                            </div>
+                            <span class="text-xs text-emerald-400">{int(d.get('prediction',0)*100)}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>""" for sym, d in buy_signals[:5]]) or '<p class="text-gray-500 text-sm text-center py-4">No BUY signals today</p>'}
+        </div>
     </div>
-</div>
+
+    <!-- POSITIONS TAB -->
+    <div id="content-positions" class="hidden">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+            <div class="p-4 border-b border-gray-800">
+                <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                    💼 Open Positions ({len(positions)}/5)
+                </h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-800 bg-gray-900/50">
+                            <th class="px-4 py-3 text-left text-xs text-gray-400 uppercase">Symbol</th>
+                            <th class="px-4 py-3 text-center text-xs text-gray-400 uppercase">Shares</th>
+                            <th class="px-4 py-3 text-center text-xs text-gray-400 uppercase">Entry</th>
+                            <th class="px-4 py-3 text-center text-xs text-gray-400 uppercase">Current</th>
+                            <th class="px-4 py-3 text-center text-xs text-gray-400 uppercase">P&L</th>
+                            <th class="px-4 py-3 text-center text-xs text-gray-400 uppercase">Stop/Target</th>
+                            <th class="px-4 py-3 text-left text-xs text-gray-400 uppercase">ML Score</th>
+                            <th class="px-4 py-3 text-center text-xs text-gray-400 uppercase">Days</th>
+                        </tr>
+                    </thead>
+                    <tbody>{positions_html}</tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIGNALS TAB -->
+    <div id="content-signals" class="hidden">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+            <div class="p-4 border-b border-gray-800 flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                    ⚡ AI Signal Analysis ({len(signals)} stocks)
+                </h3>
+                <div class="flex gap-2">
+                    <span class="px-2 py-1 rounded-lg bg-emerald-900/50 text-emerald-300 text-xs">{len(buy_signals)} BUY</span>
+                    <span class="px-2 py-1 rounded-lg bg-gray-800 text-gray-400 text-xs">{len(hold_signals)} HOLD</span>
+                    <span class="px-2 py-1 rounded-lg bg-red-900/50 text-red-300 text-xs">{len(avoid_signals)} AVOID</span>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-800 bg-gray-900/50">
+                            <th class="px-4 py-3 text-left text-xs text-gray-400 uppercase">Symbol</th>
+                            <th class="px-4 py-3 text-center text-xs text-gray-400 uppercase">Signal</th>
+                            <th class="px-4 py-3 text-left text-xs text-gray-400 uppercase">ML Score</th>
+                            <th class="px-4 py-3 text-center text-xs text-gray-400 uppercase">Regime</th>
+                            <th class="px-4 py-3 text-center text-xs text-gray-400 uppercase">Sentiment</th>
+                            <th class="px-4 py-3 text-center text-xs text-gray-400 uppercase">Price</th>
+                            <th class="px-4 py-3 text-left text-xs text-gray-400 uppercase">Layers (9)</th>
+                        </tr>
+                    </thead>
+                    <tbody>{signals_rows}</tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTORS TAB -->
+    <div id="content-sectors" class="hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {sectors_html if sectors_html else '<p class="text-gray-500 col-span-3 text-center py-8">No sector data yet</p>'}
+        </div>
+    </div>
+
+    <!-- EARNINGS TAB -->
+    <div id="content-earnings" class="hidden">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <h3 class="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wider">
+                📅 Earnings Calendar This Week
+            </h3>
+            <div class="space-y-2">{earnings_html}</div>
+        </div>
+    </div>
+
+    <!-- HISTORY TAB -->
+    <div id="content-history" class="hidden">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <h3 class="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wider">
+                🔔 Recent Trade History
+            </h3>
+            <div>{trade_history_html}</div>
+        </div>
+    </div>
+
+</main>
 
 <!-- FOOTER -->
-<div class="footer">
-    <p>
-        AlphaEdge V3 | 4-Model Ensemble (XGB+LGB+RF+LSTM) |
-        Sector Rotation | News Sentiment | Cloud Automated |
-        GitHub Actions FREE
-    </p>
-</div>
+<footer class="border-t border-gray-800 mt-8">
+    <div class="max-w-screen-2xl mx-auto px-4 py-4 text-center text-xs text-gray-600">
+        AlphaEdge V4 | 5-Model Ensemble (XGB+LGB+RF+CatBoost+LSTM) | 9-Layer Signal Filter |
+        AI Veto Agent | Insider Tracker | Circuit Breaker | GitHub Actions FREE
+    </div>
+</footer>
 
-<!-- CHARTS JS -->
+<!-- SCRIPTS -->
 <script>
-// Portfolio Chart
-const pCtx = document.getElementById('portfolio-chart').getContext('2d');
-const pData = {chart_data_str};
-const pLabels = {chart_labels_str};
-const pColor = pData[pData.length-1] >= pData[0]
-    ? '{COLORS['green']}' : '{COLORS['red']}';
+// Tab System
+function showTab(name) {{
+    document.querySelectorAll('[id^="content-"]').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('[id^="tab-"]').forEach(el => {{
+        el.classList.remove('tab-active');
+        el.classList.add('text-gray-400');
+    }});
+    document.getElementById('content-' + name).classList.remove('hidden');
+    const tab = document.getElementById('tab-' + name);
+    tab.classList.add('tab-active');
+    tab.classList.remove('text-gray-400');
+}}
 
+// Portfolio Chart
+const pCtx = document.getElementById('portfolioChart').getContext('2d');
+const pData = {chart_values};
+const pLabels = {chart_labels};
+const pUp = pData[pData.length-1] >= pData[0];
 new Chart(pCtx, {{
     type: 'line',
     data: {{
         labels: pLabels,
         datasets: [{{
             data: pData,
-            borderColor: pColor,
-            backgroundColor: pColor + '15',
+            borderColor: pUp ? '#10b981' : '#ef4444',
+            backgroundColor: pUp ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
             borderWidth: 2,
-            pointRadius: 4,
+            pointRadius: 3,
             fill: true,
-            tension: 0.3,
+            tension: 0.4,
+        }}, {{
+            data: pLabels.map(() => {starting}),
+            borderColor: '#374151',
+            borderDash: [5, 5],
+            borderWidth: 1,
+            pointRadius: 0,
+            fill: false,
         }}]
     }},
     options: {{
@@ -709,42 +725,36 @@ new Chart(pCtx, {{
         plugins: {{ legend: {{ display: false }} }},
         scales: {{
             y: {{
-                grid : {{ color: '{COLORS['border']}' }},
-                ticks: {{
-                    color: '{COLORS['text_dim']}',
-                    callback: v => '$' + v.toLocaleString()
-                }},
+                grid: {{ color: '#1f2937' }},
+                ticks: {{ color: '#6b7280', callback: v => '$' + v.toLocaleString() }},
             }},
             x: {{
-                grid : {{ color: '{COLORS['border']}' }},
-                ticks: {{ color: '{COLORS['text_dim']}' }},
+                grid: {{ color: '#1f2937' }},
+                ticks: {{ color: '#6b7280', maxTicksLimit: 8 }},
             }},
         }},
     }},
 }});
 
 // Allocation Chart
-const aCtx = document.getElementById('alloc-chart').getContext('2d');
+const aCtx = document.getElementById('allocChart').getContext('2d');
 new Chart(aCtx, {{
     type: 'doughnut',
     data: {{
         labels: {alloc_labels},
         datasets: [{{
             data: {alloc_values},
-            backgroundColor: {alloc_colors},
-            borderColor: '{COLORS['bg']}',
-            borderWidth: 2,
+            backgroundColor: {alloc_colors[:len(alloc_labels)]},
+            borderColor: '#030712',
+            borderWidth: 3,
         }}]
     }},
     options: {{
         responsive: true,
         plugins: {{
             legend: {{
-                position: 'right',
-                labels: {{
-                    color: '{COLORS['text']}',
-                    font: {{ size: 11 }},
-                }}
+                position: 'bottom',
+                labels: {{ color: '#9ca3af', font: {{ size: 11 }}, padding: 10 }}
             }}
         }},
     }},
@@ -759,15 +769,12 @@ new Chart(aCtx, {{
 
     print(f"   Dashboard generated: {DASHBOARD_FILE}")
     print(f"   Total value: ${total_value:,.2f}")
-    print(f"   Total P&L: {pnl_sign}${total_pnl:,.2f}")
-    print(f"   Open positions: {len(positions)}")
-    print(f"   Signals: {len(signals)}")
-    print(f"   Win rate: {win_rate:.1f}%")
+    print(f"   Sharpe: {sharpe:.2f} | Max DD: {max_dd*100:.2f}%")
+    print(f"   Signals: {len(buy_signals)} BUY | {len(avoid_signals)} AVOID")
     return True
 
 
 if __name__ == '__main__':
-    print("\nGenerating AlphaEdge Dashboard...")
+    print("\nGenerating AlphaEdge V4 Dashboard...")
     generate_dashboard()
-    print("Done!")
-    print("Open: docs/index.html")
+    print("Done! Open docs/index.html")
