@@ -1,7 +1,12 @@
 [
   {
+    "symbol": "NVDA",
+    "date": "2026-05-20",
+    "days_until": 7
+  },
+  {
     "symbol": "HD",
     "date": "2026-05-19",
-    "days_until": 7
+    "days_until": 6
   }
 ]
