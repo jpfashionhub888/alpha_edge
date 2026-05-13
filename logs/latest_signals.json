@@ -3,7 +3,7 @@
     "prediction": 0.9112291113145067,
     "regime": "sideways",
     "price": 224.6199951171875,
-    "sentiment": 0.13869309769795526,
+    "sentiment": 0.2429040489718318,
     "sector": "Healthcare",
     "signal": "HOLD"
   },
@@ -11,7 +11,7 @@
     "prediction": 0.8464178668007185,
     "regime": "sideways",
     "price": 148.69000244140625,
-    "sentiment": 0.1578242463116167,
+    "sentiment": 0.14290710897413922,
     "sector": "Energy",
     "signal": "HOLD"
   },
@@ -19,7 +19,7 @@
     "prediction": 0.8280004412277632,
     "regime": "sideways",
     "price": 26.09918785095215,
-    "sentiment": 0.2477979059331119,
+    "sentiment": 0.25914678326807916,
     "sector": "Healthcare",
     "signal": "HOLD"
   },
@@ -27,7 +27,7 @@
     "prediction": 0.7254505288603803,
     "regime": "downtrend",
     "price": 139.74000549316406,
-    "sentiment": 0.29792209572435635,
+    "sentiment": 0.31559602260323505,
     "sector": "Technology",
     "signal": "AVOID"
   },
@@ -35,7 +35,7 @@
     "prediction": 0.670117037886679,
     "regime": "sideways",
     "price": 185.16000366210938,
-    "sentiment": 0.14459103595924705,
+    "sentiment": 0.10351663166993713,
     "sector": "Energy",
     "signal": "HOLD"
   },
@@ -51,7 +51,7 @@
     "prediction": 0.6316808692126361,
     "regime": "sideways",
     "price": 612.8800048828125,
-    "sentiment": 0.061214798038489504,
+    "sentiment": 0.11136169835264163,
     "sector": "Communications",
     "signal": "HOLD"
   },
