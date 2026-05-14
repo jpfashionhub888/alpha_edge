@@ -10,7 +10,7 @@
       "signal": 0.6789602286911479,
       "cost": 628.5999755859375,
       "reason": "sideways",
-      "current_price": 695.77001953125
+      "current_price": 694.9400024414062
     }
   },
   "trade_history": [
@@ -228,5 +228,5 @@
       "reason": "trailing_stop"
     }
   ],
-  "saved_at": "2026-05-13T23:47:44.214422"
+  "saved_at": "2026-05-14T19:28:36.579129"
 }
