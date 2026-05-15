@@ -1,1 +1,1 @@
-["return_5d", "price_vs_ma21", "price_vs_ma50", "price_volume_corr", "obv_ratio", "ichimoku_a", "ichimoku_b", "aroon_down", "roc_5", "bb_high", "bb_position", "atr_ratio", "volatility_5d", "volatility_10d", "volatility_21d", "volatility_63d", "month", "dxy_return", "dxy_ma_ratio", "gld_level"]
+["return_5d", "price_vs_ma21", "price_vs_ma50", "ichimoku_a", "ichimoku_b", "rsi_7", "rsi_14", "rsi_21", "roc_5", "bb_high", "bb_low", "bb_position", "atr_ratio", "volatility_5d", "volatility_10d", "volatility_21d", "volatility_63d", "dxy_return", "dxy_ma_ratio", "gld_level"]

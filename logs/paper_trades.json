@@ -1,4 +1,5 @@
 {
+<<<<<<< Updated upstream
   "capital": 9453.914474365234,
   "starting_capital": 10000.0,
   "positions": {
@@ -13,6 +14,11 @@
       "current_price": 694.9400024414062
     }
   },
+=======
+  "capital": 10078.209276504036,
+  "starting_capital": 10000.0,
+  "positions": {},
+>>>>>>> Stashed changes
   "trade_history": [
     {
       "action": "BUY",
@@ -201,6 +207,7 @@
     },
     {
       "action": "SELL",
+<<<<<<< Updated upstream
       "symbol": "XOM",
       "shares": 5,
       "price": 148.69000244140625,
@@ -211,12 +218,39 @@
       "pnl": -0.2422000122070358,
       "pnl_pct": 0.002371174165712312,
       "date": "2026-05-13T20:26:14.149959",
+=======
+      "symbol": "QQQ",
+      "shares": 1,
+      "price": 628.5999755859375,
+      "fill_price": 628.2856755981446,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "revenue": 627.2856755981446,
+      "pnl": -1.3142999877928787,
+      "pnl_pct": -0.0004999999999998568,
+      "date": "2026-05-14T19:15:23.634532",
+      "reason": "trailing_stop"
+    },
+    {
+      "action": "SELL",
+      "symbol": "XOM",
+      "shares": 5,
+      "price": 148.26409744262693,
+      "fill_price": 148.18996539390562,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "revenue": 739.9498269695281,
+      "pnl": -2.3706602436066078,
+      "pnl_pct": -0.0004999999999999779,
+      "date": "2026-05-14T19:15:23.929870",
+>>>>>>> Stashed changes
       "reason": "trailing_stop"
     },
     {
       "action": "SELL",
       "symbol": "CVX",
       "shares": 3,
+<<<<<<< Updated upstream
       "price": 185.16000366210938,
       "fill_price": 185.06742366027834,
       "slippage_pct": 0.0005,
@@ -229,4 +263,22 @@
     }
   ],
   "saved_at": "2026-05-14T23:19:39.600304"
+=======
+      "price": 184.8723887786865,
+      "fill_price": 184.77995258429718,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "revenue": 553.3398577528915,
+      "pnl": -2.2773085831680646,
+      "pnl_pct": -0.0004999999999999603,
+      "date": "2026-05-14T19:15:24.441855",
+      "reason": "trailing_stop"
+    }
+  ],
+  "daily_realized_pnl": -5.962268814567551,
+  "daily_loss_limit": 500.0,
+  "last_reset_date": "2026-05-14",
+  "_halt_trading": false,
+  "saved_at": "2026-05-14T20:35:31.062355"
+>>>>>>> Stashed changes
 }

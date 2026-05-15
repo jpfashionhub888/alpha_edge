@@ -1,1 +1,1 @@
-["price_vs_ma21", "price_vs_ma200", "ma_5_21_cross", "ma_21_50_cross", "obv_ratio", "adx_pos", "macd", "macd_signal", "macd_histogram", "ichimoku_a", "ichimoku_b", "bb_high", "bb_low", "bb_width", "atr", "atr_ratio", "volatility_10d", "volatility_63d", "dxy_ma_ratio", "tlt_level"]
+["price_vs_ma21", "ma_5_21_cross", "ma_21_50_cross", "obv_ratio", "adx_pos", "macd", "macd_signal", "macd_histogram", "ichimoku_a", "ichimoku_b", "stoch_k", "williams_r", "bb_high", "bb_low", "bb_width", "atr", "atr_ratio", "volatility_10d", "volatility_63d", "tlt_level"]
