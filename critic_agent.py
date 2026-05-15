@@ -1,14 +1,17 @@
 # critic_agent.py
-# ALPHAEDGE - Self-Improving Critic Agent
-# Reviews losing trades every Sunday
-# Sends improvement report to Telegram
-# System gets smarter automatically!
+# ALPHAEDGE - Self-Improving Critic Agent V2
+#
+# Fixes applied:
+#   - `from groq import Groq` moved inside method (was at module top-level,
+#     causing ImportError crash at startup if groq not installed)
+#   - AI call errors now produce a graceful fallback report, not a crash
+#   - Trade date parsing made robust
+#   - Loss/win formatting safe against missing fields
 
 import os
 import json
 import logging
 from datetime import datetime, timedelta
-from groq import Groq
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +19,8 @@ logger = logging.getLogger(__name__)
 class CriticAgent:
     """
     AI-powered self-improvement system.
-    Reviews losses and suggests improvements.
-    Runs every Sunday automatically.
+    Reviews wins/losses and suggests improvements every Sunday.
+    Sends report to Telegram.
     """
 
     def __init__(self):
@@ -25,283 +28,221 @@ class CriticAgent:
         self.enabled = bool(self.api_key)
         self.model   = 'llama-3.3-70b-versatile'
 
+        # No top-level import of groq here — lazy import inside methods
         if not self.enabled:
-            print("   Critic Agent: GROQ_API_KEY not found")
+            print("  Critic Agent: GROQ_API_KEY not found")
         else:
-            print("   Critic Agent: Groq/Llama3 connected ✅")
+            print("  Critic Agent: Groq/Llama3 connected ✅")
+
+    def _parse_date(self, date_str):
+        """Parse ISO date string. Returns None on failure."""
+        if not date_str:
+            return None
+        try:
+            return datetime.fromisoformat(str(date_str))
+        except Exception:
+            return None
 
     def analyze_losses(self, trade_history, days_back=7):
-        """
-        Analyze losing trades from the past week.
-        Returns analysis and recommendations.
-        """
+        """Analyze trades from the past N days. Returns analysis dict or None."""
         if not trade_history:
             return None
 
-        # Get recent closed trades
-        cutoff = datetime.now() - timedelta(days=days_back)
+        cutoff        = datetime.now() - timedelta(days=days_back)
         recent_trades = []
-
         for trade in trade_history:
             if trade.get('action') != 'SELL':
                 continue
-            try:
-                trade_date = datetime.fromisoformat(
-                    trade.get('date', '')
-                )
-                if trade_date >= cutoff:
-                    recent_trades.append(trade)
-            except Exception:
-                continue
+            trade_date = self._parse_date(trade.get('date', ''))
+            if trade_date and trade_date >= cutoff:
+                recent_trades.append(trade)
 
         if not recent_trades:
             return None
 
-        # Separate wins and losses
         wins   = [t for t in recent_trades if t.get('pnl', 0) > 0]
         losses = [t for t in recent_trades if t.get('pnl', 0) <= 0]
 
         return {
-            'total_trades' : len(recent_trades),
-            'wins'         : wins,
-            'losses'       : losses,
-            'win_rate'     : len(wins) / len(recent_trades) * 100 if recent_trades else 0,
-            'total_pnl'    : sum(t.get('pnl', 0) for t in recent_trades),
-            'period_days'  : days_back,
+            'total_trades': len(recent_trades),
+            'wins'        : wins,
+            'losses'      : losses,
+            'win_rate'    : len(wins) / len(recent_trades) * 100,
+            'total_pnl'   : sum(t.get('pnl', 0) for t in recent_trades),
+            'period_days' : days_back,
         }
+
+    def _format_trades(self, trades, max_n=5):
+        """Format a list of trades for the AI prompt."""
+        lines = []
+        for t in trades[:max_n]:
+            pnl     = t.get('pnl', 0)
+            pnl_pct = t.get('pnl_pct', 0) * 100
+            symbol  = t.get('symbol', '?')
+            reason  = t.get('reason', 'unknown')
+            sign    = '+' if pnl >= 0 else ''
+            lines.append(f"- {symbol}: {sign}${pnl:.2f} ({sign}{pnl_pct:.1f}%) | reason: {reason}")
+        return '\n'.join(lines) if lines else 'None'
 
     def generate_report(self, trade_history, portfolio_value,
                         starting_capital, days_back=7):
-        """
-        Generate AI-powered improvement report.
-        Returns formatted report string.
-        """
+        """Generate AI-powered (or fallback) improvement report."""
         analysis = self.analyze_losses(trade_history, days_back)
 
         if not analysis:
             return self._no_trades_report()
 
-        wins   = analysis['wins']
-        losses = analysis['losses']
+        wins     = analysis['wins']
+        losses   = analysis['losses']
+        win_rate = analysis['win_rate']
+        total_pnl= analysis['total_pnl']
 
-        # Build trade summary for AI
-        loss_summary = ""
-        for t in losses[:5]:  # Max 5 losses
-            pnl     = t.get('pnl', 0)
-            pnl_pct = t.get('pnl_pct', 0) * 100
-            loss_summary += (
-                f"- {t.get('symbol', '?')}: "
-                f"${pnl:.2f} ({pnl_pct:.1f}%) "
-                f"Reason: {t.get('reason', 'unknown')}\n"
-            )
+        loss_summary = self._format_trades(losses)
+        win_summary  = self._format_trades(wins)
 
-        win_summary = ""
-        for t in wins[:5]:  # Max 5 wins
-            pnl     = t.get('pnl', 0)
-            pnl_pct = t.get('pnl_pct', 0) * 100
-            win_summary += (
-                f"- {t.get('symbol', '?')}: "
-                f"+${pnl:.2f} (+{pnl_pct:.1f}%) "
-                f"Reason: {t.get('reason', 'unknown')}\n"
-            )
-
-        total_pnl = analysis['total_pnl']
-        win_rate  = analysis['win_rate']
-
-        # If no AI available, generate basic report
         if not self.enabled:
             return self._basic_report(analysis)
 
+        ai_analysis = "AI analysis unavailable."
         try:
+            # Lazy import — safe even if groq not installed
+            try:
+                from groq import Groq
+            except ImportError:
+                logger.error("groq package not installed — falling back to basic report")
+                return self._basic_report(analysis)
+
             client = Groq(api_key=self.api_key)
+            prompt = f"""You are a quantitative trading analyst reviewing an AI trading system.
 
-            prompt = f"""You are a quantitative trading analyst reviewing an AI trading system's performance.
-
-WEEKLY PERFORMANCE SUMMARY:
-Period: Last {days_back} days
+WEEKLY SUMMARY:
+Period:       Last {days_back} days
 Total Trades: {analysis['total_trades']}
 Wins: {len(wins)} | Losses: {len(losses)}
-Win Rate: {win_rate:.1f}%
-Total P&L: ${total_pnl:+.2f}
-Portfolio Value: ${portfolio_value:,.2f}
-Starting Capital: ${starting_capital:,.2f}
+Win Rate:     {win_rate:.1f}%
+Total P&L:    ${total_pnl:+.2f}
+Portfolio:    ${portfolio_value:,.2f}
+Starting:     ${starting_capital:,.2f}
 
-LOSING TRADES:
-{loss_summary if loss_summary else 'No losses this week!'}
+LOSSES:
+{loss_summary if losses else 'No losses this week!'}
 
-WINNING TRADES:
-{win_summary if win_summary else 'No wins this week!'}
+WINS:
+{win_summary if wins else 'No wins this week!'}
 
-Based on this data, provide:
-1. What patterns caused the losses?
-2. What worked well in the wins?
-3. Three specific actionable recommendations to improve performance
-4. Overall assessment (1-10 score)
+Provide:
+1. Patterns in the losses
+2. What worked in the wins
+3. Three specific improvements
+4. Score this week 1-10
 
-Keep response concise and practical. Max 200 words."""
+Be concise. Max 200 words."""
 
             response = client.chat.completions.create(
-                model       = self.model,
-                messages    = [
-                    {
-                        "role"   : "system",
-                        "content": "You are a quantitative trading analyst. Be concise and specific."
-                    },
-                    {
-                        "role"   : "user",
-                        "content": prompt
-                    }
+                model    = self.model,
+                messages = [
+                    {"role": "system", "content": "You are a quantitative trading analyst. Be concise."},
+                    {"role": "user",   "content": prompt}
                 ],
                 temperature = 0.3,
                 max_tokens  = 300,
+                timeout     = 15,
             )
-
             ai_analysis = response.choices[0].message.content.strip()
 
         except Exception as e:
-            logger.warning(f"AI analysis failed: {e}")
-            ai_analysis = "AI analysis unavailable this week."
+            logger.warning(f"Critic AI call failed: {e}")
+            ai_analysis = f"AI analysis unavailable this week ({type(e).__name__})."
 
-        # Build final report
         pnl_sign = '+' if total_pnl >= 0 else ''
-        report   = f"""ALPHAEDGE WEEKLY CRITIC REPORT
+        return f"""ALPHAEDGE WEEKLY CRITIC REPORT
 ================================
-Period: Last {days_back} days
-Date: {datetime.now().strftime('%Y-%m-%d')}
+Period: Last {days_back} days | Date: {datetime.now().strftime('%Y-%m-%d')}
 
-PERFORMANCE SUMMARY:
-Total Trades: {analysis['total_trades']}
-Win Rate: {win_rate:.1f}%
-Total P&L: {pnl_sign}${total_pnl:.2f}
-Portfolio: ${portfolio_value:,.2f}
+PERFORMANCE:
+  Trades:    {analysis['total_trades']}
+  Win Rate:  {win_rate:.1f}%
+  P&L:       {pnl_sign}${total_pnl:.2f}
+  Portfolio: ${portfolio_value:,.2f}
 
 WINS ({len(wins)}):
-{win_summary if win_summary else 'No wins this week'}
+{win_summary if wins else '  No wins this week'}
+
 LOSSES ({len(losses)}):
-{loss_summary if loss_summary else 'No losses this week!'}
+{loss_summary if losses else '  No losses this week!'}
 
 AI ANALYSIS:
 {ai_analysis}
 
 Next review: {(datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')}
-AlphaEdge Critic Agent"""
-
-        return report
+AlphaEdge Critic Agent V2"""
 
     def _basic_report(self, analysis):
-        """Generate basic report without AI."""
-        wins     = analysis['wins']
-        losses   = analysis['losses']
-        win_rate = analysis['win_rate']
-        total_pnl= analysis['total_pnl']
-        pnl_sign = '+' if total_pnl >= 0 else ''
-
-        loss_summary = ""
-        for t in losses[:5]:
-            pnl = t.get('pnl', 0)
-            loss_summary += f"- {t.get('symbol','?')}: ${pnl:.2f}\n"
-
-        return f"""ALPHAEDGE WEEKLY REPORT
-========================
-Trades: {analysis['total_trades']}
+        wins      = analysis['wins']
+        losses    = analysis['losses']
+        win_rate  = analysis['win_rate']
+        total_pnl = analysis['total_pnl']
+        pnl_sign  = '+' if total_pnl >= 0 else ''
+        return f"""ALPHAEDGE WEEKLY REPORT (no AI)
+================================
+Trades:   {analysis['total_trades']}
 Win Rate: {win_rate:.1f}%
-P&L: {pnl_sign}${total_pnl:.2f}
+P&L:      {pnl_sign}${total_pnl:.2f}
 
 Losses:
-{loss_summary if loss_summary else 'None!'}
+{self._format_trades(losses) if losses else '  None!'}
 
 AlphaEdge Critic Agent"""
 
     def _no_trades_report(self):
-        """Report when no trades in period."""
         return f"""ALPHAEDGE WEEKLY REPORT
 ========================
 Date: {datetime.now().strftime('%Y-%m-%d')}
 
 No closed trades this week.
-System is holding positions
-or waiting for signals.
+System holding positions or waiting for signals.
 
-Portfolio is being protected.
 AlphaEdge Critic Agent"""
 
     def should_run_today(self):
-        """Check if today is Sunday (weekly review day)."""
         return datetime.now().strftime('%A') == 'Sunday'
 
-    def run_weekly_review(self, trade_history,
-                          portfolio_value,
-                          starting_capital,
-                          telegram_bot):
-        """
-        Run weekly review if today is Sunday.
-        Sends report to Telegram.
-        """
+    def run_weekly_review(self, trade_history, portfolio_value,
+                          starting_capital, telegram_bot):
         if not self.should_run_today():
-            print("   Critic Agent: Not Sunday, skipping review")
+            print("  Critic Agent: Not Sunday, skipping review")
             return False
 
-        print("\n   SUNDAY REVIEW - Running Critic Agent...")
+        print("\n  SUNDAY REVIEW — Running Critic Agent...")
         report = self.generate_report(
             trade_history    = trade_history,
             portfolio_value  = portfolio_value,
             starting_capital = starting_capital,
             days_back        = 7,
         )
-
         print(report)
 
-        # Send to Telegram
         if telegram_bot and report:
             telegram_bot.send_message(report)
-            print("   Critic report sent to Telegram! ✅")
-            return True
+            print("  Critic report sent to Telegram! ✅")
 
-        return False
+        return True
 
 
 if __name__ == '__main__':
-    print("\nTesting Critic Agent...")
-
-    # Set API key for testing
-    os.environ['GROQ_API_KEY'] = ''  # Add your key here for testing
+    print("\nTesting Critic Agent V2...")
 
     critic = CriticAgent()
 
-    # Sample trade history for testing
     sample_trades = [
-        {
-            'action' : 'SELL',
-            'symbol' : 'TSLA',
-            'pnl'    : -45.20,
-            'pnl_pct': -0.035,
-            'reason' : 'stop_loss',
-            'date'   : (datetime.now() - timedelta(days=2)).isoformat(),
-        },
-        {
-            'action' : 'SELL',
-            'symbol' : 'AAPL',
-            'pnl'    : +78.50,
-            'pnl_pct': 0.042,
-            'reason' : 'take_profit',
-            'date'   : (datetime.now() - timedelta(days=3)).isoformat(),
-        },
-        {
-            'action' : 'SELL',
-            'symbol' : 'PFE',
-            'pnl'    : -22.10,
-            'pnl_pct': -0.028,
-            'reason' : 'stop_loss',
-            'date'   : (datetime.now() - timedelta(days=4)).isoformat(),
-        },
-        {
-            'action' : 'SELL',
-            'symbol' : 'CVX',
-            'pnl'    : +112.30,
-            'pnl_pct': 0.089,
-            'reason' : 'take_profit',
-            'date'   : (datetime.now() - timedelta(days=1)).isoformat(),
-        },
+        {'action': 'SELL', 'symbol': 'TSLA', 'pnl': -45.20, 'pnl_pct': -0.035,
+         'reason': 'stop_loss',   'date': (datetime.now() - timedelta(days=2)).isoformat()},
+        {'action': 'SELL', 'symbol': 'AAPL', 'pnl':  78.50, 'pnl_pct':  0.042,
+         'reason': 'take_profit', 'date': (datetime.now() - timedelta(days=3)).isoformat()},
+        {'action': 'SELL', 'symbol': 'PFE',  'pnl': -22.10, 'pnl_pct': -0.028,
+         'reason': 'stop_loss',   'date': (datetime.now() - timedelta(days=4)).isoformat()},
+        {'action': 'SELL', 'symbol': 'CVX',  'pnl': 112.30, 'pnl_pct':  0.089,
+         'reason': 'take_profit', 'date': (datetime.now() - timedelta(days=1)).isoformat()},
     ]
 
     report = critic.generate_report(
@@ -310,7 +251,6 @@ if __name__ == '__main__':
         starting_capital = 10000.00,
         days_back        = 7,
     )
-
     print("\n" + "="*50)
     print(report)
     print("="*50)

@@ -15,3 +15,27 @@ logs/*.csv
 # Allow model cache
 !model_cache/
 !model_cache/*
+# Model cache — binary files, regenerated on each run
+model_cache/*.joblib
+cache/
+
+# Logs — auto-generated, not needed in git
+logs/backtest_*.json
+logs/stock_selection_*.json
+logs/weight_results.json
+logs/threshold_results.json
+logs/alphaedge_daily.log
+logs/weekly_report.log
+catboost_info/
+
+# Secrets — NEVER commit API keys
+config/secrets.env
+.env
+
+# Temp/debug files
+test_predictor.py
+find_signal_logic.py
+python
+
+# CatBoost training artifacts
+catboost_info/

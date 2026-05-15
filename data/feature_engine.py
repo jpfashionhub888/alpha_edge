@@ -1,4 +1,5 @@
 # data/feature_engine.py
+# FIXED VERSION - All look-ahead bias removed
 
 import pandas as pd
 import numpy as np
@@ -11,17 +12,29 @@ logger = logging.getLogger(__name__)
 class FeatureEngine:
     """
     Transforms raw OHLCV data into ML-ready features.
-    Includes price, volume, technical indicators,
-    volatility, patterns and cross-asset context.
+    All features are strictly point-in-time safe.
+    No future data leaks into any calculation.
     """
 
     def __init__(self):
         self.feature_names = []
 
-    def add_all_features(self, df: pd.DataFrame) -> pd.DataFrame:
+    def add_all_features(
+        self,
+        df: pd.DataFrame,
+        end_date: str = None    # ← NEW: for backtest safety
+    ) -> pd.DataFrame:
         """Add all features to a dataframe."""
 
         df = df.copy()
+
+        # ✅ Ensure returns exists before volume features
+        if 'returns' not in df.columns:
+            df['returns'] = df['close'].pct_change()
+        if 'log_returns' not in df.columns:
+            df['log_returns'] = np.log(
+                df['close'] / df['close'].shift(1)
+            )
 
         df = self._add_price_features(df)
         df = self._add_volume_features(df)
@@ -29,7 +42,7 @@ class FeatureEngine:
         df = self._add_momentum_indicators(df)
         df = self._add_volatility_indicators(df)
         df = self._add_pattern_features(df)
-        df = self._add_market_context(df)
+        df = self._add_market_context(df, end_date)
         df = self._add_target_variable(df)
 
         df.dropna(inplace=True)
@@ -39,7 +52,8 @@ class FeatureEngine:
             if col not in [
                 'open', 'high', 'low', 'close',
                 'volume', 'symbol', 'returns',
-                'log_returns', 'target', 'future_return'
+                'log_returns', 'target',
+                'future_return'     # safety: exclude if present
             ]
         ]
 
@@ -49,8 +63,10 @@ class FeatureEngine:
 
         return df
 
-    def _add_price_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Price-based features."""
+    def _add_price_features(
+        self, df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """Price-based features — all clean."""
 
         for period in [1, 2, 3, 5, 10, 21, 63]:
             df[f'return_{period}d'] = (
@@ -87,8 +103,10 @@ class FeatureEngine:
 
         return df
 
-    def _add_volume_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Volume-based features."""
+    def _add_volume_features(
+        self, df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """Volume-based features — all clean."""
 
         for period in [5, 10, 21]:
             vol_ma = df['volume'].rolling(period).mean()
@@ -101,6 +119,7 @@ class FeatureEngine:
             / (df['volume'].rolling(21).mean() + 1e-8)
         )
 
+        # ✅ returns now guaranteed to exist
         df['price_volume_corr'] = (
             df['returns'].rolling(21).corr(
                 df['volume'].pct_change()
@@ -116,8 +135,10 @@ class FeatureEngine:
 
         return df
 
-    def _add_trend_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Trend-following indicators."""
+    def _add_trend_indicators(
+        self, df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """Trend indicators — all clean."""
 
         adx = ta.trend.ADXIndicator(
             df['high'], df['low'], df['close']
@@ -131,11 +152,14 @@ class FeatureEngine:
         df['macd_signal'] = macd.macd_signal()
         df['macd_histogram'] = macd.macd_diff()
 
-        ichi = ta.trend.IchimokuIndicator(
-            df['high'], df['low']
-        )
-        df['ichimoku_a'] = ichi.ichimoku_a()
-        df['ichimoku_b'] = ichi.ichimoku_b()
+        # ⚠️ Ichimoku removed — forward projection risk
+        # Uncomment only if you verify your ta version
+        # is point-in-time safe
+        # ichi = ta.trend.IchimokuIndicator(
+        #     df['high'], df['low']
+        # )
+        # df['ichimoku_a'] = ichi.ichimoku_a()
+        # df['ichimoku_b'] = ichi.ichimoku_b()
 
         aroon = ta.trend.AroonIndicator(
             df['high'], df['low'], window=25
@@ -145,13 +169,17 @@ class FeatureEngine:
 
         return df
 
-    def _add_momentum_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Momentum indicators."""
+    def _add_momentum_indicators(
+        self, df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """Momentum indicators — all clean."""
 
         for period in [7, 14, 21]:
-            df[f'rsi_{period}'] = ta.momentum.RSIIndicator(
-                df['close'], window=period
-            ).rsi()
+            df[f'rsi_{period}'] = (
+                ta.momentum.RSIIndicator(
+                    df['close'], window=period
+                ).rsi()
+            )
 
         stoch = ta.momentum.StochasticOscillator(
             df['high'], df['low'], df['close']
@@ -159,14 +187,18 @@ class FeatureEngine:
         df['stoch_k'] = stoch.stoch()
         df['stoch_d'] = stoch.stoch_signal()
 
-        df['williams_r'] = ta.momentum.WilliamsRIndicator(
-            df['high'], df['low'], df['close']
-        ).williams_r()
+        df['williams_r'] = (
+            ta.momentum.WilliamsRIndicator(
+                df['high'], df['low'], df['close']
+            ).williams_r()
+        )
 
         for period in [5, 10, 21]:
-            df[f'roc_{period}'] = ta.momentum.ROCIndicator(
-                df['close'], window=period
-            ).roc()
+            df[f'roc_{period}'] = (
+                ta.momentum.ROCIndicator(
+                    df['close'], window=period
+                ).roc()
+            )
 
         df['cci'] = ta.trend.CCIIndicator(
             df['high'], df['low'], df['close']
@@ -174,8 +206,10 @@ class FeatureEngine:
 
         return df
 
-    def _add_volatility_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Volatility indicators."""
+    def _add_volatility_indicators(
+        self, df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """Volatility indicators — all clean."""
 
         bb = ta.volatility.BollingerBands(df['close'])
         df['bb_high'] = bb.bollinger_hband()
@@ -209,8 +243,10 @@ class FeatureEngine:
 
         return df
 
-    def _add_pattern_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Candlestick and pattern features."""
+    def _add_pattern_features(
+        self, df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """Pattern features — all clean."""
 
         df['candle_body'] = (
             abs(df['close'] - df['open'])
@@ -218,26 +254,42 @@ class FeatureEngine:
         )
 
         df['upper_shadow'] = (
-            (df['high'] - df[['open', 'close']].max(axis=1))
+            (
+                df['high']
+                - df[['open', 'close']].max(axis=1)
+            )
             / (df['open'] + 1e-8)
         )
 
         df['lower_shadow'] = (
-            (df[['open', 'close']].min(axis=1) - df['low'])
+            (
+                df[['open', 'close']].min(axis=1)
+                - df['low']
+            )
             / (df['open'] + 1e-8)
         )
 
-        df['up_day'] = (df['returns'] > 0).astype(int)
+        df['up_day'] = (
+            df['returns'] > 0
+        ).astype(int)
         df['consecutive_up'] = (
             df['up_day'].groupby(
-                (df['up_day'] != df['up_day'].shift()).cumsum()
+                (
+                    df['up_day']
+                    != df['up_day'].shift()
+                ).cumsum()
             ).cumsum() * df['up_day']
         )
 
-        df['down_day'] = (df['returns'] < 0).astype(int)
+        df['down_day'] = (
+            df['returns'] < 0
+        ).astype(int)
         df['consecutive_down'] = (
             df['down_day'].groupby(
-                (df['down_day'] != df['down_day'].shift()).cumsum()
+                (
+                    df['down_day']
+                    != df['down_day'].shift()
+                ).cumsum()
             ).cumsum() * df['down_day']
         )
 
@@ -247,12 +299,14 @@ class FeatureEngine:
 
         return df
 
-    def _add_market_context(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _add_market_context(
+        self,
+        df: pd.DataFrame,
+        end_date: str = None    # ← FIXED: date boundary
+    ) -> pd.DataFrame:
         """
-        Add cross-asset market context features.
-        VIX fear index, Dollar index, Treasury bonds
-        and Gold are among the most powerful predictors
-        in all of finance. Worth more than any extra model.
+        Cross-asset context features.
+        Fixed to never use data beyond end_date.
         """
 
         import yfinance as yf
@@ -264,30 +318,41 @@ class FeatureEngine:
             'gld': 'GLD',
         }
 
+        # ✅ Strict date boundary
+        max_date = (
+            pd.Timestamp(end_date)
+            if end_date
+            else df.index.max()
+        )
+
         for name, ticker in context_tickers.items():
             try:
                 data = yf.Ticker(ticker).history(
-                    period='2y'
+                    start='2020-01-01',
+                    end=(
+                        max_date + pd.Timedelta(days=1)
+                    ).strftime('%Y-%m-%d')
                 )
 
                 if data.empty:
                     continue
 
                 close = data['Close']
-                close.index = close.index.tz_localize(None)
+                close.index = close.index.tz_localize(
+                    None
+                )
 
-                # Align with our dataframe dates
+                # ✅ Hard cutoff — no future data
+                close = close[close.index <= max_date]
+
                 aligned = close.reindex(
                     df.index, method='ffill'
                 )
 
-                # Raw level
                 df[f'{name}_level'] = aligned
-
-                # Daily return
-                df[f'{name}_return'] = aligned.pct_change()
-
-                # Position relative to moving average
+                df[f'{name}_return'] = (
+                    aligned.pct_change()
+                )
                 df[f'{name}_ma_ratio'] = (
                     aligned
                     / (aligned.rolling(21).mean() + 1e-8)
@@ -298,22 +363,37 @@ class FeatureEngine:
 
         return df
 
-    def _add_target_variable(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Create target variable for ML prediction."""
+    def _add_target_variable(
+        self, df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """
+        Only create target if it does not already exist.
+        If caller pre-computed target (e.g. walk-forward optimizer),
+        respect that and do not overwrite with future data.
+        """
+        if 'target' in df.columns:
+            # Target already set by caller — do not overwrite
+            # Overwriting would use shift(-5) on test rows = look-ahead
+            return df
 
         forward_period = 5
+
         df['future_return'] = (
             df['close']
             .pct_change(forward_period)
             .shift(-forward_period)
         )
+
         df['target'] = (
-            df['future_return'] > 0
+        df['future_return'] > 0
         ).astype(int)
+
+        # CRITICAL: Drop future_return
+        # It must NEVER be a model feature
+        df = df.drop(columns=['future_return'])
 
         return df
 
     def get_feature_names(self) -> list:
         """Return list of feature column names."""
-
         return self.feature_names

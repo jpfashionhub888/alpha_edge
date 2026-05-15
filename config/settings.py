@@ -39,11 +39,18 @@ LOOKBACK_DAYS = 365           # 1 year of historical data
 # API KEYS (loaded from secrets.env)
 # ============================================================
 
+# FIXED (complete):
 ALPACA_API_KEY = os.getenv('ALPACA_API_KEY', '')
 ALPACA_SECRET_KEY = os.getenv('ALPACA_SECRET_KEY', '')
-ALPACA_BASE_URL = 'https://paper-api.alpaca.markets'  # Paper trading URL
-
+ALPACA_BASE_URL = 'https://paper-api.alpaca.markets'
 NEWS_API_KEY = os.getenv('NEWS_API_KEY', '')
+
+# Telegram Alerts
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
+TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '')
+
+# Groq AI
+GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
 
 # ============================================================
 # RISK MANAGEMENT SETTINGS

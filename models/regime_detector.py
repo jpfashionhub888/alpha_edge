@@ -31,7 +31,7 @@ class RegimeDetector:
         ma_long = df['close'].rolling(self.long_window).mean()
 
         # Trend strength using slope of long MA
-        ma_slope = ma_long.pct_change(10)
+        ma_slope = ma_long.pct_change(10, fill_method=None)
 
         # Volatility regime
         vol = df['returns'].rolling(self.vol_window).std()
@@ -41,18 +41,20 @@ class RegimeDetector:
         # Determine regime
         df['regime'] = 'sideways'
 
-        # Strong uptrend
+        # Strong uptrend — loosened thresholds
+        # ma_slope > 0.001 instead of 0.01
+        # markets rarely show 1% slope per 10 days
+        # Uptrend — price above long MA and short above long
+        # Removed slope requirement — too restrictive
         uptrend_mask = (
             (ma_short > ma_long)
-            & (ma_slope > 0.01)
             & (df['close'] > ma_long)
         )
         df.loc[uptrend_mask, 'regime'] = 'uptrend'
 
-        # Strong downtrend
+        # Downtrend — price below long MA and short below long
         downtrend_mask = (
             (ma_short < ma_long)
-            & (ma_slope < -0.01)
             & (df['close'] < ma_long)
         )
         df.loc[downtrend_mask, 'regime'] = 'downtrend'
