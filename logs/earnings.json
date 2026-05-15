@@ -5,6 +5,11 @@
     "days_until": 4
   },
   {
+    "symbol": "NVDA",
+    "date": "2026-05-20",
+    "days_until": 5
+  },
+  {
     "symbol": "WMT",
     "date": "2026-05-21",
     "days_until": 6
