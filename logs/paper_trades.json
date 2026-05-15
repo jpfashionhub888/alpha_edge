@@ -1,284 +1,41 @@
 {
-<<<<<<< Updated upstream
-  "capital": 9453.914474365234,
+  "capital": 9033.367431106568,
   "starting_capital": 10000.0,
   "positions": {
-    "QQQ": {
-      "shares": 1,
-      "entry_price": 628.5999755859375,
-      "entry_date": "2026-04-22T03:09:39.216465",
-      "highest_price": 695.77001953125,
-      "signal": 0.6789602286911479,
-      "cost": 628.5999755859375,
-      "reason": "sideways",
-      "current_price": 694.9400024414062
+    "MS": {
+      "shares": 5,
+      "entry_price": 193.1265137786865,
+      "market_price": 193.02999877929688,
+      "entry_date": "2026-05-15T19:14:00.098359",
+      "highest_price": 193.1265137786865,
+      "signal": 0.3939676457437838,
+      "cost": 966.6325688934326,
+      "reason": "uptrend",
+      "stop_loss_pct": 0.045441083565269186,
+      "atr": 4.385746152566919,
+      "partial_exit_done": false,
+      "current_price": 193.02999877929688
     }
   },
-=======
-  "capital": 10078.209276504036,
-  "starting_capital": 10000.0,
-  "positions": {},
->>>>>>> Stashed changes
   "trade_history": [
     {
       "action": "BUY",
-      "symbol": "CVX",
-      "shares": 4,
-      "price": 187.02000427246094,
-      "cost": 748.0800170898438,
-      "date": "2026-04-22T03:09:38.789447",
-      "reason": "uptrend"
-    },
-    {
-      "action": "BUY",
-      "symbol": "QQQ",
-      "shares": 1,
-      "price": 628.5999755859375,
-      "cost": 628.5999755859375,
-      "date": "2026-04-22T03:09:39.216478",
-      "reason": "sideways"
-    },
-    {
-      "action": "BUY",
-      "symbol": "MCD",
-      "shares": 2,
-      "price": 303.2200012207031,
-      "cost": 606.4400024414062,
-      "date": "2026-04-22T03:09:39.628646",
-      "reason": "sideways"
-    },
-    {
-      "action": "BUY",
-      "symbol": "JNJ",
-      "shares": 2,
-      "price": 240.10000610351562,
-      "cost": 480.20001220703125,
-      "date": "2026-04-22T03:09:40.047002",
-      "reason": "uptrend"
-    },
-    {
-      "action": "BUY",
-      "symbol": "NVDA",
-      "shares": 3,
-      "price": 196.50999450683594,
-      "cost": 589.5299835205078,
-      "date": "2026-04-22T03:09:40.460758",
-      "reason": "sideways"
-    },
-    {
-      "action": "SELL",
-      "symbol": "CVX",
-      "shares": 4,
-      "price": 183.25,
-      "revenue": 733.0,
-      "pnl": -15.08001708984375,
-      "pnl_pct": -0.020158294227010015,
-      "date": "2026-04-27T18:01:52.409430",
-      "reason": "trailing_stop"
-    },
-    {
-      "action": "SELL",
-      "symbol": "JNJ",
-      "shares": 2,
-      "price": 230.69000244140625,
-      "revenue": 461.3800048828125,
-      "pnl": -18.82000732421875,
-      "pnl_pct": -0.039192017588089476,
-      "date": "2026-04-27T18:01:52.896904",
-      "reason": "stop_loss"
-    },
-    {
-      "action": "BUY",
-      "symbol": "NET",
-      "shares": 4,
-      "price": 204.80999755859375,
-      "cost": 819.239990234375,
-      "date": "2026-04-27T20:25:58.866816",
-      "reason": "sideways"
-    },
-    {
-      "action": "BUY",
-      "symbol": "OXY",
-      "shares": 12,
-      "price": 54.47999954223633,
-      "cost": 653.7599945068359,
-      "date": "2026-04-27T20:25:59.369745",
-      "reason": "uptrend"
-    },
-    {
-      "action": "SELL",
-      "symbol": "MCD",
-      "shares": 2,
-      "price": 301.8399963378906,
-      "revenue": 603.6799926757812,
-      "pnl": -2.760009765625,
-      "pnl_pct": -0.0045511670643653985,
-      "date": "2026-04-28T19:17:26.729430",
-      "reason": "trailing_stop"
-    },
-    {
-      "action": "BUY",
-      "symbol": "WMT",
+      "symbol": "MS",
       "shares": 5,
-      "price": 129.60000610351562,
-      "cost": 648.0000305175781,
-      "date": "2026-04-28T20:56:14.456608",
-      "reason": "uptrend"
-    },
-    {
-      "action": "SELL",
-      "symbol": "NVDA",
-      "shares": 3,
-      "price": 216.61000061035156,
-      "fill_price": 216.5016956100464,
+      "price": 193.02999877929688,
+      "fill_price": 193.1265137786865,
       "slippage_pct": 0.0005,
       "commission": 1.0,
-      "revenue": 648.5050868301391,
-      "pnl": 58.97510330963132,
-      "pnl_pct": 0.10173376246527255,
-      "date": "2026-05-04T19:12:49.233995",
-      "reason": "take_profit"
-    },
-    {
-      "action": "SELL",
-      "symbol": "WMT",
-      "shares": 5,
-      "price": 127.58999633789062,
-      "fill_price": 127.52620133972168,
-      "slippage_pct": 0.0005,
-      "commission": 1.0,
-      "revenue": 636.6310066986084,
-      "pnl": -11.369023818969708,
-      "pnl_pct": -0.016001579213951046,
-      "date": "2026-05-04T19:12:49.744481",
-      "reason": "trailing_stop"
-    },
-    {
-      "action": "BUY",
-      "symbol": "XOM",
-      "shares": 5,
-      "price": 148.19000244140625,
-      "fill_price": 148.26409744262693,
-      "slippage_pct": 0.0005,
-      "commission": 1.0,
-      "cost": 742.3204872131347,
-      "date": "2026-05-04T20:55:54.422550",
-      "reason": "sideways"
-    },
-    {
-      "action": "BUY",
-      "symbol": "CVX",
-      "shares": 3,
-      "price": 184.77999877929688,
-      "fill_price": 184.8723887786865,
-      "slippage_pct": 0.0005,
-      "commission": 1.0,
-      "cost": 555.6171663360595,
-      "date": "2026-05-04T20:55:54.900317",
-      "reason": "sideways"
-    },
-    {
-      "action": "SELL",
-      "symbol": "OXY",
-      "shares": 12,
-      "price": 60.7599983215332,
-      "fill_price": 60.72961832237244,
-      "slippage_pct": 0.0005,
-      "commission": 1.0,
-      "revenue": 727.7554198684693,
-      "pnl": 73.99542536163335,
-      "pnl_pct": 0.1147140020676948,
-      "date": "2026-05-06T19:16:07.422816",
-      "reason": "take_profit"
-    },
-    {
-      "action": "SELL",
-      "symbol": "NET",
-      "shares": 4,
-      "price": 204.97000122070312,
-      "fill_price": 204.8675162200928,
-      "slippage_pct": 0.0005,
-      "commission": 1.0,
-      "revenue": 818.4700648803712,
-      "pnl": -0.7699253540038171,
-      "pnl_pct": 0.0002808391298505353,
-      "date": "2026-05-07T19:24:10.663825",
-      "reason": "trailing_stop"
-    },
-    {
-      "action": "SELL",
-<<<<<<< Updated upstream
-      "symbol": "XOM",
-      "shares": 5,
-      "price": 148.69000244140625,
-      "fill_price": 148.61565744018554,
-      "slippage_pct": 0.0005,
-      "commission": 1.0,
-      "revenue": 742.0782872009277,
-      "pnl": -0.2422000122070358,
-      "pnl_pct": 0.002371174165712312,
-      "date": "2026-05-13T20:26:14.149959",
-=======
-      "symbol": "QQQ",
-      "shares": 1,
-      "price": 628.5999755859375,
-      "fill_price": 628.2856755981446,
-      "slippage_pct": 0.0005,
-      "commission": 1.0,
-      "revenue": 627.2856755981446,
-      "pnl": -1.3142999877928787,
-      "pnl_pct": -0.0004999999999998568,
-      "date": "2026-05-14T19:15:23.634532",
-      "reason": "trailing_stop"
-    },
-    {
-      "action": "SELL",
-      "symbol": "XOM",
-      "shares": 5,
-      "price": 148.26409744262693,
-      "fill_price": 148.18996539390562,
-      "slippage_pct": 0.0005,
-      "commission": 1.0,
-      "revenue": 739.9498269695281,
-      "pnl": -2.3706602436066078,
-      "pnl_pct": -0.0004999999999999779,
-      "date": "2026-05-14T19:15:23.929870",
->>>>>>> Stashed changes
-      "reason": "trailing_stop"
-    },
-    {
-      "action": "SELL",
-      "symbol": "CVX",
-      "shares": 3,
-<<<<<<< Updated upstream
-      "price": 185.16000366210938,
-      "fill_price": 185.06742366027834,
-      "slippage_pct": 0.0005,
-      "commission": 1.0,
-      "revenue": 554.202270980835,
-      "pnl": -1.4148953552245302,
-      "pnl_pct": 0.0010549703115769354,
-      "date": "2026-05-13T20:26:14.717025",
-      "reason": "trailing_stop"
+      "cost": 966.6325688934326,
+      "date": "2026-05-15T19:14:00.098370",
+      "reason": "uptrend",
+      "atr": 4.385746152566919,
+      "stop_loss_pct": 0.045441083565269186
     }
   ],
-  "saved_at": "2026-05-14T23:19:39.600304"
-=======
-      "price": 184.8723887786865,
-      "fill_price": 184.77995258429718,
-      "slippage_pct": 0.0005,
-      "commission": 1.0,
-      "revenue": 553.3398577528915,
-      "pnl": -2.2773085831680646,
-      "pnl_pct": -0.0004999999999999603,
-      "date": "2026-05-14T19:15:24.441855",
-      "reason": "trailing_stop"
-    }
-  ],
-  "daily_realized_pnl": -5.962268814567551,
+  "daily_realized_pnl": 0.0,
   "daily_loss_limit": 500.0,
-  "last_reset_date": "2026-05-14",
+  "last_reset_date": "2026-05-15",
   "_halt_trading": false,
-  "saved_at": "2026-05-14T20:35:31.062355"
->>>>>>> Stashed changes
+  "saved_at": "2026-05-15T19:14:00.539471"
 }
