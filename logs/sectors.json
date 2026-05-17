@@ -1,57 +1,57 @@
 {
   "Technology": {
-    "score": 0.16735694591420253,
+    "score": 0.14215883009159538,
     "flow": "INFLOW",
-    "momentum_21d": 0.18076565554022395
+    "momentum_21d": 0.14195003263314598
   },
   "Healthcare": {
-    "score": -0.03040723869074057,
+    "score": -0.045080610180144996,
     "flow": "OUTFLOW",
-    "momentum_21d": 0.00013644548378466403
+    "momentum_21d": -0.024865570378753254
   },
   "Financials": {
-    "score": -0.02438169484639041,
+    "score": -0.026859391981290462,
     "flow": "OUTFLOW",
-    "momentum_21d": -0.014222523181453228
+    "momentum_21d": -0.02536719098442175
   },
   "Energy": {
-    "score": 0.007713354097241886,
-    "flow": "NEUTRAL",
-    "momentum_21d": 0.026334355170553048
+    "score": 0.03840275490025414,
+    "flow": "INFLOW",
+    "momentum_21d": 0.08033438989769448
   },
   "Consumer": {
-    "score": -0.0028269566099968974,
-    "flow": "NEUTRAL",
-    "momentum_21d": 0.008841289975437094
+    "score": -0.026072115871080825,
+    "flow": "OUTFLOW",
+    "momentum_21d": -0.03222327684417681
   },
   "Industrials": {
-    "score": 0.0018585631316502089,
+    "score": -0.01202103368068584,
     "flow": "NEUTRAL",
-    "momentum_21d": 0.024540554399378633
+    "momentum_21d": -0.012160686284088618
   },
   "Utilities": {
-    "score": -0.04506422430410022,
+    "score": -0.07625301047935834,
     "flow": "OUTFLOW",
-    "momentum_21d": -0.03128364608365142
+    "momentum_21d": -0.04961007199084144
   },
   "Materials": {
-    "score": -0.01745121967871396,
-    "flow": "NEUTRAL",
-    "momentum_21d": -0.0015459291025060606
+    "score": -0.03373561751869866,
+    "flow": "OUTFLOW",
+    "momentum_21d": -0.030454930580672945
   },
   "Real Estate": {
-    "score": -0.011649127695632644,
-    "flow": "NEUTRAL",
-    "momentum_21d": 0.0022825489839417568
+    "score": -0.029921175890676686,
+    "flow": "OUTFLOW",
+    "momentum_21d": -0.028102518274827126
   },
   "Communications": {
-    "score": -0.014423524585692828,
+    "score": -0.017321254950624886,
     "flow": "NEUTRAL",
-    "momentum_21d": -0.014474469361268838
+    "momentum_21d": -0.0253568151281095
   },
   "Staples": {
-    "score": 0.002374779444515385,
+    "score": 0.0020006373393642403,
     "flow": "NEUTRAL",
-    "momentum_21d": 0.04359576370445106
+    "momentum_21d": 0.02643706438733484
   }
 }

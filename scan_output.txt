@@ -1,0 +1,661 @@
+20:58:02 | INFO | Regime switch: unknown → bull (held 1 bars)
+20:58:02 | INFO | Regime: bull | confidence=0.75 | tradeable=True | bull=3 bear=0 VIX=10.7
+20:58:02 | INFO | Phase 0: 2.8s
+20:58:02 | ERROR | HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+20:58:02 | ERROR | HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IWM"}}}
+20:58:02 | ERROR | HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: DIA"}}}
+20:58:02 | ERROR | HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: SPY"}}}
+20:58:02 | ERROR | HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: QQQ"}}}
+20:58:03 | INFO | Fetched 500 rows for AAPL
+20:58:03 | INFO | Fetched 500 rows for MSFT
+20:58:03 | INFO | Fetched 500 rows for GOOGL
+20:58:04 | INFO | Fetched 500 rows for AMZN
+20:58:04 | INFO | Fetched 500 rows for NVDA
+20:58:04 | INFO | Fetched 500 rows for META
+20:58:04 | INFO | Fetched 500 rows for TSLA
+20:58:04 | INFO | Fetched 500 rows for AMD
+20:58:05 | INFO | Fetched 500 rows for NFLX
+20:58:05 | INFO | Fetched 500 rows for SPY
+20:58:05 | INFO | Fetched 500 rows for QQQ
+20:58:05 | INFO | Fetched 500 rows for IWM
+20:58:06 | INFO | Fetched 500 rows for DIA
+20:58:06 | INFO | Fetched 500 rows for JPM
+20:58:06 | INFO | Fetched 500 rows for V
+20:58:06 | INFO | Fetched 500 rows for GS
+20:58:06 | INFO | Fetched 500 rows for BAC
+20:58:07 | INFO | Fetched 500 rows for MS
+20:58:07 | INFO | Fetched 500 rows for JNJ
+20:58:07 | INFO | Fetched 500 rows for PFE
+20:58:07 | INFO | Fetched 500 rows for UNH
+20:58:08 | INFO | Fetched 500 rows for ABBV
+20:58:08 | INFO | Fetched 500 rows for LLY
+20:58:08 | INFO | Fetched 500 rows for MRK
+20:58:09 | INFO | Fetched 500 rows for WMT
+20:58:09 | INFO | Fetched 500 rows for COST
+20:58:09 | INFO | Fetched 500 rows for HD
+20:58:09 | INFO | Fetched 500 rows for MCD
+20:58:09 | INFO | Fetched 500 rows for XOM
+20:58:10 | INFO | Fetched 500 rows for CVX
+20:58:10 | INFO | Fetched 500 rows for OXY
+20:58:10 | INFO | Fetched 500 rows for SOFI
+20:58:10 | INFO | Fetched 500 rows for PLTR
+20:58:11 | INFO | Fetched 500 rows for RIVN
+20:58:11 | INFO | Fetched 500 rows for HOOD
+20:58:11 | INFO | Fetched 500 rows for MARA
+20:58:11 | INFO | Fetched 500 rows for CRM
+20:58:11 | INFO | Fetched 500 rows for SNOW
+20:58:11 | INFO | Fetched 500 rows for NET
+20:58:12 | INFO | Fetched 500 rows for DDOG
+20:58:12 | INFO | Fetched 500 rows for CRWD
+20:58:13 | INFO | Generated 74 features
+20:58:13 | INFO | Regime detection complete
+20:58:14 | INFO | Generated 74 features
+20:58:14 | INFO | Regime detection complete
+20:58:14 | INFO | Generated 74 features
+20:58:14 | INFO | Regime detection complete
+20:58:14 | INFO | Generated 74 features
+20:58:14 | INFO | Regime detection complete
+20:58:14 | INFO | Generated 74 features
+20:58:14 | INFO | Regime detection complete
+20:58:14 | INFO | Generated 74 features
+20:58:14 | INFO | Regime detection complete
+20:58:14 | INFO | Generated 74 features
+20:58:14 | INFO | Regime detection complete
+20:58:14 | INFO | Generated 74 features
+20:58:14 | INFO | Regime detection complete
+20:58:14 | INFO | Generated 74 features
+20:58:15 | INFO | Regime detection complete
+20:58:15 | INFO | Generated 74 features
+20:58:15 | INFO | Regime detection complete
+20:58:15 | INFO | Generated 74 features
+20:58:15 | INFO | Regime detection complete
+20:58:15 | INFO | Generated 74 features
+20:58:15 | INFO | Regime detection complete
+20:58:15 | INFO | Generated 74 features
+20:58:15 | INFO | Regime detection complete
+20:58:15 | INFO | Generated 74 features
+20:58:15 | INFO | Regime detection complete
+20:58:15 | INFO | Generated 74 features
+20:58:15 | INFO | Regime detection complete
+20:58:15 | INFO | Generated 74 features
+20:58:15 | INFO | Regime detection complete
+20:58:15 | INFO | Generated 74 features
+20:58:15 | INFO | Regime detection complete
+20:58:15 | INFO | Generated 74 features
+20:58:15 | INFO | Regime detection complete
+20:58:15 | INFO | Generated 74 features
+20:58:15 | INFO | Regime detection complete
+20:58:15 | INFO | Generated 74 features
+20:58:15 | INFO | Regime detection complete
+20:58:15 | INFO | Generated 74 features
+20:58:15 | INFO | Regime detection complete
+20:58:16 | INFO | Generated 74 features
+20:58:16 | INFO | Regime detection complete
+20:58:16 | INFO | Generated 74 features
+20:58:16 | INFO | Regime detection complete
+20:58:16 | INFO | Generated 74 features
+20:58:16 | INFO | Regime detection complete
+20:58:16 | INFO | Generated 74 features
+20:58:16 | INFO | Regime detection complete
+20:58:16 | INFO | Generated 74 features
+20:58:16 | INFO | Regime detection complete
+20:58:16 | INFO | Generated 74 features
+20:58:16 | INFO | Regime detection complete
+20:58:16 | INFO | Generated 74 features
+20:58:16 | INFO | Regime detection complete
+20:58:16 | INFO | Generated 74 features
+20:58:16 | INFO | Regime detection complete
+20:58:16 | INFO | Generated 74 features
+20:58:16 | INFO | Regime detection complete
+20:58:16 | INFO | Generated 74 features
+20:58:16 | INFO | Regime detection complete
+20:58:16 | INFO | Generated 74 features
+20:58:16 | INFO | Regime detection complete
+20:58:17 | INFO | Generated 74 features
+20:58:17 | INFO | Regime detection complete
+20:58:17 | INFO | Generated 74 features
+20:58:17 | INFO | Regime detection complete
+20:58:17 | INFO | Generated 74 features
+20:58:17 | INFO | Regime detection complete
+20:58:17 | INFO | Generated 74 features
+20:58:17 | INFO | Regime detection complete
+20:58:17 | INFO | Generated 74 features
+20:58:17 | INFO | Regime detection complete
+20:58:17 | INFO | Generated 74 features
+20:58:17 | INFO | Regime detection complete
+20:58:17 | INFO | Generated 74 features
+20:58:17 | INFO | Regime detection complete
+20:58:17 | INFO | Generated 74 features
+20:58:17 | INFO | Regime detection complete
+20:58:17 | INFO | Generated 74 features
+20:58:17 | INFO | Regime detection complete
+20:58:17 | INFO | Generated 74 features
+20:58:17 | INFO | Regime detection complete
+20:58:17 | INFO | Generated 74 features
+20:58:17 | INFO | Regime detection complete
+20:58:17 | INFO | Generated 74 features
+20:58:17 | INFO | Regime detection complete
+20:58:18 | INFO | Generated 74 features
+20:58:18 | INFO | Regime detection complete
+20:58:18 | INFO | Generated 74 features
+20:58:18 | INFO | Regime detection complete
+20:58:18 | INFO | Generated 74 features
+20:58:18 | INFO | Regime detection complete
+20:58:18 | INFO | Generated 74 features
+20:58:18 | INFO | Regime detection complete
+20:58:18 | INFO | Generated 74 features
+20:58:18 | INFO | Regime detection complete
+20:58:18 | INFO | Generated 74 features
+20:58:18 | INFO | Regime detection complete
+20:58:18 | INFO | Generated 74 features
+20:58:18 | INFO | Regime detection complete
+20:58:18 | INFO | Generated 74 features
+20:58:18 | INFO | Regime detection complete
+
+🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀
+  ALPHA EDGE V5 — 2026-05-16 20:57
+  4-Model Ensemble + Sector Rotation + LSTM
+🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀
+   📂 State loaded: $10,000.00 cash | 0 open positions | 0 total trades
+
+============================================================
+PHASE 0: MARKET CONTEXT
+============================================================
+
+🔄 Analyzing sector rotation...
+
+   Sector Rankings (best to worst):
+   -------------------------------------------------------
+   🟢 Technology      | Score: +0.142 | 21d: +14.2% | INFLOW
+   🟢 Energy          | Score: +0.038 | 21d: +8.0% | INFLOW
+   ⚪ Staples         | Score: +0.002 | 21d: +2.6% | NEUTRAL
+   ⚪ Industrials     | Score: -0.012 | 21d: -1.2% | NEUTRAL
+   ⚪ Communications  | Score: -0.017 | 21d: -2.5% | NEUTRAL
+   🔴 Consumer        | Score: -0.026 | 21d: -3.2% | OUTFLOW
+   🔴 Financials      | Score: -0.027 | 21d: -2.5% | OUTFLOW
+   🔴 Real Estate     | Score: -0.030 | 21d: -2.8% | OUTFLOW
+   🔴 Materials       | Score: -0.034 | 21d: -3.0% | OUTFLOW
+   🔴 Healthcare      | Score: -0.045 | 21d: -2.5% | OUTFLOW
+   🔴 Utilities       | Score: -0.076 | 21d: -5.0% | OUTFLOW
+
+  Risk Check:
+  Daily P&L:    +0.00%
+  Weekly P&L:   -1.88%
+  Total P&L:    +0.00%
+  Drawdown:     -1.88% (from peak $10,191.56)
+  ✅ Risk check passed — Trading allowed
+  Veto Agent: Groq/Llama3 connected ✅
+   Loaded 10353 tickers from SEC ✅
+
+📅 Checking earnings calendar...
+  ⚠️  3 stocks reporting this week
+     ⚠️  HD earnings in 3 days
+     ⚠️  NVDA earnings in 4 days
+     ⚠️  WMT earnings in 5 days
+
+============================================================
+PHASE 1: STOCK ANALYSIS
+============================================================
+
+1a. Fetching data for 41 stocks...
+
+📊 Fetching data for 41 stocks...
+  [1/41] Fetching AAPL... ✅ 500 rows
+  [2/41] Fetching MSFT... ✅ 500 rows
+  [3/41] Fetching GOOGL... ✅ 500 rows
+  [4/41] Fetching AMZN... ✅ 500 rows
+  [5/41] Fetching NVDA... ✅ 500 rows
+  [6/41] Fetching META... ✅ 500 rows
+  [7/41] Fetching TSLA... ✅ 500 rows
+  [8/41] Fetching AMD... ✅ 500 rows
+  [9/41] Fetching NFLX... ✅ 500 rows
+  [10/41] Fetching SPY... ✅ 500 rows
+  [11/41] Fetching QQQ... ✅ 500 rows
+  [12/41] Fetching IWM... ✅ 500 rows
+  [13/41] Fetching DIA... ✅ 500 rows
+  [14/41] Fetching JPM... ✅ 500 rows
+  [15/41] Fetching V... ✅ 500 rows
+  [16/41] Fetching GS... ✅ 500 rows
+  [17/41] Fetching BAC... ✅ 500 rows
+  [18/41] Fetching MS... ✅ 500 rows
+  [19/41] Fetching JNJ... ✅ 500 rows
+  [20/41] Fetching PFE... ✅ 500 rows
+  [21/41] Fetching UNH... ✅ 500 rows
+  [22/41] Fetching ABBV... ✅ 500 rows
+  [23/41] Fetching LLY... ✅ 500 rows
+  [24/41] Fetching MRK... ✅ 500 rows
+  [25/41] Fetching WMT... ✅ 500 rows
+  [26/41] Fetching COST... ✅ 500 rows
+  [27/41] Fetching HD... ✅ 500 rows
+  [28/41] Fetching MCD... ✅ 500 rows
+  [29/41] Fetching XOM... ✅ 500 rows
+  [30/41] Fetching CVX... ✅ 500 rows
+  [31/41] Fetching OXY... ✅ 500 rows
+  [32/41] Fetching SOFI... ✅ 500 rows
+  [33/41] Fetching PLTR... ✅ 500 rows
+  [34/41] Fetching RIVN... ✅ 500 rows
+  [35/41] Fetching HOOD... ✅ 500 rows
+  [36/41] Fetching MARA... ✅ 500 rows
+  [37/41] Fetching CRM... ✅ 500 rows
+  [38/41] Fetching SNOW... ✅ 500 rows
+  [39/41] Fetching NET... ✅ 500 rows
+  [40/41] Fetching DDOG... ✅ 500 rows
+  [41/41] Fetching CRWD... ✅ 500 rows
+
+✅ Successfully fetched 41/41 stocks
+
+1b. Training 4-model ensemble per stock...
+   Regime distribution:
+   Regime distribution:
+      uptrend: 138 days (45.8%)
+      sideways: 87 days (28.9%)
+      downtrend: 53 days (17.6%)
+      volatile: 23 days (7.6%)
+   Regime distribution:
+   Regime distribution:
+      sideways: 106 days (35.2%)
+      uptrend: 97 days (32.2%)
+      downtrend: 77 days (25.6%)
+      volatile: 21 days (7.0%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 188 days (62.5%)
+      sideways: 76 days (25.2%)
+      downtrend: 23 days (7.6%)
+      volatile: 14 days (4.7%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 134 days (44.5%)
+      sideways: 102 days (33.9%)
+      downtrend: 57 days (18.9%)
+      volatile: 8 days (2.7%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 151 days (50.2%)
+      sideways: 114 days (37.9%)
+      downtrend: 36 days (12.0%)
+   Regime distribution:
+   Regime distribution:
+      sideways: 111 days (36.9%)
+      uptrend: 84 days (27.9%)
+      downtrend: 75 days (24.9%)
+      volatile: 31 days (10.3%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 113 days (37.5%)
+      sideways: 112 days (37.2%)
+      downtrend: 76 days (25.2%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 124 days (41.2%)
+      sideways: 103 days (34.2%)
+      downtrend: 47 days (15.6%)
+      volatile: 27 days (9.0%)
+   Regime distribution:
+   Regime distribution:
+      downtrend: 106 days (35.2%)
+      sideways: 99 days (32.9%)
+      uptrend: 57 days (18.9%)
+      volatile: 39 days (13.0%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 189 days (62.8%)
+      sideways: 85 days (28.2%)
+      downtrend: 20 days (6.6%)
+      volatile: 7 days (2.3%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 165 days (54.8%)
+      sideways: 93 days (30.9%)
+      downtrend: 33 days (11.0%)
+      volatile: 10 days (3.3%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 186 days (61.8%)
+      sideways: 99 days (32.9%)
+      downtrend: 16 days (5.3%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 195 days (64.8%)
+      sideways: 86 days (28.6%)
+      downtrend: 20 days (6.6%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 154 days (51.2%)
+      sideways: 105 days (34.9%)
+      downtrend: 39 days (13.0%)
+      volatile: 3 days (1.0%)
+   Regime distribution:
+   Regime distribution:
+      downtrend: 136 days (45.2%)
+      sideways: 118 days (39.2%)
+      uptrend: 47 days (15.6%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 194 days (64.5%)
+      sideways: 83 days (27.6%)
+      downtrend: 24 days (8.0%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 165 days (54.8%)
+      sideways: 98 days (32.6%)
+      downtrend: 35 days (11.6%)
+      volatile: 3 days (1.0%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 195 days (64.8%)
+      sideways: 76 days (25.2%)
+      downtrend: 24 days (8.0%)
+      volatile: 6 days (2.0%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 199 days (66.1%)
+      sideways: 78 days (25.9%)
+      downtrend: 24 days (8.0%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 166 days (55.1%)
+      sideways: 105 days (34.9%)
+      downtrend: 22 days (7.3%)
+      volatile: 8 days (2.7%)
+   Regime distribution:
+   Regime distribution:
+      downtrend: 105 days (34.9%)
+      sideways: 104 days (34.6%)
+      uptrend: 71 days (23.6%)
+      volatile: 21 days (7.0%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 115 days (38.2%)
+      sideways: 110 days (36.5%)
+      downtrend: 70 days (23.3%)
+      volatile: 6 days (2.0%)
+   Regime distribution:
+   Regime distribution:
+      sideways: 109 days (36.2%)
+      uptrend: 97 days (32.2%)
+      downtrend: 54 days (17.9%)
+      volatile: 41 days (13.6%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 178 days (59.1%)
+      sideways: 91 days (30.2%)
+      downtrend: 24 days (8.0%)
+      volatile: 8 days (2.7%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 192 days (63.8%)
+      sideways: 94 days (31.2%)
+      downtrend: 9 days (3.0%)
+      volatile: 6 days (2.0%)
+   Regime distribution:
+   Regime distribution:
+      downtrend: 122 days (40.5%)
+      sideways: 93 days (30.9%)20:58:18 | INFO | Generated 74 features
+20:58:18 | INFO | Regime detection complete
+20:58:18 | INFO | Generated 74 features
+20:58:18 | INFO | Regime detection complete
+20:58:18 | INFO | Generated 74 features
+20:58:18 | INFO | Regime detection complete
+20:58:18 | INFO | Generated 74 features
+20:58:18 | INFO | Regime detection complete
+20:58:18 | INFO | Generated 74 features
+20:58:18 | INFO | Regime detection complete
+20:58:19 | INFO | Generated 74 features
+20:58:19 | INFO | Regime detection complete
+20:58:19 | INFO | Generated 74 features
+20:58:19 | INFO | Regime detection complete
+20:58:19 | INFO | Generated 74 features
+20:58:19 | INFO | Regime detection complete
+20:58:19 | INFO | Generated 74 features
+20:58:19 | INFO | Regime detection complete
+20:58:19 | INFO | Generated 74 features
+20:58:19 | INFO | Regime detection complete
+20:58:19 | INFO | Generated 74 features
+20:58:19 | INFO | Regime detection complete
+20:58:19 | INFO | Generated 74 features
+20:58:19 | INFO | Regime detection complete
+20:58:19 | INFO | Generated 74 features
+20:58:19 | INFO | Regime detection complete
+20:58:19 | INFO | Generated 74 features
+20:58:19 | INFO | Regime detection complete
+20:58:19 | INFO | Generated 74 features
+20:58:19 | INFO | Regime detection complete
+20:58:19 | INFO | Generated 74 features
+20:58:19 | INFO | Regime detection complete
+20:58:19 | INFO | Generated 74 features
+20:58:19 | INFO | Regime detection complete
+20:58:20 | INFO | Generated 74 features
+20:58:20 | INFO | Regime detection complete
+20:58:20 | INFO | Generated 74 features
+20:58:20 | INFO | Regime detection complete
+20:58:20 | INFO | Generated 74 features
+20:58:20 | INFO | Regime detection complete
+20:58:20 | INFO | Generated 74 features
+20:58:20 | INFO | Regime detection complete
+20:58:20 | INFO | Generated 74 features
+20:58:20 | INFO | Regime detection complete
+20:58:20 | INFO | Generated 74 features
+20:58:20 | INFO | Regime detection complete
+20:58:20 | INFO | Generated 74 features
+20:58:20 | INFO | Regime detection complete
+20:58:20 | INFO | Generated 74 features
+20:58:20 | INFO | Regime detection complete
+20:58:20 | INFO | Generated 74 features
+20:58:20 | INFO | Regime detection complete
+20:58:20 | INFO | Generated 74 features
+20:58:20 | INFO | Regime detection complete
+20:58:20 | INFO | Generated 74 features
+20:58:20 | INFO | Regime detection complete
+20:58:20 | INFO | Generated 74 features
+20:58:20 | INFO | Regime detection complete
+20:58:21 | INFO | Generated 74 features
+20:58:21 | INFO | Regime detection complete
+20:58:21 | ERROR | No stock data fetched — aborting stock scan
+20:58:28 | INFO | Generated 74 features
+20:58:28 | INFO | Regime detection complete
+20:58:28 | INFO | Training ensemble on 107 samples
+20:58:29 | INFO | CatBoost model trained successfully
+20:58:30 | INFO | LSTM training complete. Final loss: 0.4332
+20:58:30 | INFO | LSTM model added to ensemble
+20:58:30 | INFO | Ensemble training complete (5 models)
+20:58:30 | INFO | Generated 74 features
+20:58:30 | INFO | Regime detection complete
+20:58:30 | INFO | Training ensemble on 107 samples
+20:58:32 | INFO | CatBoost model trained successfully
+20:58:32 | INFO | LSTM training complete. Final loss: 0.4330
+20:58:32 | INFO | LSTM model added to ensemble
+20:58:32 | INFO | Ensemble training complete (5 models)
+20:58:32 | INFO | Generated 74 features
+20:58:32 | INFO | Regime detection complete
+20:58:32 | INFO | Training ensemble on 107 samples
+20:58:33 | INFO | CatBoost model trained successfully
+20:58:34 | INFO | LSTM training complete. Final loss: 0.4362
+20:58:34 | INFO | LSTM model added to ensemble
+20:58:34 | INFO | Ensemble training complete (5 models)
+20:58:34 | INFO | Crypto scan complete: 1 signals in 13.5s
+20:58:34 | INFO | Phase 1+2 (scan): 32.4s
+20:58:34 | INFO | Phase 3 (execute stocks): 0.0s
+20:58:34 | INFO | Phase 4 (execute crypto): 0.0s
+20:58:34 | INFO | Phase 5 (position mgmt): 0.0s
+20:58:34 | INFO | Phase 6 (save): 0.0s
+
+      uptrend: 86 days (28.6%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 103 days (34.2%)
+      sideways: 98 days (32.6%)
+      downtrend: 82 days (27.2%)
+      volatile: 18 days (6.0%)
+   Regime distribution:
+   Regime distribution:
+      sideways: 127 days (42.2%)
+      uptrend: 94 days (31.2%)
+      downtrend: 80 days (26.6%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 173 days (57.5%)
+      sideways: 113 days (37.5%)
+      downtrend: 13 days (4.3%)
+      volatile: 2 days (0.7%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 134 days (44.5%)
+      sideways: 104 days (34.6%)
+      downtrend: 55 days (18.3%)
+      volatile: 8 days (2.7%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 150 days (49.8%)
+      sideways: 92 days (30.6%)
+      downtrend: 57 days (18.9%)
+      volatile: 2 days (0.7%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 120 days (39.9%)
+      downtrend: 102 days (33.9%)
+      sideways: 75 days (24.9%)
+      volatile: 4 days (1.3%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 116 days (38.5%)
+      sideways: 105 days (34.9%)
+      downtrend: 80 days (26.6%)
+   Regime distribution:
+   Regime distribution:
+      sideways: 122 days (40.5%)
+      downtrend: 82 days (27.2%)
+      uptrend: 76 days (25.2%)
+      volatile: 21 days (7.0%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 121 days (40.2%)
+      sideways: 93 days (30.9%)
+      downtrend: 87 days (28.9%)
+   Regime distribution:
+   Regime distribution:
+      downtrend: 106 days (35.2%)
+      sideways: 99 days (32.9%)
+      uptrend: 76 days (25.2%)
+      volatile: 20 days (6.6%)
+   Regime distribution:
+   Regime distribution:
+      downtrend: 156 days (51.8%)
+      sideways: 118 days (39.2%)
+      uptrend: 27 days (9.0%)
+   Regime distribution:
+   Regime distribution:
+      downtrend: 112 days (37.2%)
+      uptrend: 87 days (28.9%)
+      sideways: 76 days (25.2%)
+      volatile: 26 days (8.6%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 136 days (45.2%)
+      sideways: 81 days (26.9%)
+      downtrend: 48 days (15.9%)
+      volatile: 36 days (12.0%)
+   Regime distribution:
+   Regime distribution:
+      sideways: 117 days (38.9%)
+      uptrend: 76 days (25.2%)
+      downtrend: 68 days (22.6%)
+      volatile: 40 days (13.3%)
+   Regime distribution:
+   Regime distribution:
+      uptrend: 101 days (33.6%)
+      downtrend: 90 days (29.9%)
+      sideways: 83 days (27.6%)
+      volatile: 27 days (9.0%)
+
+============================================================
+PHASE 2: CRYPTO ANALYSIS
+============================================================
+
+============================================================
+CRYPTO PREDICTION PIPELINE
+============================================================
+
+🪙 Fetching data for 3 crypto pairs...
+   [1/3] Fetching BTC/USD... ✅ 366 candles
+   [2/3] Fetching ETH/USD... ✅ 366 candles
+   [3/3] Fetching SOL/USD... ✅ 366 candles
+
+   ✅ Fetched 3/3 pairs
+   Regime distribution:
+      sideways: 68 days (40.7%)
+      downtrend: 54 days (32.3%)
+      uptrend: 41 days (24.6%)
+      volatile: 4 days (2.4%)
+
+   Training model for BTC/USD...
+   BTC/USD validation AUC: 0.397
+   ❌ BTC/USD model rejected
+   Regime distribution:
+      sideways: 69 days (41.3%)
+      downtrend: 54 days (32.3%)
+      uptrend: 43 days (25.7%)
+      volatile: 1 days (0.6%)
+
+   Training model for ETH/USD...
+   ETH/USD validation AUC: 0.446
+   ❌ ETH/USD model rejected
+   Regime distribution:
+      sideways: 83 days (49.7%)
+      downtrend: 74 days (44.3%)
+      uptrend: 7 days (4.2%)
+      volatile: 3 days (1.8%)
+
+   Training model for SOL/USD...
+   SOL/USD validation AUC: 0.571
+   ✅ SOL/USD model accepted
+  ⚪ SOL/USD    | pred=0.521 | sideways   | HOLD | $86.11 | ATR proxy $4.31
+
+============================================================
+PHASE 3: EXECUTE SIGNALS
+============================================================
+
+============================================================
+PHASE 4: CRYPTO SIGNALS
+============================================================
+
+============================================================
+PHASE 5: POSITION MANAGEMENT
+============================================================
+
+  No open positions to manage
+
+============================================================
+PHASE 6: SAVE DASHBOARD DATA
+============================================================
+  💾 All data saved (atomic)
+
+============================================================
+PHASE 7: PORTFOLIO SUMMARY
+============================================================
+
+============================================================
+  PAPER TRADING PORTFOLIO
+============================================================
+  Cash:              $   10,000.00
+  Daily P&L:         $       +0.00
+  Daily limit:       $      500.00  ✅ Active
+
+  Position Value:    $        0.00
+  Total Value:       $   10,000.00
+  Total PnL:         $       +0.00 (+0.0%)
+  Total Trades:                 0
+============================================================
+
+✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
+  ALPHA EDGE V5 SCAN COMPLETE
+✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
+
+  Scanned : 0 stocks + 1 crypto
+  Earnings: 3 stocks this week
+  Duration: 35.9s
+  Models  : XGB + LGB + RF + CatBoost + LSTM per stock
+
+  Dashboard → python run_dashboard.py
+             → http://localhost:8050
+

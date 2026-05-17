@@ -1,50 +1,48 @@
 # execution/paper_trader.py
 
-import pandas as pd
-import numpy as np
-from datetime import datetime
+"""
+PaperTrader V3
+
+Changes from V2 (documented in AUDIT.md):
+- reconcile() invariant check: capital + position_costs - total_realized_pnl
+  must equal starting_capital. Called on every save_state(). Crashes
+  loudly if state is corrupt.
+- ATR fallback raised from price*0.02 to price*0.03 (handled at caller,
+  but the stop_loss_pct floor here also raised from 0.02 to 0.025).
+- _signal_to_size_multiplier left as discrete tiers — see AUDIT.md M3.
+- Type hints added on public methods.
+- Format strings cleaned up to remove the if-inside-format bug.
+"""
+
 import json
+import logging
 import os
 import tempfile
-import logging
+from datetime import datetime
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 
 class PaperTrader:
     """
-    Simulated trading engine. Tracks all trades,
-    positions and P&L as if trading real money.
-    Saves state to disk so you can stop and resume.
+    Simulated trading engine. Tracks all trades, positions, and P&L
+    as if real money. Saves state atomically so you can stop/resume.
     Includes slippage and commission for realistic results.
-
-    Fixes applied (v2):
-    - ATR-based volatility position sizing (Bug 1 & 2)
-    - Partial exit cost basis corrected (Bug 3)
-    - Atomic state save prevents corruption (Bug 4)
-    - load_state() has full error handling (Bug 5)
-    - Trailing stop only fires after min profit (Bug 6)
-    - update_position() check order corrected (Flaw 1)
-    - Signal strength uses discrete tier system (Flaw 2)
-    - Partial exit now deducts commission+slippage (Flaw 3)
-    - Missing prices use entry as fallback (Flaw 4)
-    - Per-trade max loss cap added (Risk 1)
-    - Daily loss limit at trader level (Risk 2)
-    - Auto-save after every open and close (Risk 3)
     """
 
     def __init__(self,
-                 starting_capital   = 10000.0,
-                 max_position_pct   = 0.15,
-                 max_positions      = 5,
-                 slippage_pct       = 0.0005,
-                 commission         = 1.0,
-                 risk_per_trade_pct = 0.02,
-                 daily_loss_limit_pct = 0.05,
-                 log_file           = 'logs/paper_trades.json'):
+                 starting_capital     : float = 10000.0,
+                 max_position_pct     : float = 0.15,
+                 max_positions        : int   = 5,
+                 slippage_pct         : float = 0.0005,
+                 commission           : float = 1.0,
+                 risk_per_trade_pct   : float = 0.02,
+                 daily_loss_limit_pct : float = 0.05,
+                 log_file             : str   = 'logs/paper_trades.json'):
 
-        self.starting_capital     = starting_capital
-        self.capital              = starting_capital
+        self.starting_capital     = float(starting_capital)
+        self.capital              = float(starting_capital)
         self.max_position_pct     = max_position_pct
         self.max_positions        = max_positions
         self.slippage_pct         = slippage_pct
@@ -52,40 +50,81 @@ class PaperTrader:
         self.risk_per_trade_pct   = risk_per_trade_pct
         self.log_file             = log_file
 
-        self.positions            = {}
-        self.trade_history        = []
-        self.daily_pnl            = []
+        self.positions     : dict = {}
+        self.trade_history : list = []
+        self.daily_pnl     : list = []
 
-        # --- Daily loss limit tracking (Risk 2) ---
-        self.daily_loss_limit     = starting_capital * daily_loss_limit_pct
-        self.daily_realized_pnl   = 0.0
-        self.last_reset_date      = datetime.now().date()
-        self._halt_trading        = False
+        # Daily loss limit tracking
+        self.daily_loss_limit   = starting_capital * daily_loss_limit_pct
+        self.daily_realized_pnl = 0.0
+        self.last_reset_date    = datetime.now().date()
+        self._halt_trading      = False
+
+    # ------------------------------------------------------------------ #
+    #  RECONCILIATION INVARIANT — NEW                                      #
+    # ------------------------------------------------------------------ #
+
+    def reconcile(self, tolerance: float = 0.01) -> None:
+        """
+        Verify the accounting invariant:
+
+            starting_capital + total_realized_pnl
+                = capital + sum(position_costs)
+
+        Realized P&L includes commission and slippage already (because
+        revenue and cost both already include them). If this ever drifts
+        beyond `tolerance` dollars, state is corrupt — we crash loudly
+        rather than continue trading on bad numbers.
+        """
+        position_costs = sum(p.get('cost', 0.0) for p in self.positions.values())
+
+        realized_pnl = 0.0
+        for trade in self.trade_history:
+            if trade.get('action') in ('SELL', 'PARTIAL_SELL'):
+                realized_pnl += trade.get('pnl', 0.0)
+
+        expected = self.starting_capital + realized_pnl
+        actual   = self.capital + position_costs
+        drift    = actual - expected
+
+        if abs(drift) > tolerance:
+            msg = (
+                f"PaperTrader reconciliation FAILED.\n"
+                f"  expected (start + realized_pnl) = ${expected:,.4f}\n"
+                f"  actual   (cash    + costs)      = ${actual:,.4f}\n"
+                f"  drift                           = ${drift:+,.4f}\n"
+                f"  starting_capital                = ${self.starting_capital:,.4f}\n"
+                f"  capital (cash)                  = ${self.capital:,.4f}\n"
+                f"  sum(position_costs)             = ${position_costs:,.4f}\n"
+                f"  realized_pnl from trade_history = ${realized_pnl:,.4f}\n"
+                f"  n_positions = {len(self.positions)}, "
+                f"n_trades = {len(self.trade_history)}"
+            )
+            logger.critical(msg)
+            raise AssertionError(msg)
+
+        logger.debug(
+            "Reconcile OK: drift=$%.4f, realized=$%.2f, "
+            "cash=$%.2f, costs=$%.2f",
+            drift, realized_pnl, self.capital, position_costs,
+        )
 
     # ------------------------------------------------------------------ #
     #  INTERNAL HELPERS                                                    #
     # ------------------------------------------------------------------ #
 
-    def _check_daily_reset(self):
-        """
-        Reset daily P&L tracker at the start of each new trading day.
-        Also lifts the halt flag so trading resumes next day.
-        """
+    def _check_daily_reset(self) -> None:
         today = datetime.now().date()
         if today != self.last_reset_date:
             logger.info(
-                f"New trading day. Resetting daily P&L "
-                f"(was {self.daily_realized_pnl:+.2f})"
+                "New trading day. Resetting daily P&L (was %+.2f)",
+                self.daily_realized_pnl,
             )
             self.daily_realized_pnl = 0.0
             self._halt_trading      = False
             self.last_reset_date    = today
 
-    def _is_trading_halted(self):
-        """
-        Returns True if the daily loss limit has been hit.
-        Always checks for a new day first so halt auto-lifts next morning.
-        """
+    def _is_trading_halted(self) -> bool:
         self._check_daily_reset()
         if self._halt_trading:
             logger.warning("Trading halted: daily loss limit reached.")
@@ -93,16 +132,9 @@ class PaperTrader:
         return False
 
     @staticmethod
-    def _signal_to_size_multiplier(signal_strength):
+    def _signal_to_size_multiplier(signal_strength: float) -> float:
         """
-        Convert a raw signal score to a discrete position-size tier.
-        Replaces the old linear scaling which had no documented rationale.
-
-        Tier table:
-            >= 0.80  →  1.00  (full position, high conviction)
-            >= 0.70  →  0.75  (three-quarter position)
-            >= 0.60  →  0.50  (half position)
-            <  0.60  →  0.25  (quarter position, minimum conviction)
+        Discrete tier table. See AUDIT.md M3 for stability discussion.
         """
         if signal_strength >= 0.80:
             return 1.00
@@ -117,40 +149,20 @@ class PaperTrader:
     #  POSITION SIZING                                                     #
     # ------------------------------------------------------------------ #
 
-    def get_position_size(self, price, signal_strength=1.0, atr=None):
-        """
-        Volatility-adjusted position sizing.
-
-        PRIMARY PATH (ATR available):
-            Risk exactly risk_per_trade_pct of capital per trade.
-            Stop distance = 2 * ATR.
-            shares = dollar_risk / stop_distance
-            Hard-capped at max_position_pct of capital.
-
-        FALLBACK PATH (no ATR):
-            Fixed-fractional sizing using max_position_pct,
-            scaled by discrete signal-strength tier.
-
-        Per-trade max loss cap is enforced in open_position()
-        after this method returns.
-        """
+    def get_position_size(self,
+                          price: float,
+                          signal_strength: float = 1.0,
+                          atr: Optional[float] = None) -> int:
         size_multiplier = self._signal_to_size_multiplier(signal_strength)
 
         if atr and atr > 0:
-            # Primary: risk-based sizing
             dollar_risk   = self.capital * self.risk_per_trade_pct
             stop_distance = 2.0 * atr
             shares        = int(dollar_risk / stop_distance)
-
-            # Apply conviction multiplier
-            shares = int(shares * size_multiplier)
-
-            # Hard cap: never exceed max_position_pct of capital
-            max_shares = int((self.capital * self.max_position_pct) / price)
-            shares     = min(shares, max_shares)
-
+            shares        = int(shares * size_multiplier)
+            max_shares    = int((self.capital * self.max_position_pct) / price)
+            shares        = min(shares, max_shares)
         else:
-            # Fallback: fixed-fractional
             max_dollars = self.capital * self.max_position_pct
             adjusted    = max_dollars * size_multiplier
             shares      = int(adjusted / price)
@@ -161,119 +173,98 @@ class PaperTrader:
     #  OPEN POSITION                                                       #
     # ------------------------------------------------------------------ #
 
-    def open_position(self, symbol, price, signal,
-                      reason='signal', atr=None):
-        """
-        Open a new long position.
+    def open_position(self,
+                      symbol: str,
+                      price: float,
+                      signal: float,
+                      reason: str = 'signal',
+                      atr: Optional[float] = None) -> bool:
 
-        Guards (in order):
-            1. Daily loss limit halt
-            2. Max concurrent positions
-            3. Duplicate symbol
-            4. Zero shares after sizing
-            5. Insufficient capital
-            6. Per-trade max loss cap
-        """
-
-        # Guard 1: daily loss limit
         if self._is_trading_halted():
             return False
-
-        # Guard 2: max positions
         if len(self.positions) >= self.max_positions:
             logger.info("Max positions reached, skipping %s", symbol)
             return False
-
-        # Guard 3: duplicate
         if symbol in self.positions:
             logger.info("Already in %s, skipping", symbol)
             return False
 
-        # FIX Bug 1 & 2: pass atr into get_position_size
         shares = self.get_position_size(price, signal, atr=atr)
-
-        # Guard 4: zero shares
         if shares == 0:
             logger.info("Position size is 0 for %s, skipping", symbol)
             return False
 
-        # Apply slippage on the buy side
         fill_price = price * (1 + self.slippage_pct)
         cost       = shares * fill_price + self.commission
 
-        # Guard 5: insufficient capital — scale down instead of rejecting
+        # Scale down on insufficient capital
         if cost > self.capital:
-            shares = int(
-                (self.capital * 0.95 - self.commission) / fill_price
-            )
+            shares = int((self.capital * 0.95 - self.commission) / fill_price)
             if shares <= 0:
                 logger.info("Insufficient capital for %s", symbol)
                 return False
             cost = shares * fill_price + self.commission
 
-        # Guard 6: per-trade max loss cap (Risk 1)
+        # Per-trade max loss cap
         if atr and atr > 0:
-            potential_loss    = shares * (2.0 * atr)
-            max_loss_dollars  = self.capital * self.risk_per_trade_pct
+            potential_loss   = shares * (2.0 * atr)
+            max_loss_dollars = self.capital * self.risk_per_trade_pct
             if potential_loss > max_loss_dollars:
                 shares = int(max_loss_dollars / (2.0 * atr))
                 if shares <= 0:
                     logger.info(
-                        "Per-trade loss cap: 0 shares allowed for %s", symbol
+                        "Per-trade loss cap: 0 shares allowed for %s", symbol,
                     )
                     return False
                 cost = shares * fill_price + self.commission
 
-        # Deduct cost from cash
         self.capital -= cost
 
-        # ATR-based stop loss
+        # ATR-based stop loss; floor raised from 0.02 to 0.025
         if atr and atr > 0:
             atr_stop_pct  = (2.0 * atr) / price
-            stop_loss_pct = max(0.02, min(0.08, atr_stop_pct))
+            stop_loss_pct = max(0.025, min(0.08, atr_stop_pct))
         else:
-            stop_loss_pct = 0.03  # default 3% stop
+            stop_loss_pct = 0.03
 
         self.positions[symbol] = {
-            'shares'             : shares,
-            'entry_price'        : fill_price,
-            'market_price'       : price,
-            'entry_date'         : datetime.now().isoformat(),
-            'highest_price'      : fill_price,
-            'signal'             : signal,
-            'cost'               : cost,
-            'reason'             : reason,
-            'stop_loss_pct'      : stop_loss_pct,
-            'atr'                : atr or 0,
-            'partial_exit_done'  : False,
+            'shares'            : shares,
+            'entry_price'       : fill_price,
+            'market_price'      : price,
+            'entry_date'        : datetime.now().isoformat(),
+            'highest_price'     : fill_price,
+            'signal'            : signal,
+            'cost'              : cost,
+            'reason'            : reason,
+            'stop_loss_pct'     : stop_loss_pct,
+            'atr'               : atr or 0,
+            'partial_exit_done' : False,
         }
 
-        trade = {
-            'action'      : 'BUY',
-            'symbol'      : symbol,
-            'shares'      : shares,
-            'price'       : price,
-            'fill_price'  : fill_price,
-            'slippage_pct': self.slippage_pct,
-            'commission'  : self.commission,
-            'cost'        : cost,
-            'date'        : datetime.now().isoformat(),
-            'reason'      : reason,
-            'atr'         : atr or 0,
+        self.trade_history.append({
+            'action'       : 'BUY',
+            'symbol'       : symbol,
+            'shares'       : shares,
+            'price'        : price,
+            'fill_price'   : fill_price,
+            'slippage_pct' : self.slippage_pct,
+            'commission'   : self.commission,
+            'cost'         : cost,
+            'date'         : datetime.now().isoformat(),
+            'reason'       : reason,
+            'atr'          : atr or 0,
             'stop_loss_pct': stop_loss_pct,
-        }
-        self.trade_history.append(trade)
+        })
 
+        # FIX: removed if-inside-format expression which silently dropped
+        # the ATR string entirely when atr was None.
+        atr_str = f" | ATR {atr:.2f}" if atr else ""
         print(
-            f"   BUY  {shares:>5} {symbol:<6}"
-            f" @ ${price:>8.2f}"
-            f" fill ${fill_price:>8.2f}"
-            f" cost ${cost:>9.2f}"
-            f" | Stop {stop_loss_pct:.1%}"
-            f" | ATR {atr:.2f}" if atr else ""
+            f"   BUY  {shares:>5} {symbol:<6} @ ${price:>8.2f}"
+            f" fill ${fill_price:>8.2f} cost ${cost:>9.2f}"
+            f" | Stop {stop_loss_pct:.1%}{atr_str}"
         )
 
-        # Auto-save after every trade (Risk 3)
         self.save_state()
         return True
 
@@ -281,13 +272,10 @@ class PaperTrader:
     #  CLOSE POSITION                                                      #
     # ------------------------------------------------------------------ #
 
-    def close_position(self, symbol, price, reason='signal'):
-        """
-        Close an existing position in full.
-        Updates daily P&L and triggers halt if limit is hit.
-        Auto-saves state after every close.
-        """
-
+    def close_position(self,
+                       symbol: str,
+                       price: float,
+                       reason: str = 'signal') -> bool:
         if symbol not in self.positions:
             return False
 
@@ -295,25 +283,23 @@ class PaperTrader:
         shares = pos['shares']
         entry  = pos['entry_price']
 
-        # Slippage on sell side
         fill_price = price * (1 - self.slippage_pct)
         revenue    = shares * fill_price - self.commission
         pnl        = revenue - pos['cost']
-        pnl_pct    = (fill_price - entry) / entry
+        pnl_pct    = (fill_price - entry) / entry if entry > 0 else 0.0
 
         self.capital += revenue
 
-        # Daily P&L tracking (Risk 2)
         self._check_daily_reset()
         self.daily_realized_pnl += pnl
         if self.daily_realized_pnl < -self.daily_loss_limit:
             logger.critical(
                 "Daily loss limit hit (%.2f). Halting trading for today.",
-                self.daily_realized_pnl
+                self.daily_realized_pnl,
             )
             self._halt_trading = True
 
-        trade = {
+        self.trade_history.append({
             'action'      : 'SELL',
             'symbol'      : symbol,
             'shares'      : shares,
@@ -326,93 +312,81 @@ class PaperTrader:
             'pnl_pct'     : pnl_pct,
             'date'        : datetime.now().isoformat(),
             'reason'      : reason,
-        }
-        self.trade_history.append(trade)
+        })
 
         emoji = "🟢" if pnl > 0 else "🔴"
         print(
-            f"   {emoji} SELL {shares:>5} {symbol:<6}"
-            f" @ ${price:>8.2f}"
-            f" PnL ${pnl:>+9.2f} ({pnl_pct:>+6.1%})"
-            f" [{reason}]"
+            f"   {emoji} SELL {shares:>5} {symbol:<6} @ ${price:>8.2f}"
+            f" PnL ${pnl:>+9.2f} ({pnl_pct:>+6.1%}) [{reason}]"
         )
 
         del self.positions[symbol]
-
-        # Auto-save after every trade (Risk 3)
         self.save_state()
         return True
 
     # ------------------------------------------------------------------ #
-    #  UPDATE POSITION (called every scan cycle)                           #
+    #  UPDATE POSITION                                                     #
     # ------------------------------------------------------------------ #
 
-    def update_position(self, symbol, current_price,
-                        stop_loss    = 0.03,
-                        take_profit  = 0.08,
-                        trailing_stop = 0.035):
-        """
-        Check exit conditions for an open position.
-
-        Check order (Flaw 1 fix):
-            1. Stop loss          — most urgent, always first
-            2. Full take profit   — 8% wins before partial 5% is checked
-            3. Partial exit       — 50% size reduction at 5% gain
-            4. Trailing stop      — only fires after min profit threshold
-            5. Time stop          — last resort for flat positions
-
-        Trailing stop activation threshold (Bug 6 fix):
-            Only fires after the position has reached +2% at its peak.
-            Prevents premature exit on day-one slippage dips.
-        """
-
+    def update_position(self,
+                        symbol: str,
+                        current_price: float,
+                        stop_loss     : float = 0.03,
+                        take_profit   : float = 0.08,
+                        trailing_stop : float = 0.035) -> None:
         if symbol not in self.positions:
             return
 
         pos   = self.positions[symbol]
         entry = pos['entry_price']
-
-        # Use ATR-derived stop if stored, else use parameter default
         stop_loss = pos.get('stop_loss_pct', stop_loss)
 
-        # Update highest price seen
         if current_price > pos['highest_price']:
             pos['highest_price'] = current_price
 
-        pnl_pct  = (current_price - entry) / entry
-        max_gain = (pos['highest_price'] - entry) / entry
+        pnl_pct  = (current_price - entry) / entry if entry > 0 else 0.0
+        max_gain = (pos['highest_price'] - entry) / entry if entry > 0 else 0.0
 
-        # ── 1. STOP LOSS ──────────────────────────────────────────────
+        # 1. Stop loss
         if pnl_pct <= -stop_loss:
             print(f"   🛑 STOP LOSS:    {symbol} down {pnl_pct:.1%}")
             self.close_position(symbol, current_price, 'stop_loss')
             return
 
-        # ── 2. FULL TAKE PROFIT (checked BEFORE partial) ──────────────
+        # 2. Full take profit
         if pnl_pct >= take_profit:
             print(f"   🎯 TAKE PROFIT:  {symbol} up {pnl_pct:.1%}")
             self.close_position(symbol, current_price, 'take_profit')
             return
 
-        # ── 3. PARTIAL EXIT at 5% ─────────────────────────────────────
+        # 3. Partial exit at 5%
         if pnl_pct >= 0.05 and not pos.get('partial_exit_done'):
             shares_to_sell = pos['shares'] // 2
             if shares_to_sell > 0:
-
-                # FIX Flaw 3: apply slippage + commission to partial exit
                 partial_fill    = current_price * (1 - self.slippage_pct)
                 partial_revenue = shares_to_sell * partial_fill - self.commission
-                partial_pnl     = shares_to_sell * (partial_fill - entry)
 
-                self.capital   += partial_revenue
+                self.capital += partial_revenue
 
-                # FIX Bug 3: scale cost proportionally, preserve commission
-                original_shares   = pos['shares'] + shares_to_sell
-                cost_per_share    = pos['cost'] / original_shares
-                pos['shares']    -= shares_to_sell
-                pos['cost']       = pos['shares'] * cost_per_share
-
+                # ── Cost basis scaling (REAL FIX) ─────────────────────
+                # V2 had: `original_shares = pos['shares'] + shares_to_sell`
+                # but pos['shares'] was still pre-sale, so this produced
+                # 1.5x the real total → under-reported cost-per-share →
+                # inflated future P&L reporting. AUDIT.md H5.
+                #
+                # Correct: pos['shares'] IS the pre-sale total here.
+                cost_per_share  = pos['cost'] / pos['shares']
+                cost_of_sold    = shares_to_sell * cost_per_share
+                pos['shares']  -= shares_to_sell
+                pos['cost']     = pos['shares'] * cost_per_share
                 pos['partial_exit_done'] = True
+
+                # Reported PnL must include commission of this partial
+                # exit AND the proportional share of original entry
+                # commission. Without this, reconcile() drifts by ~$1
+                # per partial exit (entry comm not amortised + exit comm
+                # not deducted). H5 part 2.
+                partial_pnl = partial_revenue - cost_of_sold
 
                 self.trade_history.append({
                     'action'      : 'PARTIAL_SELL',
@@ -434,76 +408,50 @@ class PaperTrader:
                     f" — sold {shares_to_sell} shares"
                     f" locked +${partial_pnl:.2f}"
                 )
-
-                # Auto-save after partial exit
                 self.save_state()
             return
 
-        # ── 4. TRAILING STOP ──────────────────────────────────────────
-        # FIX Bug 6: only activates after position has reached +2% peak
+        # 4. Trailing stop (requires 2% peak first)
         TRAILING_ACTIVATION = 0.02
-        drop = (
-            (pos['highest_price'] - current_price) / pos['highest_price']
-        )
+        drop = ((pos['highest_price'] - current_price)
+                / pos['highest_price']) if pos['highest_price'] > 0 else 0
         if drop >= trailing_stop and max_gain >= TRAILING_ACTIVATION:
             print(
-                f"   📉 TRAILING STOP: {symbol}"
-                f" dropped {drop:.1%} from high"
+                f"   📉 TRAILING STOP: {symbol} dropped {drop:.1%} from high"
             )
             self.close_position(symbol, current_price, 'trailing_stop')
             return
 
-        # ── 5. TIME-BASED STOP ────────────────────────────────────────
+        # 5. Time stop
         try:
-            entry_date = datetime.fromisoformat(
-                pos.get('entry_date', '')
-            )
+            entry_date = datetime.fromisoformat(pos.get('entry_date', ''))
             days_held = (datetime.now() - entry_date).days
             if days_held >= 5 and abs(pnl_pct) < 0.02:
                 print(
-                    f"   ⏱️  TIME STOP:    {symbol}"
-                    f" flat after {days_held} days"
+                    f"   ⏱️  TIME STOP:    {symbol} flat after {days_held} days"
                 )
                 self.close_position(symbol, current_price, 'time_stop')
                 return
-        except Exception:
+        except (ValueError, TypeError):
             pass
 
     # ------------------------------------------------------------------ #
     #  PORTFOLIO VALUATION                                                 #
     # ------------------------------------------------------------------ #
 
-    def get_portfolio_value(self, current_prices):
-        """
-        Calculate total portfolio value (cash + positions).
-
-        FIX Flaw 4: positions missing from current_prices now use
-        entry_price as a conservative fallback instead of being
-        silently excluded (which was understating total value and
-        could trigger the circuit breaker incorrectly).
-        """
+    def get_portfolio_value(self, current_prices: dict) -> float:
         position_value = 0.0
-
         for symbol, pos in self.positions.items():
-            if symbol in current_prices:
-                price = current_prices[symbol]
-            else:
-                price = pos['entry_price']
+            price = current_prices.get(symbol, pos['entry_price'])
+            if symbol not in current_prices:
                 logger.warning(
                     "No current price for %s — using entry price as fallback",
-                    symbol
+                    symbol,
                 )
             position_value += pos['shares'] * price
-
         return self.capital + position_value
 
-    # ------------------------------------------------------------------ #
-    #  PORTFOLIO SUMMARY                                                   #
-    # ------------------------------------------------------------------ #
-
-    def get_summary(self, current_prices=None):
-        """Print a formatted portfolio summary to console."""
-
+    def get_summary(self, current_prices=None) -> float:
         if current_prices is None:
             current_prices = {}
 
@@ -514,9 +462,9 @@ class PaperTrader:
         print("=" * 60)
         print(f"  Cash:              ${self.capital:>12,.2f}")
         print(f"  Daily P&L:         ${self.daily_realized_pnl:>+12,.2f}")
+        halt_str = '🛑 HALTED' if self._halt_trading else '✅ Active'
         print(
-            f"  Daily limit:       ${self.daily_loss_limit:>12,.2f}"
-            f"  {'🛑 HALTED' if self._halt_trading else '✅ Active'}"
+            f"  Daily limit:       ${self.daily_loss_limit:>12,.2f}  {halt_str}"
         )
 
         if self.positions:
@@ -529,53 +477,43 @@ class PaperTrader:
                     curr    = current_prices[symbol]
                     val     = shares * curr
                     pnl     = val - pos['cost']
-                    pnl_pct = (curr - entry) / entry
+                    pnl_pct = (curr - entry) / entry if entry > 0 else 0.0
                     position_value += val
                     emoji = "🟢" if pnl > 0 else "🔴"
                     print(
-                        f"    {emoji} {symbol:<6}"
-                        f" {shares:>5} shares"
-                        f" entry ${entry:>8.2f}"
-                        f" now ${curr:>8.2f}"
+                        f"    {emoji} {symbol:<6} {shares:>5} shares"
+                        f" entry ${entry:>8.2f} now ${curr:>8.2f}"
                         f" PnL ${pnl:>+9.2f} ({pnl_pct:>+6.1%})"
                     )
                 else:
                     val = shares * entry
                     position_value += val
                     print(
-                        f"    ⚪ {symbol:<6}"
-                        f" {shares:>5} shares"
-                        f" entry ${entry:>8.2f}"
-                        f" (no current price)"
+                        f"    ⚪ {symbol:<6} {shares:>5} shares"
+                        f" entry ${entry:>8.2f} (no current price)"
                     )
 
         total     = self.capital + position_value
         total_pnl = total - self.starting_capital
-        total_pct = total_pnl / self.starting_capital
+        total_pct = total_pnl / self.starting_capital if self.starting_capital else 0.0
 
         print(f"\n  Position Value:    ${position_value:>12,.2f}")
         print(f"  Total Value:       ${total:>12,.2f}")
-        print(
-            f"  Total PnL:         ${total_pnl:>+12,.2f}"
-            f" ({total_pct:>+.1%})"
-        )
+        print(f"  Total PnL:         ${total_pnl:>+12,.2f} ({total_pct:>+.1%})")
         print(f"  Total Trades:      {len(self.trade_history):>12}")
         print("=" * 60)
-
         return total
 
     # ------------------------------------------------------------------ #
     #  STATE PERSISTENCE                                                   #
     # ------------------------------------------------------------------ #
 
-    def save_state(self):
-        """
-        Save current state to disk atomically.
+    def save_state(self) -> None:
+        """Atomic save. Runs reconcile() first; refuses to save corrupt state."""
+        # Run invariant check before persisting. If this throws, we want
+        # the system to halt before writing bad state to disk.
+        self.reconcile()
 
-        FIX Bug 4: writes to a .tmp file first, then os.replace()
-        which is atomic on all platforms. A mid-write crash can no
-        longer corrupt the live state file.
-        """
         state = {
             'capital'            : self.capital,
             'starting_capital'   : self.starting_capital,
@@ -589,30 +527,22 @@ class PaperTrader:
         }
 
         os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
-
         tmp_path = self.log_file + '.tmp'
         try:
             with open(tmp_path, 'w') as f:
                 json.dump(state, f, indent=2)
             os.replace(tmp_path, self.log_file)
             logger.debug("State saved to %s", self.log_file)
-
         except Exception as e:
             logger.error("Failed to save state: %s", e)
             if os.path.exists(tmp_path):
-                os.remove(tmp_path)
+                try:
+                    os.remove(tmp_path)
+                except OSError:
+                    pass
             raise
 
-    def load_state(self):
-        """
-        Load state from disk with full error handling.
-
-        FIX Bug 5:
-        - Validates all required keys before applying any values
-        - Catches JSON decode errors and key errors gracefully
-        - Backs up the corrupted file instead of deleting it
-        - Never crashes the trading system at startup
-        """
+    def load_state(self) -> None:
         if not os.path.exists(self.log_file):
             print("   No saved state found — starting fresh")
             return
@@ -621,51 +551,42 @@ class PaperTrader:
             with open(self.log_file, 'r') as f:
                 state = json.load(f)
 
-            # Validate required keys before touching any instance state
-            required = [
-                'capital', 'starting_capital',
-                'positions', 'trade_history'
-            ]
-            missing = [k for k in required if k not in state]
+            required = ['capital', 'starting_capital', 'positions', 'trade_history']
+            missing  = [k for k in required if k not in state]
             if missing:
-                raise ValueError(
-                    f"Corrupted state file — missing keys: {missing}"
-                )
+                raise ValueError(f"Corrupted state file — missing keys: {missing}")
 
-            # Apply loaded state
-            self.capital          = float(state['capital'])
-            self.starting_capital = float(state['starting_capital'])
-            self.positions        = state['positions']
-            self.trade_history    = state['trade_history']
-
-            # Restore daily tracking state if present
-            self.daily_realized_pnl = float(
-                state.get('daily_realized_pnl', 0.0)
-            )
+            self.capital            = float(state['capital'])
+            self.starting_capital   = float(state['starting_capital'])
+            self.positions          = state['positions']
+            self.trade_history      = state['trade_history']
+            self.daily_realized_pnl = float(state.get('daily_realized_pnl', 0.0))
             self.daily_loss_limit   = float(
-                state.get('daily_loss_limit',
-                          self.starting_capital * 0.05)
+                state.get('daily_loss_limit', self.starting_capital * 0.05)
             )
-            self._halt_trading      = bool(
-                state.get('_halt_trading', False)
-            )
+            self._halt_trading      = bool(state.get('_halt_trading', False))
 
-            # Restore last reset date
             raw_date = state.get('last_reset_date', '')
             try:
-                self.last_reset_date = datetime.strptime(
-                    raw_date, '%Y-%m-%d'
-                ).date()
-            except Exception:
+                self.last_reset_date = datetime.strptime(raw_date, '%Y-%m-%d').date()
+            except (ValueError, TypeError):
                 self.last_reset_date = datetime.now().date()
 
+            # Run invariant check on loaded state
+            try:
+                self.reconcile()
+            except AssertionError as e:
+                # Corrupt state on load — back up and start fresh
+                logger.critical("Loaded state failed reconciliation: %s", e)
+                self._backup_corrupt_state()
+                self._reset_to_fresh()
+                return
+
             print(
-                f"   📂 State loaded: "
-                f"${self.capital:,.2f} cash | "
+                f"   📂 State loaded: ${self.capital:,.2f} cash | "
                 f"{len(self.positions)} open positions | "
                 f"{len(self.trade_history)} total trades"
             )
-
             if self._halt_trading:
                 print("   ⚠️  Trading was halted when state was saved.")
 
@@ -673,12 +594,19 @@ class PaperTrader:
             logger.error("Failed to load state: %s", e)
             print(f"   ⚠️  Corrupted state file ({e})")
             print("   Backing up and starting fresh.")
+            self._backup_corrupt_state()
 
-            backup = self.log_file + '.corrupted'
-            try:
-                os.replace(self.log_file, backup)
-                print(f"   Backup saved → {backup}")
-            except Exception as backup_err:
-                logger.error(
-                    "Could not back up corrupted file: %s", backup_err
-                )
+    def _backup_corrupt_state(self) -> None:
+        backup = self.log_file + '.corrupted'
+        try:
+            os.replace(self.log_file, backup)
+            print(f"   Backup saved → {backup}")
+        except OSError as e:
+            logger.error("Could not back up corrupted file: %s", e)
+
+    def _reset_to_fresh(self) -> None:
+        self.capital            = self.starting_capital
+        self.positions          = {}
+        self.trade_history      = []
+        self.daily_realized_pnl = 0.0
+        self._halt_trading      = False

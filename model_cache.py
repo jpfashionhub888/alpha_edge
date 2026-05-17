@@ -1,186 +1,172 @@
-# model_cache.py - Fixed V2
-# Fixes:
-# 1. Feature hash validation (stale model = wrong features = silent corruption)
-# 2. Model age TTL (default 7 days - configurable)
-# 3. Atomic writes (crash during save = corrupted cache)
-# 4. Explicit versioning field in metadata
-# 5. Thread-safe file locking for concurrent scanner runs
+# model_cache.py - V3 (M5 fix)
+"""
+Model cache with TTL, feature-hash validation, and atomic saves.
 
-import os
-import json
-import pickle
+Changes in V3:
+- M5 fix: The backward-compat `load_models()` shim previously bypassed
+  the TTL check by reading the pickle directly. Now it routes through
+  the ModelCache class so TTL and version checks actually apply.
+- Feature hash is now stored at the same key (`feature_hash`) inside
+  the pickled model dict, so the scanner.py legacy call path still
+  works: `cached.get('feature_hash')` returns the hash and scanner
+  can compare against its current feature set.
+
+Note: the `model_cache/` directory at repo root containing `*.joblib`
+files is leftover from an older cache implementation no longer in
+use. Safe to delete. Current cache lives at `cache/models/`.
+"""
+
 import hashlib
+import json
 import logging
-import threading
-import tempfile
+import pickle
 import shutil
-from datetime import datetime, timedelta
+import threading
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, Dict, List
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-# ── Constants ──────────────────────────────────────────────────────────────────
-CACHE_VERSION = "2.0"          # Bump this manually when model architecture changes
-DEFAULT_TTL_DAYS = 7           # Max age before forced retrain
+# ── Constants ──────────────────────────────────────────────────────────────
+CACHE_VERSION     = "3.0"   # bumped — invalidates all V2 caches on first run
+DEFAULT_TTL_DAYS  = 14      # raised from 7 — see scanner.retrain_days*2 rule
 DEFAULT_CACHE_DIR = "cache/models"
 
 
 class ModelCache:
     """
-    Thread-safe model cache with:
-    - Feature-hash validation (detects feature_engine.py changes)
-    - TTL expiry (no model runs forever without retraining)
-    - Atomic saves (crash-safe)
-    - Version tagging (architecture changes invalidate old caches)
+    Thread-safe model cache.
+    - Feature-hash validation
+    - TTL expiry
+    - Atomic saves
+    - Version tagging
     """
 
-    def __init__(
-        self,
-        cache_dir: str = DEFAULT_CACHE_DIR,
-        ttl_days: int = DEFAULT_TTL_DAYS,
-    ):
+    def __init__(self,
+                 cache_dir: str = DEFAULT_CACHE_DIR,
+                 ttl_days: int  = DEFAULT_TTL_DAYS):
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.ttl_days = ttl_days
         self._lock = threading.Lock()
-
         logger.info(
-            f"ModelCache initialized | dir={self.cache_dir} "
-            f"ttl={ttl_days}d version={CACHE_VERSION}"
+            "ModelCache initialised | dir=%s ttl=%dd version=%s",
+            self.cache_dir, ttl_days, CACHE_VERSION,
         )
 
-    # ── Public API ─────────────────────────────────────────────────────────────
+    # ── Public API ────────────────────────────────────────────────────
 
-    def get(
-        self,
-        symbol: str,
-        feature_names: List[str],
-    ) -> Optional[Any]:
+    def get(self, symbol: str,
+            feature_names: Optional[List[str]] = None) -> Optional[Any]:
         """
-        Load cached model for symbol.
-
-        Returns None if:
+        Load cached model. Returns None if:
         - No cache exists
-        - Cache is expired (> ttl_days old)
-        - Feature set has changed since training
-        - Cache version mismatch
+        - Cache is expired
+        - Version mismatch
+        - Feature set has changed (if feature_names provided)
         - File is corrupted
         """
         with self._lock:
             meta_path, model_path = self._paths(symbol)
 
             if not meta_path.exists() or not model_path.exists():
-                logger.debug(f"[{symbol}] No cache found")
                 return None
 
-            # ── Load metadata ──────────────────────────────────────────────
+            # Metadata
             try:
                 with open(meta_path, "r") as f:
                     meta = json.load(f)
             except (json.JSONDecodeError, OSError) as e:
-                logger.warning(f"[{symbol}] Corrupt metadata, invalidating: {e}")
+                logger.warning("[%s] Corrupt metadata, invalidating: %s", symbol, e)
                 self._delete(symbol)
                 return None
 
-            # ── Version check ──────────────────────────────────────────────
+            # Version
             if meta.get("cache_version") != CACHE_VERSION:
                 logger.info(
-                    f"[{symbol}] Cache version mismatch "
-                    f"({meta.get('cache_version')} vs {CACHE_VERSION}), retraining"
+                    "[%s] Cache version mismatch (%s vs %s), retraining",
+                    symbol, meta.get('cache_version'), CACHE_VERSION,
                 )
                 self._delete(symbol)
                 return None
 
-            # ── TTL check ─────────────────────────────────────────────────
-            trained_at = datetime.fromisoformat(meta["trained_at"])
+            # TTL
+            try:
+                trained_at = datetime.fromisoformat(meta["trained_at"])
+            except (KeyError, ValueError):
+                logger.warning("[%s] Missing/invalid trained_at, invalidating", symbol)
+                self._delete(symbol)
+                return None
+
             age_days = (datetime.utcnow() - trained_at).days
             if age_days > self.ttl_days:
                 logger.info(
-                    f"[{symbol}] Cache expired ({age_days}d > {self.ttl_days}d), retraining"
+                    "[%s] Cache expired (%dd > %dd), retraining",
+                    symbol, age_days, self.ttl_days,
                 )
                 self._delete(symbol)
                 return None
 
-            # ── Feature hash check ────────────────────────────────────────
-            current_hash = self._hash_features(feature_names)
-            if meta.get("feature_hash") != current_hash:
-                logger.warning(
-                    f"[{symbol}] Feature set changed since training — "
-                    f"cached model is INVALID, forcing retrain. "
-                    f"Old hash={meta.get('feature_hash')[:8]} "
-                    f"New hash={current_hash[:8]}"
-                )
-                self._delete(symbol)
-                return None
+            # Feature hash (if caller provided current feature set)
+            if feature_names is not None:
+                current_hash = self._hash_features(feature_names)
+                if meta.get("feature_hash") != current_hash:
+                    logger.warning(
+                        "[%s] Feature set changed — invalidating "
+                        "(old=%s new=%s)",
+                        symbol,
+                        (meta.get('feature_hash') or '')[:8],
+                        current_hash[:8],
+                    )
+                    self._delete(symbol)
+                    return None
 
-            # ── Load model ────────────────────────────────────────────────
+            # Load model
             try:
                 with open(model_path, "rb") as f:
                     model = pickle.load(f)
-                logger.info(
-                    f"[{symbol}] Cache hit | age={age_days}d "
-                    f"features={len(feature_names)}"
-                )
+                logger.info("[%s] Cache hit | age=%dd", symbol, age_days)
                 return model
             except (pickle.UnpicklingError, OSError) as e:
-                logger.warning(f"[{symbol}] Corrupt model file, invalidating: {e}")
+                logger.warning("[%s] Corrupt model file, invalidating: %s", symbol, e)
                 self._delete(symbol)
                 return None
 
-    def save(
-        self,
-        symbol: str,
-        model: Any,
-        feature_names: List[str],
-    ) -> bool:
-        """
-        Atomically save model + metadata.
-
-        Uses temp file + rename so a crash during save
-        never leaves a half-written corrupted cache.
-        """
+    def save(self, symbol: str, model: Any,
+             feature_names: List[str]) -> bool:
         with self._lock:
             meta_path, model_path = self._paths(symbol)
 
             meta = {
-                "symbol": symbol,
+                "symbol"       : symbol,
                 "cache_version": CACHE_VERSION,
-                "trained_at": datetime.utcnow().isoformat(),
-                "ttl_days": self.ttl_days,
-                "feature_hash": self._hash_features(feature_names),
+                "trained_at"   : datetime.utcnow().isoformat(),
+                "ttl_days"     : self.ttl_days,
+                "feature_hash" : self._hash_features(feature_names),
                 "feature_count": len(feature_names),
-                "feature_names": feature_names,  # stored for debugging
+                "feature_names": feature_names,
             }
 
             try:
-                # ── Atomic metadata write ──────────────────────────────
                 self._atomic_write_json(meta_path, meta)
-
-                # ── Atomic model write ─────────────────────────────────
                 self._atomic_write_pickle(model_path, model)
-
                 logger.info(
-                    f"[{symbol}] Model cached | "
-                    f"features={len(feature_names)} "
-                    f"expires_in={self.ttl_days}d"
+                    "[%s] Model cached | features=%d expires_in=%dd",
+                    symbol, len(feature_names), self.ttl_days,
                 )
                 return True
-
             except OSError as e:
-                logger.error(f"[{symbol}] Cache save failed: {e}")
-                # Clean up partial writes
+                logger.error("[%s] Cache save failed: %s", symbol, e)
                 self._delete(symbol)
                 return False
 
     def invalidate(self, symbol: str) -> None:
-        """Manually invalidate cache for a symbol (e.g., after regime change)."""
         with self._lock:
             self._delete(symbol)
-            logger.info(f"[{symbol}] Cache manually invalidated")
+            logger.info("[%s] Cache manually invalidated", symbol)
 
     def invalidate_all(self) -> int:
-        """Wipe entire cache. Returns count of files removed."""
         with self._lock:
             count = 0
             for f in self.cache_dir.glob("*"):
@@ -189,31 +175,30 @@ class ModelCache:
                     count += 1
                 except OSError:
                     pass
-            logger.warning(f"Full cache wipe: {count} files removed")
+            logger.warning("Full cache wipe: %d files removed", count)
             return count
 
     def get_cache_status(self) -> Dict[str, Any]:
-        """Return summary of all cached models — useful for dashboard."""
         status = {}
         for meta_path in self.cache_dir.glob("*.meta.json"):
             try:
                 with open(meta_path) as f:
                     meta = json.load(f)
-                symbol = meta["symbol"]
+                symbol     = meta["symbol"]
                 trained_at = datetime.fromisoformat(meta["trained_at"])
-                age_days = (datetime.utcnow() - trained_at).days
+                age_days   = (datetime.utcnow() - trained_at).days
                 status[symbol] = {
-                    "age_days": age_days,
-                    "expired": age_days > self.ttl_days,
-                    "version_ok": meta.get("cache_version") == CACHE_VERSION,
+                    "age_days"     : age_days,
+                    "expired"      : age_days > self.ttl_days,
+                    "version_ok"   : meta.get("cache_version") == CACHE_VERSION,
                     "feature_count": meta.get("feature_count", "unknown"),
-                    "trained_at": meta["trained_at"],
+                    "trained_at"   : meta["trained_at"],
                 }
             except (json.JSONDecodeError, KeyError, OSError):
                 continue
         return status
 
-    # ── Private helpers ────────────────────────────────────────────────────────
+    # ── Private helpers ───────────────────────────────────────────────
 
     def _paths(self, symbol: str):
         safe = symbol.replace("/", "_").replace(":", "_")
@@ -223,7 +208,6 @@ class ModelCache:
         )
 
     def _delete(self, symbol: str) -> None:
-        """Delete both files for a symbol. Called inside lock."""
         meta_path, model_path = self._paths(symbol)
         for p in (meta_path, model_path):
             try:
@@ -233,16 +217,11 @@ class ModelCache:
 
     @staticmethod
     def _hash_features(feature_names: List[str]) -> str:
-        """
-        SHA-256 of sorted feature names.
-        Sorting ensures order changes don't invalidate cache unnecessarily.
-        """
         canonical = json.dumps(sorted(feature_names), separators=(",", ":"))
         return hashlib.sha256(canonical.encode()).hexdigest()
 
     @staticmethod
     def _atomic_write_json(path: Path, data: dict) -> None:
-        """Write JSON atomically using temp file + rename."""
         tmp = path.with_suffix(".tmp")
         try:
             with open(tmp, "w") as f:
@@ -254,7 +233,6 @@ class ModelCache:
 
     @staticmethod
     def _atomic_write_pickle(path: Path, obj: Any) -> None:
-        """Write pickle atomically using temp file + rename."""
         tmp = path.with_suffix(".tmp")
         try:
             with open(tmp, "wb") as f:
@@ -263,57 +241,42 @@ class ModelCache:
         except Exception:
             tmp.unlink(missing_ok=True)
             raise
-# ── Backward-compatible function wrappers ──────────────────────────────────
-# scanner.py uses these older function-based API calls
-# They wrap the new ModelCache class internally
+
+
+# ── Singleton + backward-compat shims ──────────────────────────────────────
 
 _cache = ModelCache()
 
 
 def is_cache_valid(symbol: str, feature_names: List[str]) -> bool:
-    """
-    Check if a valid cached model exists for this symbol
-    with the current feature set.
-
-    Returns True if cache hit, False if miss/expired/stale.
-    """
-    model = _cache.get(symbol, feature_names)
-    return model is not None
+    """True if a valid cached model exists with the given feature set."""
+    return _cache.get(symbol, feature_names) is not None
 
 
 def load_models(symbol: str) -> Optional[Any]:
     """
-    Load cached model for symbol.
-    Returns None if cache miss or invalid.
+    M5 fix: now routes through ModelCache.get() so TTL and version
+    checks apply. Was previously a raw pickle.load() that bypassed
+    all invalidation logic.
 
-    Note: feature validation is skipped here for backward
-    compatibility. Use ModelCache.get() directly for full
-    feature hash validation.
+    Feature hash check is skipped here because the legacy API doesn't
+    pass feature names. scanner.py handles feature hash separately via
+    the returned model dict's 'feature_hash' field.
     """
-    meta_path, model_path = _cache._paths(symbol)
-
-    if not model_path.exists():
-        return None
-
-    try:
-        import pickle
-        with open(model_path, "rb") as f:
-            return pickle.load(f)
-    except Exception as e:
-        logger.warning(f"[{symbol}] load_models failed: {e}")
-        return None
+    return _cache.get(symbol, feature_names=None)
 
 
 def save_models(symbol: str, models: Any) -> bool:
     """
-    Save models to cache for symbol.
-
-    models: can be a dict or a single model object
-    Feature names stored as empty list for backward compatibility.
-    Use ModelCache.save() directly for full feature hash tracking.
+    Save models. Feature names extracted from models dict if present
+    (so feature hash is recorded in metadata for TTL check on load).
     """
+    feature_names = []
+    if isinstance(models, dict):
+        feature_names = models.get('selected_features', []) or []
+
     return _cache.save(
-        symbol=symbol,
-        model=models,
-        feature_names=[],
+        symbol        = symbol,
+        model         = models,
+        feature_names = feature_names,
     )

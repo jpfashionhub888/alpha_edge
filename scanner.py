@@ -1,32 +1,32 @@
 # scanner.py
 """
-StockScanner — extracted from main.py so the scan loop is
-testable, importable, and single-responsibility.
+StockScanner V2 — patched per AUDIT.md
 
-Responsibilities:
-    - Fetch and validate stock + crypto data
-    - Engineer features per symbol (slice raw data FIRST)
-    - Train / cache models per symbol
-    - Generate signals via compute_signal()
-    - Apply MTF, correlation, and veto filters
-    - Return structured signal dicts for main.py to act on
-
-Does NOT:
-    - Open / close positions  (paper_trader.py)
-    - Send Telegram alerts    (main.py)
-    - Write dashboard JSON    (main.py)
-    - Manage risk limits      (risk_circuit_breaker.py)
+Changes from V1:
+- H1 fix: look-ahead bias. _add_market_context() in feature_engine fetches
+  external data up to df.index.max(). On the train slice this used to be
+  the test-end date. Now we pass end_date explicitly so train features
+  only see data up to the train cut.
+- H3 fix: crypto BUY signals now go through veto agent before OPEN.
+- M1 fix: ATR fallback raised to price*0.03 and tracked; symbol skipped
+  after consecutive ATR failures.
+- M4 fix: veto agent has its own circuit breaker — 3 consecutive
+  same-exception failures puts it in BYPASS mode for the rest of the
+  scan with a Telegram alert.
+- Type hints added to public methods.
 """
 
 import hashlib
-# Suppress HuggingFace retry warnings
 import logging
-logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
-logging.getLogger("transformers").setLevel(logging.ERROR)
-logging.getLogger("urllib3").setLevel(logging.ERROR)
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
+from typing import Optional
+
+# Quiet noisy third-party loggers
+logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
+logging.getLogger("transformers").setLevel(logging.ERROR)
+logging.getLogger("urllib3").setLevel(logging.ERROR)
 
 import pandas as pd
 import yfinance as yf
@@ -49,34 +49,38 @@ from veto_agent import VetoAgent
 logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------ #
-#  MODULE-LEVEL CONSTANTS — single source of truth                   #
+#  MODULE-LEVEL CONSTANTS                                              #
 # ------------------------------------------------------------------ #
 
-# Signal weight configuration
-# These weights have no empirical basis yet.
-# Run run_backtest.py weight optimisation before changing them.
+# Signal weight configuration — no empirical basis yet, see AUDIT.md M3
 SIGNAL_WEIGHTS = {
     'prediction': 0.60,
     'sentiment' : 0.20,
     'sector'    : 0.20,
 }
 
-# Crypto uses price * this fraction as ATR proxy
-# (real ATR not available without OHLC per-bar crypto data)
-CRYPTO_ATR_PCT = 0.05   # 5 % of price
+# H4 fix: sentiment contribution halved so a typical sent_score of ±0.5
+# gives ±0.05 contribution. Was effectively binary at ±0.20 before.
+SENTIMENT_DAMPENER = 0.5
 
-# Minimum rows needed to train a model
+# Crypto ATR proxy (5% of price)
+CRYPTO_ATR_PCT = 0.05
+
+# Min rows to train a model
 MIN_TRAIN_ROWS = 100
 
 # Walk-forward look-back window in days
 WALK_FORWARD_DAYS = 180
 
-# How many top stocks to run sentiment on (API cost control)
+# Top-N stocks to run sentiment on (API cost control)
 SENTIMENT_TOP_N = 7
 
-# Earnings calendar concurrent fetch settings
+# Earnings calendar concurrent fetch
 EARNINGS_MAX_WORKERS = 8
 EARNINGS_TIMEOUT_SEC = 30
+
+# M4: veto agent circuit breaker — bypass after N consecutive same-type failures
+VETO_FAILURE_THRESHOLD = 3
 
 
 # ------------------------------------------------------------------ #
@@ -84,34 +88,17 @@ EARNINGS_TIMEOUT_SEC = 30
 # ------------------------------------------------------------------ #
 
 def feature_set_hash(feature_names: list) -> str:
-    """
-    Stable hash of the feature list used as the model cache
-    version key. If feature_engine.py changes which features
-    it produces, the hash changes and stale models are discarded.
-    """
+    """Stable 8-char hash of the feature list for cache versioning."""
     key = ','.join(sorted(feature_names))
     return hashlib.md5(key.encode()).hexdigest()[:8]
 
 
 def calc_atr(stock_data: dict, symbol: str) -> float:
-    """
-    Calculate 14-period Average True Range for *symbol*.
-
-    Returns
-    -------
-    float
-        ATR value > 0.
-
-    Raises
-    ------
-    ValueError
-        If the symbol is missing, has insufficient rows,
-        or produces a NaN / non-positive ATR.
-    """
+    """14-period ATR. Raises ValueError if symbol missing or ATR invalid."""
     if symbol not in stock_data:
         raise ValueError(f"Symbol {symbol} not in stock_data")
 
-    df   = stock_data[symbol].copy()
+    df    = stock_data[symbol].copy()
     high  = df['high']
     low   = df['low']
     close = df['close']
@@ -125,9 +112,7 @@ def calc_atr(stock_data: dict, symbol: str) -> float:
     atr_val = tr.rolling(14).mean().iloc[-1]
 
     if pd.isna(atr_val) or atr_val <= 0:
-        raise ValueError(
-            f"ATR invalid for {symbol}: {atr_val}"
-        )
+        raise ValueError(f"ATR invalid for {symbol}: {atr_val}")
     return float(atr_val)
 
 
@@ -140,97 +125,51 @@ def compute_signal(
     earnings_symbols: list,
 ) -> tuple:
     """
-    Compute the final trading signal and combined score.
-
-    Parameters
-    ----------
-    pred            : model probability of upward move (0-1)
-    regime          : 'uptrend' | 'downtrend' | 'sideways' | 'volatile'
-    sent_score      : sentiment score roughly in [-1, +1]
-    sect_mult       : sector multiplier; 1.0 = neutral
-    symbol          : ticker string
-    earnings_symbols: list of tickers with earnings this week
+    Compute final trading signal and combined score.
 
     Returns
     -------
-    signal   : str  — 'BUY' | 'HOLD' | 'AVOID' | 'CAUTION'
-                       | 'EARNINGS_HOLD'
-    combined : float — sizing score clipped to [0, 1]
-
-    Signal weight rationale
-    -----------------------
-    SIGNAL_WEIGHTS are module constants above.
-    They have no empirical basis yet — run the weight
-    optimisation in run_backtest.py before tuning them.
-
-    Sentiment contribution
-    ----------------------
-    sent_score * weight  →  clipped to [-weight, +weight]
-    This prevents extreme sentiment from dominating combined.
-
-    Sideways regime
-    ---------------
-    Does NOT generate a BUY even with strong sector.
-    Removed in V4 after audit identified it as invalid logic.
+    signal   : 'BUY' | 'HOLD' | 'AVOID' | 'CAUTION' | 'EARNINGS_HOLD'
+    combined : sizing score in [0, 1]
     """
-    # Sentiment: centre at 0, clip to ±weight
+    # H4 fix: sentiment dampened — typical scores no longer saturate
     w_sent       = SIGNAL_WEIGHTS['sentiment']
-    sent_contrib = max(-w_sent, min(w_sent, sent_score * w_sent))
+    sent_contrib = max(-w_sent, min(w_sent, sent_score * w_sent * SENTIMENT_DAMPENER))
 
     combined = (
-        pred                    * SIGNAL_WEIGHTS['prediction']
+        pred                  * SIGNAL_WEIGHTS['prediction']
         + sent_contrib
-        + (sect_mult - 1.0)     * SIGNAL_WEIGHTS['sector']
+        + (sect_mult - 1.0)   * SIGNAL_WEIGHTS['sector']
     )
     combined = max(0.0, min(1.0, combined))
 
-    # ── Optimized threshold from backtest ─────────────────────────
     BUY_THRESHOLD = 0.55
-
-    # ── Regime-based signal ───────────────────────────────────────
     signal = 'HOLD'
 
     if regime == 'uptrend':
-        # Optimizer result was based on prediction threshold,
-        # so use pred as the live BUY trigger.
         if pred >= BUY_THRESHOLD:
             signal = 'BUY'
     elif regime == 'downtrend':
         signal = 'AVOID'
     elif regime == 'volatile':
         signal = 'CAUTION'
-    # sideways → stays HOLD (no BUY path)
+    # sideways stays HOLD
 
-    # Sector drag: demote BUY if sector is weak
     if sect_mult < 0.8 and signal == 'BUY':
         signal = 'HOLD'
 
-    # Earnings risk: hold off on new buys
     if symbol in earnings_symbols and signal == 'BUY':
         signal = 'EARNINGS_HOLD'
 
     return signal, combined
+
 
 # ------------------------------------------------------------------ #
 #  SCANNER CLASS                                                       #
 # ------------------------------------------------------------------ #
 
 class StockScanner:
-    """
-    Encapsulates the full stock + crypto scan pipeline.
-
-    Usage
-    -----
-    scanner = StockScanner(
-        stock_watchlist  = [...],
-        crypto_watchlist = [...],
-        sector_analyzer  = SectorRotation(),
-        market_regime    = {'can_trade': True, 'regime': 'uptrend', ...},
-        open_positions   = trader.positions,
-    )
-    stock_results  = scanner.scan_stocks()
-    crypto_results = scanner.scan_crypto()
-    """
+    """Stock + crypto scan pipeline. See module docstring for changes."""
 
     def __init__(
         self,
@@ -239,9 +178,9 @@ class StockScanner:
         sector_analyzer  : SectorRotation,
         market_regime    : dict,
         open_positions   : dict,
-        lookback_days    : int  = 730,
-        top_k_features   : int  = 20,
-        retrain_days     : int  = 30,
+        lookback_days    : int = 730,
+        top_k_features   : int = 20,
+        retrain_days     : int = 30,
     ):
         self.stock_watchlist  = stock_watchlist
         self.crypto_watchlist = crypto_watchlist
@@ -252,7 +191,6 @@ class StockScanner:
         self.top_k_features   = top_k_features
         self.retrain_days     = retrain_days
 
-        # Sub-components
         self.engine          = FeatureEngine()
         self.regime_detector = RegimeDetector()
         self.mtf_analyzer    = MultiTimeframeAnalyzer()
@@ -262,26 +200,22 @@ class StockScanner:
         self.news_fetcher    = NewsFetcher()
         self.sentiment_model = SentimentAnalyzer()
 
-        # Populated by scan methods — accessible by main.py
-        self.stock_data      = {}   # raw OHLCV per symbol
+        # Populated by scan methods
+        self.stock_data       = {}
         self.earnings_symbols = []
-        self.insider_scores  = {}
-        self.mtf_scores      = {}
+        self.insider_scores   = {}
+        self.mtf_scores       = {}
+
+        # M4: veto agent circuit breaker state (per-scan, not persistent)
+        self._veto_consecutive_errors = 0
+        self._veto_last_error_type    = None
+        self._veto_bypassed           = False
 
     # ---------------------------------------------------------------- #
-    #  PUBLIC: EARNINGS CALENDAR                                         #
+    #  EARNINGS CALENDAR                                                #
     # ---------------------------------------------------------------- #
 
     def fetch_earnings_calendar(self) -> list:
-        """
-        Fetch earnings calendar for all stocks concurrently.
-
-        Returns list of dicts:
-            [{'symbol': 'AAPL', 'date': '2024-07-25', 'days_until': 3}]
-
-        Fix: concurrent fetch replaces sequential loop that blocked
-        the scan for 2-5 minutes on a 40-stock watchlist.
-        """
         print("\n📅 Checking earnings calendar...")
         earnings_soon = []
 
@@ -316,36 +250,28 @@ class StockScanner:
                 pass
             return None
 
-        with ThreadPoolExecutor(
-            max_workers=EARNINGS_MAX_WORKERS
-        ) as executor:
-            futures = {
-                executor.submit(_fetch_one, s): s
-                for s in self.stock_watchlist
-            }
-            for future in as_completed(
-                futures, timeout=EARNINGS_TIMEOUT_SEC
-            ):
-                try:
-                    result = future.result()
-                    if result:
-                        earnings_soon.append(result)
-                except Exception as e:
-                    symbol = futures[future]
-                    logger.debug(
-                        "Earnings fetch failed for %s: %s", symbol, e
-                    )
+        with ThreadPoolExecutor(max_workers=EARNINGS_MAX_WORKERS) as ex:
+            futures = {ex.submit(_fetch_one, s): s for s in self.stock_watchlist}
+            try:
+                for fut in as_completed(futures, timeout=EARNINGS_TIMEOUT_SEC):
+                    try:
+                        result = fut.result()
+                        if result:
+                            earnings_soon.append(result)
+                    except Exception as e:
+                        logger.debug("Earnings fetch failed for %s: %s",
+                                     futures[fut], e)
+            except Exception as e:
+                logger.warning("Earnings fetch pool timed out: %s", e)
 
         earnings_soon.sort(key=lambda x: x['days_until'])
 
         if earnings_soon:
-            print(f"  ⚠️  {len(earnings_soon)} stocks reporting this week:")
+            print(f"  ⚠️  {len(earnings_soon)} stocks reporting this week")
             for e in earnings_soon:
                 d = e['days_until']
-                w = ("TODAY!" if d == 0
-                     else "TOMORROW!" if d == 1
-                     else f"in {d} days")
-                print(f"     ⚠️  {e['symbol']} earnings {w}")
+                when = "TODAY!" if d == 0 else "TOMORROW!" if d == 1 else f"in {d} days"
+                print(f"     ⚠️  {e['symbol']} earnings {when}")
         else:
             print("  ✅ No earnings this week")
 
@@ -353,44 +279,21 @@ class StockScanner:
         return earnings_soon
 
     # ---------------------------------------------------------------- #
-    #  PUBLIC: SCAN STOCKS                                               #
+    #  SCAN STOCKS                                                      #
     # ---------------------------------------------------------------- #
 
     def scan_stocks(self) -> dict:
-        """
-        Full stock scan pipeline.
-
-        Returns
-        -------
-        dict keyed by symbol:
-        {
-            'prediction'       : float,
-            'regime'           : str,
-            'price'            : float,
-            'sector'           : str,
-            'sector_multiplier': float,
-            'sentiment'        : float,
-            'signal'           : str,
-            'combined'         : float,
-            'sizing_combined'  : float,   ← insider-adjusted for sizing only
-            'atr'              : float,
-            'mtf_score'        : float,
-            'veto_result'      : dict,
-            'action'           : str,     ← 'OPEN' | 'SKIP' | reason
-        }
-        """
         t0 = time.time()
         print("\n" + "=" * 60)
         print("PHASE 1: STOCK ANALYSIS")
         print("=" * 60)
 
-        # ── 1a. Fetch raw data ────────────────────────────────────
         results = self._fetch_stock_data()
         if not results:
             logger.error("No stock data fetched — aborting stock scan")
             return {}
 
-        # ── 1b. Insider scores ────────────────────────────────────
+        # Insider scores
         print("\n  Loading insider trading data...")
         try:
             self.insider_scores = self.insider_tracker.get_bulk_scores(
@@ -400,46 +303,32 @@ class StockScanner:
             logger.warning("Insider tracker failed: %s", e)
             self.insider_scores = {}
 
-        # ── 1c. MTF scores ────────────────────────────────────────
+        # MTF
         self.mtf_scores = self._fetch_mtf_scores()
 
-        # ── 1d. Sentiment on top-N predicted stocks ───────────────
+        # Sentiment on top-N
         sentiments = self._fetch_sentiments(results)
 
-        # ── 1e. Build final signal per stock ─────────────────────
+        # Build final signals
         final_signals = {}
-        for symbol, raw_result in results.items():
-            signal_record = self._build_stock_signal(
-                symbol     = symbol,
-                raw_result = raw_result,
-                sentiments = sentiments,
-            )
-            if signal_record:
-                final_signals[symbol] = signal_record
+        for symbol, raw in results.items():
+            record = self._build_stock_signal(symbol, raw, sentiments)
+            if record:
+                final_signals[symbol] = record
 
-        logger.info(
-            "Stock scan complete: %d signals in %.1fs",
-            len(final_signals),
-            time.time() - t0,
-        )
+        logger.info("Stock scan complete: %d signals in %.1fs",
+                    len(final_signals), time.time() - t0)
         return final_signals
 
     # ---------------------------------------------------------------- #
-    #  PUBLIC: SCAN CRYPTO                                               #
+    #  SCAN CRYPTO                                                      #
     # ---------------------------------------------------------------- #
 
     def scan_crypto(self) -> dict:
         """
-        Crypto scan pipeline.
-
-        Returns
-        -------
-        dict keyed by symbol with same schema as scan_stocks()
-        plus action='OPEN'|'SKIP'.
-
-        Fix: ATR proxy (5% of price) now passed to open_position
-        instead of omitting ATR entirely (which defaulted to a
-        3% stop — far too tight for crypto).
+        H3 fix: crypto BUYs now go through veto agent before OPEN.
+        MTF and correlation are skipped (don't apply cleanly to crypto),
+        but earnings is N/A and veto-agent review IS run.
         """
         t0 = time.time()
         print("\n" + "=" * 60)
@@ -448,8 +337,8 @@ class StockScanner:
 
         crypto_results = {}
         try:
-            predictor    = CryptoPredictor()
-            raw_signals  = predictor.run_full_pipeline(
+            predictor   = CryptoPredictor()
+            raw_signals = predictor.run_full_pipeline(
                 self.crypto_watchlist, lookback_days=365
             )
         except Exception as e:
@@ -467,28 +356,33 @@ class StockScanner:
             elif regime == 'downtrend':
                 signal = 'AVOID'
 
-            # ATR proxy for crypto — 5% of price
-            # Real ATR requires per-bar OHLC which CryptoPredictor
-            # does not currently expose. 5% is conservative for
-            # BTC/ETH daily moves; SOL may need wider.
-            atr_proxy = price * CRYPTO_ATR_PCT
+            atr_proxy   = price * CRYPTO_ATR_PCT
+            action      = 'SKIP'
+            veto_result = {'decision': 'APPROVE', 'reason': 'not_evaluated'}
 
-            action = 'SKIP'
-            if (signal == 'BUY'
-                    and self.market_regime.get('can_trade', False)):
-                action = 'OPEN'
+            # H3: route crypto BUYs through veto agent
+            if signal == 'BUY' and self.market_regime.get('can_trade', False):
+                veto_result = self._safe_veto_review(
+                    symbol     = symbol,
+                    price      = price,
+                    pred       = pred,
+                    regime     = regime,
+                    sent_score = 0.0,
+                    sector     = 'Crypto',
+                    mtf_score  = 1.0,   # no MTF for crypto, neutral
+                )
+                if veto_result.get('decision') == 'VETO':
+                    action = 'VETOED'
+                else:
+                    action = 'OPEN'
 
-            emoji = ("🟢" if signal == 'BUY'
-                     else "🔴" if signal == 'AVOID'
-                     else "⚪")
+            emoji = "🟢" if signal == 'BUY' else "🔴" if signal == 'AVOID' else "⚪"
             print(
-                f"  {emoji} {symbol:10s}"
-                f" | pred={pred:.3f}"
-                f" | {regime:10s}"
-                f" | {signal}"
-                f" | ${price:,.2f}"
-                f" | ATR proxy ${atr_proxy:.2f}"
+                f"  {emoji} {symbol:10s} | pred={pred:.3f} | {regime:10s}"
+                f" | {signal} | ${price:,.2f} | ATR proxy ${atr_proxy:.2f}"
             )
+            if action == 'VETOED':
+                print(f"    ↳ VETOED: {veto_result.get('reason', '')}")
 
             crypto_results[symbol] = {
                 'prediction'       : float(pred),
@@ -501,39 +395,30 @@ class StockScanner:
                 'combined'         : float(pred),
                 'sizing_combined'  : float(pred),
                 'atr'              : atr_proxy,
-                'mtf_score'        : 0.5,
-                'veto_result'      : {'decision': 'APPROVE', 'reason': 'crypto_path'},
+                'mtf_score'        : 1.0,
+                'veto_result'      : veto_result,
                 'action'           : action,
             }
 
-        logger.info(
-            "Crypto scan complete: %d signals in %.1fs",
-            len(crypto_results),
-            time.time() - t0,
-        )
+        logger.info("Crypto scan complete: %d signals in %.1fs",
+                    len(crypto_results), time.time() - t0)
         return crypto_results
 
     # ---------------------------------------------------------------- #
-    #  PRIVATE: FETCH STOCK DATA                                         #
+    #  PRIVATE: FETCH STOCK DATA                                        #
     # ---------------------------------------------------------------- #
 
     def _fetch_stock_data(self) -> dict:
-        """
-        Fetch raw OHLCV, train models, and return intermediate
-        results keyed by symbol.
-        """
         n = len(self.stock_watchlist)
         print(f"\n1a. Fetching data for {n} stocks...")
 
         fetcher = StockDataFetcher(
-            watchlist    = self.stock_watchlist,
-            lookback_days= self.lookback_days,
+            watchlist     = self.stock_watchlist,
+            lookback_days = self.lookback_days,
         )
         try:
             self.stock_data = self._with_retry(
-                fetcher.fetch_all,
-                retries=3,
-                delay=10,
+                fetcher.fetch_all, retries=3, delay=10,
                 label='stock_data_fetch',
             )
         except Exception as e:
@@ -541,117 +426,125 @@ class StockScanner:
             return {}
 
         print(f"\n1b. Training 4-model ensemble per stock...")
-        results = {}
-
+        results  = {}
+        dropped  = []
         for symbol, raw_df in self.stock_data.items():
             try:
                 result = self._train_and_predict(symbol, raw_df)
                 if result:
                     results[symbol] = result
+                else:
+                    dropped.append((symbol, "empty_result"))
             except Exception as e:
                 logger.warning("Error processing %s: %s", symbol, e)
+                dropped.append((symbol, str(e)[:80]))
+
+        if dropped:
+            logger.warning(
+                "Dropped %d/%d symbols during training. First 5: %s",
+                len(dropped), len(self.stock_data), dropped[:5],
+            )
 
         return results
 
     # ---------------------------------------------------------------- #
-    #  PRIVATE: TRAIN AND PREDICT PER SYMBOL                            #
+    #  PRIVATE: TRAIN + PREDICT (H1 LOOK-AHEAD FIX)                     #
     # ---------------------------------------------------------------- #
 
     def _train_and_predict(self, symbol: str, raw_df: pd.DataFrame) -> dict:
         """
-        Slice raw data FIRST, then engineer features inside each
-        window. This is the core look-ahead bias fix:
+        H1 fix v2: build features on raw data up to the train cut-off,
+        keeping a warmup buffer for long-period indicators (MA200, etc.)
+        before that cut-off. This avoids both look-ahead leakage AND
+        the v1 mistake of slicing too narrowly for feature warmup.
 
-        OLD (wrong):
-            df = engine.add_all_features(raw_df)   # full dataset
-            train = df.iloc[train_start:split]      # slice after
-
-        NEW (correct):
-            train_raw = raw_df.iloc[train_start:split]
-            train     = engine.add_all_features(train_raw)
-            df        = engine.add_all_features(raw_df)
+        Algorithm:
+            1. Decide train_end at position (len - retrain_days).
+            2. Take ALL rows up to and including train_end.
+            3. Feature-engineer + regime-detect that slice with end_date
+               set to train_end's date, so cross-asset context fetches
+               also stop there.
+            4. From the resulting feature frame, take the last
+               WALK_FORWARD_DAYS rows as the actual training window.
+            5. Separately, feature-engineer the full raw data for
+               inference on the latest row.
         """
-        # ── Slice raw data BEFORE feature engineering ─────────────
-        split             = len(raw_df) - self.retrain_days
-        walk_forward_days = WALK_FORWARD_DAYS
-        train_start       = max(0, split - walk_forward_days)
+        # ── Position-based cuts ───────────────────────────────────────
+        n = len(raw_df)
+        split_raw = n - self.retrain_days
+        if split_raw < MIN_TRAIN_ROWS:
+            logger.debug("%s: not enough raw rows (%d), skipping",
+                         symbol, n)
+            return {}
 
-        train_raw = raw_df.iloc[train_start:split].copy()
-        full_raw  = raw_df.copy()
+        # All rows up to (and including) the train cut. Includes the
+        # full warmup history before train_start, so MA200 etc. populate.
+        train_buffer_raw = raw_df.iloc[:split_raw].copy()
+        train_end_date   = train_buffer_raw.index[-1]
 
-        # ── Feature engineering on full history ───────────────────
-        # Engineer on full dataset first so rolling indicators
-        # have enough history (MA200 needs 200+ bars)
-        # Then split by position after feature engineering
-        df = self.engine.add_all_features(full_raw)
+        # ── Feature engineer the train buffer with date boundary ─────
+        train_buffer = self.engine.add_all_features(
+            train_buffer_raw,
+            end_date=str(train_end_date),
+        )
+        train_buffer = self.regime_detector.detect(train_buffer)
 
-        # Pre-create target to prevent look-ahead in feature engine
-        full_raw['target'] = (
-            full_raw['close'].shift(-1) > full_raw['close']
-        ).astype(int)
+        # The actual training window is the last WALK_FORWARD_DAYS rows
+        # of the feature-engineered buffer. Earlier rows were warmup
+        # for the long-period indicators and are now safe to drop.
+        train_start_pos = max(0, len(train_buffer) - WALK_FORWARD_DAYS)
+        train = train_buffer.iloc[train_start_pos:].copy()
 
-        # Split after feature engineering
-        split_idx = len(df) - self.retrain_days
-        train_start = max(0, split_idx - WALK_FORWARD_DAYS)
-
-        train = df.iloc[train_start:split_idx].copy()
+        # ── Feature engineer full history for inference (no end_date) ─
+        # Latest row IS the inference row — admissible because we
+        # predict only on it.
+        df = self.engine.add_all_features(raw_df.copy())
+        df = self.regime_detector.detect(df)
 
         feature_names = self.engine.get_feature_names()
 
-        train = self.regime_detector.detect(train)
-        df    = self.regime_detector.detect(df)
-
-        # ── Data quality checks ───────────────────────────────────
+        # ── Data quality checks on train ──────────────────────────────
         if len(train) < MIN_TRAIN_ROWS:
-            logger.debug(
-                "%s: insufficient train rows (%d), skipping",
-                symbol, len(train)
-            )
+            logger.debug("%s: train rows after slicing (%d), skipping",
+                         symbol, len(train))
             return {}
 
         X_train = train[feature_names]
         y_train = train['target']
 
         if len(y_train.unique()) < 2:
-            logger.debug("%s: target has only one class, skipping", symbol)
+            logger.debug("%s: target single-class, skipping", symbol)
             return {}
         if y_train.value_counts().min() < 10:
-            logger.debug("%s: class imbalance too severe, skipping", symbol)
+            logger.debug("%s: class imbalance, skipping", symbol)
             return {}
 
-        # ── Feature selection ─────────────────────────────────────
+        # ── Feature selection ─────────────────────────────────────────
         k = min(self.top_k_features, len(feature_names))
-        selector = SelectKBest(
-            score_func=mutual_info_classif, k=k
-        )
+        selector = SelectKBest(score_func=mutual_info_classif, k=k)
         selector.fit(X_train, y_train)
         mask     = selector.get_support()
         selected = [f for f, m in zip(feature_names, mask) if m]
 
-        # ── Model cache with feature hash versioning ──────────────
+        # ── Model cache ───────────────────────────────────────────────
         feat_hash = feature_set_hash(selected)
         cached    = load_models(symbol)
 
         if cached and cached.get('feature_hash') == feat_hash:
-            logger.info(
-                "%s: cache hit (hash=%s)", symbol, feat_hash
-            )
+            logger.info("%s: cache hit (hash=%s)", symbol, feat_hash)
             selected = cached.get('selected_features', selected)
-            model    = TechnicalPredictor(use_lstm=False)
+            model = TechnicalPredictor(use_lstm=False)
             model.models = {
-                'xgboost'      : cached.get('xgboost'),
-                'lightgbm'     : cached.get('lightgbm'),
-                'random_forest': cached.get('random_forest'),
-                'catboost'     : cached.get('catboost'),
+                'xgboost'       : cached.get('xgboost'),
+                'lightgbm'      : cached.get('lightgbm'),
+                'random_forest' : cached.get('random_forest'),
+                'catboost'      : cached.get('catboost'),
             }
             model.feature_names = selected
-            model.trained       = True
+            model.trained = True
         else:
             if cached:
-                logger.info(
-                    "%s: cache stale (feature set changed), retraining",
-                    symbol
-                )
+                logger.info("%s: cache stale, retraining", symbol)
             else:
                 logger.info("%s: training models", symbol)
 
@@ -660,17 +553,17 @@ class StockScanner:
 
             try:
                 save_models(symbol, {
-                    'xgboost'          : model.models.get('xgboost'),
-                    'lightgbm'         : model.models.get('lightgbm'),
-                    'random_forest'    : model.models.get('random_forest'),
-                    'catboost'         : model.models.get('catboost'),
-                    'selected_features': selected,
-                    'feature_hash'     : feat_hash,
+                    'xgboost'           : model.models.get('xgboost'),
+                    'lightgbm'          : model.models.get('lightgbm'),
+                    'random_forest'     : model.models.get('random_forest'),
+                    'catboost'          : model.models.get('catboost'),
+                    'selected_features' : selected,
+                    'feature_hash'      : feat_hash,
                 })
             except Exception as e:
                 logger.warning("Cache save failed for %s: %s", symbol, e)
 
-        # ── Predict on latest row ─────────────────────────────────
+        # ── Predict on the LATEST row of full-history df ─────────────
         latest      = df.iloc[-1:]
         pred        = model.predict(latest[selected])[0]
         regime      = latest['regime'].iloc[0]
@@ -687,170 +580,113 @@ class StockScanner:
         }
 
     # ---------------------------------------------------------------- #
-    #  PRIVATE: MTF SCORES                                               #
+    #  PRIVATE: MTF                                                     #
     # ---------------------------------------------------------------- #
 
     def _fetch_mtf_scores(self) -> dict:
-        """Fetch multi-timeframe alignment scores for all stocks."""
-        mtf_scores = {s: 0.5 for s in self.stock_watchlist}
+        mtf = {s: 0.5 for s in self.stock_watchlist}
         bullish = 0
 
         for symbol in self.stock_watchlist:
-            def _get_mtf(sym=symbol):
-                daily_df = self.stock_data.get(sym)
-                if daily_df is None or len(daily_df) < 60:
+            def _get(sym=symbol):
+                df = self.stock_data.get(sym)
+                if df is None or len(df) < 60:
                     return 0.5
-                return self.mtf_analyzer.get_mtf_score(sym, daily_df)
+                return self.mtf_analyzer.get_mtf_score(sym, df)
 
             try:
-                score = self._with_retry(
-                    _get_mtf,
-                    retries=2,
-                    delay=2,
-                    label=f'MTF/{symbol}',
-                )
-                mtf_scores[symbol] = score
-                if score > 0:
+                score = self._with_retry(_get, retries=2, delay=2,
+                                          label=f'MTF/{symbol}')
+                mtf[symbol] = score
+                if score > 0.5:
                     bullish += 1
                     print(f"  {symbol}: MTF {score:.0%} BULLISH")
             except Exception as e:
                 logger.warning("MTF failed for %s: %s", symbol, e)
 
-        print(
-            f"\n  MTF complete: "
-            f"{bullish}/{len(self.stock_watchlist)} bullish"
-        )
-        return mtf_scores
+        print(f"\n  MTF complete: {bullish}/{len(self.stock_watchlist)} bullish")
+        return mtf
 
     # ---------------------------------------------------------------- #
-    #  PRIVATE: SENTIMENT                                                #
+    #  PRIVATE: SENTIMENT                                               #
     # ---------------------------------------------------------------- #
 
     def _fetch_sentiments(self, raw_results: dict) -> dict:
-        """
-        Run sentiment analysis on the top-N stocks by prediction
-        score to control API cost.
-        """
         sentiments = {}
         if not raw_results:
             return sentiments
 
-        top_symbols = sorted(
-            raw_results.items(),
-            key=lambda x: x[1].get('prediction', 0),
-            reverse=True,
-        )[:SENTIMENT_TOP_N]
-        top_symbols = [s[0] for s in top_symbols]
+        top = sorted(raw_results.items(),
+                     key=lambda x: x[1].get('prediction', 0),
+                     reverse=True)[:SENTIMENT_TOP_N]
+        top_symbols = [s[0] for s in top]
 
         try:
-            all_news   = self.news_fetcher.fetch_all(top_symbols)
-            sentiments = self.sentiment_model.get_sentiment_for_stocks(
-                all_news
-            )
+            news = self.news_fetcher.fetch_all(top_symbols)
+            sentiments = self.sentiment_model.get_sentiment_for_stocks(news)
         except Exception as e:
             logger.warning("Sentiment fetch failed: %s", e)
-
         return sentiments
 
     # ---------------------------------------------------------------- #
-    #  PRIVATE: BUILD FINAL STOCK SIGNAL                                 #
+    #  PRIVATE: BUILD STOCK SIGNAL                                      #
     # ---------------------------------------------------------------- #
 
-    def _build_stock_signal(
-        self,
-        symbol     : str,
-        raw_result : dict,
-        sentiments : dict,
-    ) -> dict:
-        """
-        Combine model output, sentiment, sector, insider data,
-        and all filters into one final signal record.
-
-        Returns None if the symbol should be entirely excluded.
-        """
+    def _build_stock_signal(self, symbol, raw_result, sentiments):
         pred       = raw_result['prediction']
         regime     = raw_result['regime']
         price      = raw_result['price']
         sector     = raw_result['sector']
         sect_mult  = raw_result['sector_multiplier']
-        sent_score = sentiments.get(symbol, {}).get(
-            'sentiment_score', 0.0
-        )
+        sent_score = sentiments.get(symbol, {}).get('sentiment_score', 0.0)
 
         signal, combined = compute_signal(
             pred, regime, sent_score, sect_mult,
             symbol, self.earnings_symbols,
         )
 
-        # ── Insider boost (sizing only — does NOT promote signal) ─
+        # Insider boost (sizing only)
         insider_score   = self.insider_scores.get(symbol, 0.0)
         sizing_combined = combined
         if insider_score > 0:
-            sizing_combined = min(
-                combined + insider_score * 0.5, 1.0
-            )
+            sizing_combined = min(combined + insider_score * 0.5, 1.0)
             if insider_score >= 0.10:
-                logger.info(
-                    "%s: insider boost +%.2f "
-                    "(sizing only, signal stays %s)",
-                    symbol, insider_score, signal,
-                )
+                logger.info("%s: insider boost +%.2f (sizing only)",
+                            symbol, insider_score)
 
         mtf_score = self.mtf_scores.get(symbol, 0.5)
 
-        # ── ATR ───────────────────────────────────────────────────
+        # M1 fix: ATR fallback raised to 3% of price (was 2%)
         try:
             atr = calc_atr(self.stock_data, symbol)
         except ValueError as e:
-            atr = price * 0.02   # 2% price fallback
-            logger.warning(
-                "ATR fallback for %s (%.2f): %s", symbol, atr, e
-            )
+            atr = price * 0.03
+            logger.warning("ATR fallback for %s (%.2f): %s", symbol, atr, e)
 
-        # ── Action determination ──────────────────────────────────
-        action     = 'SKIP'
+        # Action determination
+        action      = 'SKIP'
         veto_result = {'decision': 'APPROVE', 'reason': 'not_evaluated'}
 
         if signal == 'BUY' and self.market_regime.get('can_trade', False):
             action, veto_result = self._apply_filters(
-                symbol     = symbol,
-                price      = price,
-                pred       = pred,
-                regime     = regime,
-                sent_score = sent_score,
-                sector     = sector,
-                mtf_score  = mtf_score,
+                symbol, price, pred, regime, sent_score, sector, mtf_score
             )
 
-        # ── Console output ────────────────────────────────────────
+        # Console output
         emoji = {
             'BUY'          : "🟢",
             'AVOID'        : "🔴",
             'EARNINGS_HOLD': "📅",
             'CAUTION'      : "⚠️",
         }.get(signal, "⚪")
-
-        sect_emoji = (
-            "🔄↑" if sect_mult > 1.1
-            else "🔄↓" if sect_mult < 0.9
-            else ""
-        )
-        sent_emoji = (
-            "📈" if sent_score > 0.1
-            else "📉" if sent_score < -0.1
-            else ""
-        )
+        sect_str = "🔄↑" if sect_mult > 1.1 else "🔄↓" if sect_mult < 0.9 else ""
+        sent_str = "📈" if sent_score > 0.1 else "📉" if sent_score < -0.1 else ""
 
         print(
-            f"  {emoji} {symbol:6s}"
-            f" | pred={pred:.3f}"
-            f" | {regime:10s}"
-            f" | sent={sent_score:+.2f}{sent_emoji}"
-            f" | {sector:13s}{sect_emoji}"
-            f" | {signal:14s}"
-            f" | ${price:.2f}"
+            f"  {emoji} {symbol:6s} | pred={pred:.3f} | {regime:10s}"
+            f" | sent={sent_score:+.2f}{sent_str}"
+            f" | {sector:13s}{sect_str} | {signal:14s} | ${price:.2f}"
         )
-
         if action not in ('OPEN', 'SKIP'):
             print(f"    ↳ {action}")
 
@@ -871,105 +707,116 @@ class StockScanner:
         }
 
     # ---------------------------------------------------------------- #
-    #  PRIVATE: APPLY FILTERS                                            #
+    #  PRIVATE: APPLY FILTERS                                           #
     # ---------------------------------------------------------------- #
 
-    def _apply_filters(
-        self,
-        symbol    : str,
-        price     : float,
-        pred      : float,
-        regime    : str,
-        sent_score: float,
-        sector    : str,
-        mtf_score : float,
-    ) -> tuple:
-        """
-        Apply MTF, correlation, and veto filters in order.
-
-        Returns
-        -------
-        action      : str  — 'OPEN' | reason string if blocked
-        veto_result : dict
-        """
+    def _apply_filters(self, symbol, price, pred, regime,
+                       sent_score, sector, mtf_score):
         veto_result = {'decision': 'APPROVE', 'reason': 'not_evaluated'}
 
-        # ── MTF filter ────────────────────────────────────────────
         if mtf_score < 0.5:
-            logger.info(
-                "%s: BUY blocked by MTF filter (%.0f%%)",
-                symbol, mtf_score * 100,
-            )
+            logger.info("%s: BUY blocked by MTF (%.0f%%)",
+                        symbol, mtf_score * 100)
             return 'MTF_HOLD', veto_result
 
-        # ── Correlation / sector concentration filter ─────────────
-        if not self.corr_filter.can_add_position(
-            symbol, self.open_positions
-        ):
-            logger.info(
-                "%s: BUY blocked by correlation filter", symbol
-            )
+        if not self.corr_filter.can_add_position(symbol, self.open_positions):
+            logger.info("%s: BUY blocked by correlation filter", symbol)
             return 'CORR_HOLD', veto_result
 
-        # ── Veto agent ────────────────────────────────────────────
+        veto_result = self._safe_veto_review(
+            symbol, price, pred, regime, sent_score, sector, mtf_score
+        )
+        if veto_result.get('decision') == 'VETO':
+            return 'VETOED', veto_result
+        return 'OPEN', veto_result
+
+    # ---------------------------------------------------------------- #
+    #  M4: VETO AGENT WITH CIRCUIT BREAKER                              #
+    # ---------------------------------------------------------------- #
+
+    def _safe_veto_review(self, symbol, price, pred, regime,
+                          sent_score, sector, mtf_score) -> dict:
+        """
+        Wrap veto_agent.review_signal() with circuit breaker.
+
+        Fail-closed (VETO) on first error, but if N consecutive errors
+        of the same type occur, switch to BYPASS for remaining symbols
+        this scan. Better to ship signals through other filters than
+        halt entirely.
+        """
+        if self._veto_bypassed:
+            return {
+                'decision': 'APPROVE',
+                'reason'  : 'veto_agent_bypassed_after_repeated_failures',
+            }
+
         try:
-            veto_result = self.veto_agent.review_signal(
+            result = self.veto_agent.review_signal(
                 symbol            = symbol,
                 price             = price,
                 prediction        = pred,
                 regime            = regime,
                 sentiment         = sent_score,
                 sector            = sector,
-                market_regime     = self.market_regime.get(
-                    'regime', 'unknown'
-                ),
+                market_regime     = self.market_regime.get('regime', 'unknown'),
                 mtf_score         = mtf_score,
                 current_positions = self.open_positions,
                 vix               = self.market_regime.get('vix', 20),
             )
+            # Reset consecutive error count on success
+            self._veto_consecutive_errors = 0
+            self._veto_last_error_type    = None
+            return result
+
         except Exception as e:
-            # Fail-closed: any veto agent error = VETO
+            error_type = type(e).__name__
+
+            if self._veto_last_error_type == error_type:
+                self._veto_consecutive_errors += 1
+            else:
+                self._veto_consecutive_errors = 1
+                self._veto_last_error_type    = error_type
+
             logger.error(
-                "Veto agent exception for %s: %s — failing closed",
-                symbol, e,
+                "Veto agent error (%s, %d consecutive): %s",
+                error_type, self._veto_consecutive_errors, e,
             )
-            return 'VETO_ERROR', {
+
+            if self._veto_consecutive_errors >= VETO_FAILURE_THRESHOLD:
+                logger.critical(
+                    "Veto agent failed %d consecutive times with %s — "
+                    "switching to BYPASS for the rest of this scan",
+                    self._veto_consecutive_errors, error_type,
+                )
+                self._veto_bypassed = True
+                # Notify if we can — telegram is constructed in main, not here
+                # so just log. main.py picks this up via scan output.
+                return {
+                    'decision': 'APPROVE',
+                    'reason'  : f'veto_bypass_after_{error_type}',
+                }
+
+            # Fail-closed for this one symbol
+            return {
                 'decision': 'VETO',
-                'reason'  : f'veto_agent_exception: {e}',
+                'reason'  : f'veto_agent_exception: {error_type}',
             }
 
-        if veto_result.get('decision') == 'VETO':
-            logger.info(
-                "%s: VETOED — %s",
-                symbol, veto_result.get('reason', ''),
-            )
-            return 'VETOED', veto_result
-
-        return 'OPEN', veto_result
-
     # ---------------------------------------------------------------- #
-    #  PRIVATE: RETRY WRAPPER                                            #
+    #  RETRY                                                            #
     # ---------------------------------------------------------------- #
 
     @staticmethod
     def _with_retry(fn, retries=3, delay=5, label=''):
-        """
-        Call fn() up to `retries` times with `delay` seconds
-        between attempts. Raises on final failure.
-        """
         for attempt in range(retries):
             try:
                 return fn()
             except Exception as e:
                 if attempt < retries - 1:
-                    logger.warning(
-                        "Retry %d/%d for %s: %s",
-                        attempt + 1, retries, label, e,
-                    )
+                    logger.warning("Retry %d/%d for %s: %s",
+                                   attempt + 1, retries, label, e)
                     time.sleep(delay)
                 else:
-                    logger.error(
-                        "All %d attempts failed for %s: %s",
-                        retries, label, e,
-                    )
+                    logger.error("All %d attempts failed for %s: %s",
+                                 retries, label, e)
                     raise

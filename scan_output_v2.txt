@@ -1,0 +1,1360 @@
+21:02:49 | INFO | Regime switch: unknown → bull (held 1 bars)
+21:02:49 | INFO | Regime: bull | confidence=0.75 | tradeable=True | bull=3 bear=0 VIX=10.7
+21:02:49 | INFO | Phase 0: 3.1s
+21:02:50 | ERROR | HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: QQQ"}}}
+21:02:50 | ERROR | HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IWM"}}}
+21:02:50 | ERROR | HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: SPY"}}}
+21:02:50 | ERROR | HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: DIA"}}}
+21:02:50 | INFO | Fetched 500 rows for AAPL
+21:02:50 | INFO | Fetched 500 rows for MSFT
+21:02:51 | INFO | Fetched 500 rows for GOOGL
+21:02:51 | INFO | Fetched 500 rows for AMZN
+21:02:51 | INFO | Fetched 500 rows for NVDA
+21:02:51 | INFO | Fetched 500 rows for META
+21:02:51 | INFO | Fetched 500 rows for TSLA
+21:02:52 | INFO | Fetched 500 rows for AMD
+21:02:52 | INFO | Fetched 500 rows for NFLX
+21:02:52 | INFO | Fetched 500 rows for SPY
+21:02:52 | INFO | Fetched 500 rows for QQQ
+21:02:53 | INFO | Fetched 500 rows for IWM
+21:02:53 | INFO | Fetched 500 rows for DIA
+21:02:53 | INFO | Fetched 500 rows for JPM
+21:02:53 | INFO | Fetched 500 rows for V
+21:02:54 | INFO | Fetched 500 rows for GS
+21:02:54 | INFO | Fetched 500 rows for BAC
+21:02:54 | INFO | Fetched 500 rows for MS
+21:02:54 | INFO | Fetched 500 rows for JNJ
+21:02:55 | INFO | Fetched 500 rows for PFE
+21:02:55 | INFO | Fetched 500 rows for UNH
+21:02:55 | INFO | Fetched 500 rows for ABBV
+21:02:55 | INFO | Fetched 500 rows for LLY
+21:02:56 | INFO | Fetched 500 rows for MRK
+21:02:56 | INFO | Fetched 500 rows for WMT
+21:02:56 | INFO | Fetched 500 rows for COST
+21:02:56 | INFO | Fetched 500 rows for HD
+21:02:56 | INFO | Fetched 500 rows for MCD
+21:02:57 | INFO | Fetched 500 rows for XOM
+21:02:57 | INFO | Fetched 500 rows for CVX
+21:02:57 | INFO | Fetched 500 rows for OXY
+21:02:57 | INFO | Fetched 500 rows for SOFI
+21:02:58 | INFO | Fetched 500 rows for PLTR
+21:02:58 | INFO | Fetched 500 rows for RIVN
+21:02:58 | INFO | Fetched 500 rows for HOOD
+21:02:58 | INFO | Fetched 500 rows for MARA
+21:02:58 | INFO | Fetched 500 rows for CRM
+21:02:59 | INFO | Fetched 500 rows for SNOW
+21:02:59 | INFO | Fetched 500 rows for NET
+21:02:59 | INFO | Fetched 500 rows for DDOG
+21:02:59 | INFO | Fetched 500 rows for CRWD
+21:03:00 | INFO | Generated 74 features
+21:03:00 | INFO | Regime detection complete
+21:03:01 | INFO | Generated 74 features
+21:03:01 | INFO | Regime detection complete
+21:03:01 | INFO | [AAPL] Cache version mismatch (2.0 vs 3.0), retraining
+21:03:01 | INFO | AAPL: training models
+21:03:01 | INFO | Training ensemble on 180 samples
+21:03:03 | INFO | CatBoost model trained successfully
+21:03:04 | INFO | LSTM training complete. Final loss: 0.2714
+21:03:04 | INFO | LSTM model added to ensemble
+21:03:04 | INFO | Ensemble training complete (5 models)
+21:03:04 | INFO | [AAPL] Model cached | features=20 expires_in=14d
+21:03:04 | INFO | Generated 74 features
+21:03:04 | INFO | Regime detection complete
+21:03:04 | INFO | Generated 74 features
+21:03:04 | INFO | Regime detection complete
+21:03:04 | INFO | [MSFT] Cache version mismatch (2.0 vs 3.0), retraining
+21:03:04 | INFO | MSFT: training models
+21:03:04 | INFO | Training ensemble on 180 samples
+21:03:07 | INFO | CatBoost model trained successfully
+21:03:07 | INFO | LSTM training complete. Final loss: 0.3570
+21:03:07 | INFO | LSTM model added to ensemble
+21:03:07 | INFO | Ensemble training complete (5 models)
+21:03:07 | INFO | [MSFT] Model cached | features=20 expires_in=14d
+21:03:08 | INFO | Generated 74 features
+21:03:08 | INFO | Regime detection complete
+21:03:08 | INFO | Generated 74 features
+21:03:08 | INFO | Regime detection complete
+21:03:08 | INFO | [GOOGL] Cache version mismatch (2.0 vs 3.0), retraining
+21:03:08 | INFO | GOOGL: training models
+21:03:08 | INFO | Training ensemble on 180 samples
+21:03:10 | INFO | CatBoost model trained successfully
+21:03:11 | INFO | LSTM training complete. Final loss: 0.3689
+21:03:11 | INFO | LSTM model added to ensemble
+21:03:11 | INFO | Ensemble training complete (5 models)
+21:03:12 | INFO | [GOOGL] Model cached | features=20 expires_in=14d
+21:03:12 | INFO | Generated 74 features
+21:03:12 | INFO | Regime detection complete
+21:03:12 | INFO | Generated 74 features
+21:03:12 | INFO | Regime detection complete
+21:03:12 | INFO | [AMZN] Cache version mismatch (2.0 vs 3.0), retraining
+21:03:12 | INFO | AMZN: training models
+21:03:12 | INFO | Training ensemble on 180 samples
+21:03:15 | INFO | CatBoost model trained successfully
+21:03:16 | INFO | LSTM training complete. Final loss: 0.3627
+21:03:16 | INFO | LSTM model added to ensemble
+21:03:16 | INFO | Ensemble training complete (5 models)
+21:03:16 | INFO | [AMZN] Model cached | features=20 expires_in=14d
+21:03:17 | INFO | Generated 74 features
+21:03:17 | INFO | Regime detection complete
+21:03:17 | INFO | Generated 74 features
+21:03:17 | INFO | Regime detection complete
+21:03:17 | INFO | [NVDA] Cache version mismatch (2.0 vs 3.0), retraining
+21:03:17 | INFO | NVDA: training models
+21:03:17 | INFO | Training ensemble on 180 samples
+21:03:20 | INFO | CatBoost model trained successfully
+21:03:21 | INFO | LSTM training complete. Final loss: 0.4015
+21:03:21 | INFO | LSTM model added to ensemble
+21:03:21 | INFO | Ensemble training complete (5 models)
+21:03:21 | INFO | [NVDA] Model cached | features=20 expires_in=14d
+21:03:21 | INFO | Generated 74 features
+21:03:21 | INFO | Regime detection complete
+21:03:21 | INFO | Generated 74 features
+21:03:21 | INFO | Regime detection complete
+21:03:22 | INFO | [META] Cache version mismatch (2.0 vs 3.0), retraining
+21:03:22 | INFO | META: training models
+21:03:22 | INFO | Training ensemble on 180 samples
+21:03:24 | INFO | CatBoost model trained successfully
+21:03:25 | INFO | LSTM training complete. Final loss: 0.2843
+21:03:25 | INFO | LSTM model added to ensemble
+21:03:25 | INFO | Ensemble training complete (5 models)
+21:03:25 | INFO | [META] Model cached | features=20 expires_in=14d
+21:03:26 | INFO | Generated 74 features
+21:03:26 | INFO | Regime detection complete
+21:03:26 | INFO | Generated 74 features
+21:03:26 | INFO | Regime detection complete
+21:03:26 | INFO | [TSLA] Cache version mismatch (2.0 vs 3.0), retraining
+21:03:26 | INFO | TSLA: training models
+21:03:26 | INFO | Training ensemble on 180 samples
+21:03:29 | INFO | CatBoost model trained successfully
+21:03:29 | INFO | LSTM training complete. Final loss: 0.3595
+21:03:29 | INFO | LSTM model added to ensemble
+21:03:29 | INFO | Ensemble training complete (5 models)
+21:03:30 | INFO | [TSLA] Model cached | features=20 expires_in=14d
+21:03:30 | INFO | Generated 74 features
+21:03:30 | INFO | Regime detection complete
+21:03:30 | INFO | Generated 74 features
+21:03:30 | INFO | Regime detection complete
+21:03:30 | INFO | [AMD] Cache version mismatch (2.0 vs 3.0), retraining
+21:03:30 | INFO | AMD: training models
+21:03:30 | INFO | Training ensemble on 180 samples
+21:03:33 | INFO | CatBoost model trained successfully
+21:03:34 | INFO | LSTM training complete. Final loss: 0.4346
+21:03:34 | INFO | LSTM model added to ensemble
+21:03:34 | INFO | Ensemble training complete (5 models)
+21:03:34 | INFO | [AMD] Model cached | features=20 expires_in=14d
+21:03:34 | INFO | Generated 74 features
+21:03:34 | INFO | Regime detection complete
+21:03:34 | INFO | Generated 74 features
+21:03:34 | INFO | Regime detection complete
+21:03:34 | INFO | [NFLX] Cache version mismatch (2.0 vs 3.0), retraining
+21:03:34 | INFO | NFLX: training models
+21:03:34 | INFO | Training ensemble on 180 samples
+21:03:37 | INFO | CatBoost model trained successfully
+21:03:38 | INFO | LSTM training complete. Final loss: 0.3571
+21:03:38 | INFO | LSTM model added to ensemble
+21:03:38 | INFO | Ensemble training complete (5 models)
+21:03:38 | INFO | [NFLX] Model cached | features=20 expires_in=14d
+21:03:38 | INFO | Generated 74 features
+21:03:38 | INFO | Regime detection complete
+21:03:38 | INFO | Generated 74 features
+21:03:38 | INFO | Regime detection complete
+21:03:38 | INFO | [SPY] Cache version mismatch (2.0 vs 3.0), retraining
+21:03:38 | INFO | SPY: training models
+21:03:38 | INFO | Training ensemble on 180 samples
+21:03:41 | INFO | CatBoost model trained successfully
+21:03:42 | INFO | LSTM training complete. Final loss: 0.3583
+21:03:42 | INFO | LSTM model added to ensemble
+21:03:42 | INFO | Ensemble training complete (5 models)
+21:03:42 | INFO | [SPY] Model cached | features=20 expires_in=14d
+21:03:42 | INFO | Generated 74 features
+21:03:42 | INFO | Regime detection complete
+21:03:42 | INFO | Generated 74 features
+21:03:42 | INFO | Regime detection complete
+21:03:42 | INFO | [QQQ] Cache version mismatch (2.0 vs 3.0), retraining
+21:03:42 | INFO | QQQ: training models
+21:03:42 | INFO | Training ensemble on 180 samples
+21:03:45 | INFO | CatBoost model trained successfully
+21:03:46 | INFO | LSTM training complete. Final loss: 0.3708
+21:03:46 | INFO | LSTM model added to ensemble
+21:03:46 | INFO | Ensemble training complete (5 models)
+21:03:46 | INFO | [QQQ] Model cached | features=20 expires_in=14d
+21:03:46 | INFO | Generated 74 features
+21:03:46 | INFO | Regime detection complete
+21:03:46 | INFO | Generated 74 features
+21:03:46 | INFO | Regime detection complete
+21:03:46 | INFO | [IWM] Cache version mismatch (2.0 vs 3.0), retraining
+21:03:46 | INFO | IWM: training models
+21:03:46 | INFO | Training ensemble on 180 samples
+21:03:49 | INFO | CatBoost model trained successfully
+21:03:50 | INFO | LSTM training complete. Final loss: 0.4166
+21:03:50 | INFO | LSTM model added to ensemble
+21:03:50 | INFO | Ensemble training complete (5 models)
+21:03:50 | INFO | [IWM] Model cached | features=20 expires_in=14d
+21:03:51 | INFO | Generated 74 features
+21:03:51 | INFO | Regime detection complete
+21:03:51 | INFO | Generated 74 features
+21:03:51 | INFO | Regime detection complete
+21:03:51 | INFO | [DIA] Cache version mismatch (2.0 vs 3.0), retraining
+21:03:51 | INFO | DIA: training models
+21:03:51 | INFO | Training ensemble on 180 samples
+21:03:54 | INFO | CatBoost model trained successfully
+21:03:56 | INFO | LSTM training complete. Final loss: 0.3814
+21:03:56 | INFO | LSTM model added to ensemble
+21:03:56 | INFO | Ensemble training complete (5 models)
+21:03:56 | INFO | [DIA] Model cached | features=20 expires_in=14d
+21:03:56 | INFO | Generated 74 features
+21:03:56 | INFO | Regime detection complete
+21:03:56 | INFO | Generated 74 features
+21:03:56 | INFO | Regime detection complete
+21:03:57 | INFO | [JPM] Cache version mismatch (2.0 vs 3.0), retraining
+21:03:57 | INFO | JPM: training models
+21:03:57 | INFO | Training ensemble on 180 samples
+21:03:59 | INFO | CatBoost model trained successfully
+21:04:00 | INFO | LSTM training complete. Final loss: 0.2703
+21:04:00 | INFO | LSTM model added to ensemble
+21:04:00 | INFO | Ensemble training complete (5 models)
+21:04:00 | INFO | [JPM] Model cached | features=20 expires_in=14d
+21:04:01 | INFO | Generated 74 features
+21:04:01 | INFO | Regime detection complete
+21:04:01 | INFO | Generated 74 features
+21:04:01 | INFO | Regime detection complete
+21:04:01 | INFO | [V] Cache version mismatch (2.0 vs 3.0), retraining
+21:04:01 | INFO | V: training models
+21:04:01 | INFO | Training ensemble on 180 samples
+21:04:04 | INFO | CatBoost model trained successfully
+21:04:05 | INFO | LSTM training complete. Final loss: 0.3110
+21:04:05 | INFO | LSTM model added to ensemble
+21:04:05 | INFO | Ensemble training complete (5 models)
+21:04:05 | INFO | [V] Model cached | features=20 expires_in=14d
+21:04:05 | INFO | Generated 74 features
+21:04:05 | INFO | Regime detection complete
+
+🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀
+  ALPHA EDGE V5 — 2026-05-16 21:02
+  4-Model Ensemble + Sector Rotation + LSTM
+🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀
+   📂 State loaded: $10,000.00 cash | 0 open positions | 0 total trades
+
+============================================================
+PHASE 0: MARKET CONTEXT
+============================================================
+
+🔄 Analyzing sector rotation...
+
+   Sector Rankings (best to worst):
+   -------------------------------------------------------
+   🟢 Technology      | Score: +0.142 | 21d: +14.2% | INFLOW
+   🟢 Energy          | Score: +0.038 | 21d: +8.0% | INFLOW
+   ⚪ Staples         | Score: +0.002 | 21d: +2.6% | NEUTRAL
+   ⚪ Industrials     | Score: -0.012 | 21d: -1.2% | NEUTRAL
+   ⚪ Communications  | Score: -0.017 | 21d: -2.5% | NEUTRAL
+   🔴 Consumer        | Score: -0.026 | 21d: -3.2% | OUTFLOW
+   🔴 Financials      | Score: -0.027 | 21d: -2.5% | OUTFLOW
+   🔴 Real Estate     | Score: -0.030 | 21d: -2.8% | OUTFLOW
+   🔴 Materials       | Score: -0.034 | 21d: -3.0% | OUTFLOW
+   🔴 Healthcare      | Score: -0.045 | 21d: -2.5% | OUTFLOW
+   🔴 Utilities       | Score: -0.076 | 21d: -5.0% | OUTFLOW
+
+  Risk Check:
+  Daily P&L:    +0.00%
+  Weekly P&L:   -1.88%
+  Total P&L:    +0.00%
+  Drawdown:     -1.88% (from peak $10,191.56)
+  ✅ Risk check passed — Trading allowed
+  Veto Agent: Groq/Llama3 connected ✅
+   Loaded 10353 tickers from SEC ✅
+
+📅 Checking earnings calendar...
+  ⚠️  3 stocks reporting this week
+     ⚠️  HD earnings in 3 days
+     ⚠️  NVDA earnings in 4 days
+     ⚠️  WMT earnings in 5 days
+
+============================================================
+PHASE 1: STOCK ANALYSIS
+============================================================
+
+1a. Fetching data for 41 stocks...
+
+📊 Fetching data for 41 stocks...
+  [1/41] Fetching AAPL... ✅ 500 rows
+  [2/41] Fetching MSFT... ✅ 500 rows
+  [3/41] Fetching GOOGL... ✅ 500 rows
+  [4/41] Fetching AMZN... ✅ 500 rows
+  [5/41] Fetching NVDA... ✅ 500 rows
+  [6/41] Fetching META... ✅ 500 rows
+  [7/41] Fetching TSLA... ✅ 500 rows
+  [8/41] Fetching AMD... ✅ 500 rows
+  [9/41] Fetching NFLX... ✅ 500 rows
+  [10/41] Fetching SPY... ✅ 500 rows
+  [11/41] Fetching QQQ... ✅ 500 rows
+  [12/41] Fetching IWM... ✅ 500 rows
+  [13/41] Fetching DIA... ✅ 500 rows
+  [14/41] Fetching JPM... ✅ 500 rows
+  [15/41] Fetching V... ✅ 500 rows
+  [16/41] Fetching GS... ✅ 500 rows
+  [17/41] Fetching BAC... ✅ 500 rows
+  [18/41] Fetching MS... ✅ 500 rows
+  [19/41] Fetching JNJ... ✅ 500 rows
+  [20/41] Fetching PFE... ✅ 500 rows
+  [21/41] Fetching UNH... ✅ 500 rows
+  [22/41] Fetching ABBV... ✅ 500 rows
+  [23/41] Fetching LLY... ✅ 500 rows
+  [24/41] Fetching MRK... ✅ 500 rows
+  [25/41] Fetching WMT... ✅ 500 rows
+  [26/41] Fetching COST... ✅ 500 rows
+  [27/41] Fetching HD... ✅ 500 rows
+  [28/41] Fetching MCD... ✅ 500 rows
+  [29/41] Fetching XOM... ✅ 500 rows
+  [30/41] Fetching CVX... ✅ 500 rows
+  [31/41] Fetching OXY... ✅ 500 rows
+  [32/41] Fetching SOFI... ✅ 500 rows
+  [33/41] Fetching PLTR... ✅ 500 rows
+  [34/41] Fetching RIVN... ✅ 500 rows
+  [35/41] Fetching HOOD... ✅ 500 rows
+  [36/41] Fetching MARA... ✅ 500 rows
+  [37/41] Fetching CRM... ✅ 500 rows
+  [38/41] Fetching SNOW... ✅ 500 rows
+  [39/41] Fetching NET... ✅ 500 rows
+  [40/41] Fetching DDOG... ✅ 500 rows
+  [41/41] Fetching CRWD... ✅ 500 rows
+
+✅ Successfully fetched 41/41 stocks
+
+1b. Training 4-model ensemble per stock...
+   Regime distribution:
+      uptrend: 124 days (45.8%)
+      sideways: 76 days (28.0%)
+      downtrend: 48 days (17.7%)
+      volatile: 23 days (8.5%)
+   Regime distribution:
+      uptrend: 138 days (45.8%)
+      sideways: 87 days (28.9%)
+      downtrend: 53 days (17.6%)
+      volatile: 23 days (7.6%)
+   Regime distribution:
+      sideways: 96 days (35.4%)
+      uptrend: 84 days (31.0%)
+      downtrend: 70 days (25.8%)
+      volatile: 21 days (7.7%)
+   Regime distribution:
+      sideways: 106 days (35.2%)
+      uptrend: 97 days (32.2%)
+      downtrend: 77 days (25.6%)
+      volatile: 21 days (7.0%)
+   Regime distribution:
+      uptrend: 172 days (63.5%)
+      sideways: 73 days (26.9%)
+      downtrend: 23 days (8.5%)
+      volatile: 3 days (1.1%)
+   Regime distribution:
+      uptrend: 188 days (62.5%)
+      sideways: 76 days (25.2%)
+      downtrend: 23 days (7.6%)
+      volatile: 14 days (4.7%)
+   Regime distribution:
+      uptrend: 113 days (41.7%)
+      sideways: 95 days (35.1%)
+      downtrend: 55 days (20.3%)
+      volatile: 8 days (3.0%)
+   Regime distribution:
+      uptrend: 134 days (44.5%)
+      sideways: 102 days (33.9%)
+      downtrend: 57 days (18.9%)
+      volatile: 8 days (2.7%)
+   Regime distribution:
+      uptrend: 133 days (49.1%)
+      sideways: 105 days (38.7%)
+      downtrend: 33 days (12.2%)
+   Regime distribution:
+      uptrend: 151 days (50.2%)
+      sideways: 114 days (37.9%)
+      downtrend: 36 days (12.0%)
+   Regime distribution:
+      sideways: 86 days (31.7%)
+      uptrend: 84 days (31.0%)
+      downtrend: 70 days (25.8%)
+      volatile: 31 days (11.4%)
+   Regime distribution:
+      sideways: 111 days (36.9%)
+      uptrend: 84 days (27.9%)
+      downtrend: 75 days (24.9%)
+      volatile: 31 days (10.3%)
+   Regime distribution:
+      uptrend: 109 days (40.2%)
+      sideways: 104 days (38.4%)
+      downtrend: 58 days (21.4%)
+   Regime distribution:
+      uptrend: 113 days (37.5%)
+      sideways: 112 days (37.2%)
+      downtrend: 76 days (25.2%)
+   Regime distribution:
+      uptrend: 102 days (37.6%)
+      sideways: 96 days (35.4%)
+      downtrend: 47 days (17.3%)
+      volatile: 26 days (9.6%)
+   Regime distribution:
+      uptrend: 124 days (41.2%)
+      sideways: 103 days (34.2%)
+      downtrend: 47 days (15.6%)
+      volatile: 27 days (9.0%)
+   Regime distribution:
+      downtrend: 104 days (38.4%)
+      sideways: 91 days (33.6%)
+      volatile: 39 days (14.4%)
+      uptrend: 37 days (13.7%)
+   Regime distribution:
+      downtrend: 106 days (35.2%)
+      sideways: 99 days (32.9%)
+      uptrend: 57 days (18.9%)
+      volatile: 39 days (13.0%)
+   Regime distribution:
+      uptrend: 173 days (63.8%)
+      sideways: 76 days (28.0%)
+      downtrend: 19 days (7.0%)
+      volatile: 3 days (1.1%)
+   Regime distribution:
+      uptrend: 189 days (62.8%)
+      sideways: 85 days (28.2%)
+      downtrend: 20 days (6.6%)
+      volatile: 7 days (2.3%)
+   Regime distribution:
+      uptrend: 148 days (54.6%)
+      sideways: 82 days (30.3%)
+      downtrend: 31 days (11.4%)
+      volatile: 10 days (3.7%)
+   Regime distribution:
+      uptrend: 165 days (54.8%)
+      sideways: 93 days (30.9%)
+      downtrend: 33 days (11.0%)
+      volatile: 10 days (3.3%)
+   Regime distribution:
+      uptrend: 168 days (62.0%)
+      sideways: 89 days (32.8%)
+      downtrend: 14 days (5.2%)
+   Regime distribution:
+      uptrend: 186 days (61.8%)
+      sideways: 99 days (32.9%)
+      downtrend: 16 days (5.3%)
+   Regime distribution:
+      uptrend: 182 days (67.2%)
+      sideways: 73 days (26.9%)
+      downtrend: 16 days (5.9%)
+   Regime distribution:
+      uptrend: 195 days (64.8%)
+      sideways: 86 days (28.6%)
+      downtrend: 20 days (6.6%)
+   Regime distribution:
+      uptrend: 138 days (50.9%)
+      sideways: 93 days (34.3%)
+      downtrend: 37 days (13.7%)
+      volatile: 3 days (1.1%)
+   Regime distribution:
+      uptrend: 154 days (51.2%)
+      sideways: 105 days (34.9%)
+      downtrend: 39 days (13.0%)
+      volatile: 3 days (1.0%)
+   Regime distribution:
+      downtrend: 121 days (44.6%)
+      sideways: 113 days (41.7%)
+      uptrend: 37 days (13.7%)
+   Regime distribution:
+      downtrend: 136 days (45.2%)
+      sideways: 118 days (39.2%)
+      uptrend: 47 days (15.6%)
+   Regime distribution:
+      uptrend: 177 days (65.3%)21:04:06 | INFO | Generated 74 features
+21:04:06 | INFO | Regime detection complete
+21:04:06 | INFO | [GS] Cache version mismatch (2.0 vs 3.0), retraining
+21:04:06 | INFO | GS: training models
+21:04:06 | INFO | Training ensemble on 180 samples
+21:04:08 | INFO | CatBoost model trained successfully
+21:04:09 | INFO | LSTM training complete. Final loss: 0.3937
+21:04:09 | INFO | LSTM model added to ensemble
+21:04:09 | INFO | Ensemble training complete (5 models)
+21:04:10 | INFO | [GS] Model cached | features=20 expires_in=14d
+21:04:10 | INFO | Generated 74 features
+21:04:10 | INFO | Regime detection complete
+21:04:10 | INFO | Generated 74 features
+21:04:10 | INFO | Regime detection complete
+21:04:10 | INFO | [BAC] Cache version mismatch (2.0 vs 3.0), retraining
+21:04:10 | INFO | BAC: training models
+21:04:10 | INFO | Training ensemble on 180 samples
+21:04:12 | INFO | CatBoost model trained successfully
+21:04:13 | INFO | LSTM training complete. Final loss: 0.3482
+21:04:13 | INFO | LSTM model added to ensemble
+21:04:13 | INFO | Ensemble training complete (5 models)
+21:04:13 | INFO | [BAC] Model cached | features=20 expires_in=14d
+21:04:13 | INFO | Generated 74 features
+21:04:13 | INFO | Regime detection complete
+21:04:13 | INFO | Generated 74 features
+21:04:13 | INFO | Regime detection complete
+21:04:13 | INFO | [MS] Cache version mismatch (2.0 vs 3.0), retraining
+21:04:13 | INFO | MS: training models
+21:04:13 | INFO | Training ensemble on 180 samples
+21:04:15 | INFO | CatBoost model trained successfully
+21:04:16 | INFO | LSTM training complete. Final loss: 0.5161
+21:04:16 | INFO | LSTM model added to ensemble
+21:04:16 | INFO | Ensemble training complete (5 models)
+21:04:16 | INFO | [MS] Model cached | features=20 expires_in=14d
+21:04:16 | INFO | Generated 74 features
+21:04:16 | INFO | Regime detection complete
+21:04:16 | INFO | Generated 74 features
+21:04:16 | INFO | Regime detection complete
+21:04:16 | INFO | [JNJ] Cache version mismatch (2.0 vs 3.0), retraining
+21:04:16 | INFO | JNJ: training models
+21:04:16 | INFO | Training ensemble on 180 samples
+21:04:18 | INFO | CatBoost model trained successfully
+21:04:19 | INFO | LSTM training complete. Final loss: 0.3163
+21:04:19 | INFO | LSTM model added to ensemble
+21:04:19 | INFO | Ensemble training complete (5 models)
+21:04:19 | INFO | [JNJ] Model cached | features=20 expires_in=14d
+21:04:19 | INFO | Generated 74 features
+21:04:19 | INFO | Regime detection complete
+21:04:19 | INFO | Generated 74 features
+21:04:19 | INFO | Regime detection complete
+21:04:19 | INFO | [PFE] Cache version mismatch (2.0 vs 3.0), retraining
+21:04:19 | INFO | PFE: training models
+21:04:19 | INFO | Training ensemble on 180 samples
+21:04:21 | INFO | CatBoost model trained successfully
+21:04:22 | INFO | LSTM training complete. Final loss: 0.3494
+21:04:22 | INFO | LSTM model added to ensemble
+21:04:22 | INFO | Ensemble training complete (5 models)
+21:04:22 | INFO | [PFE] Model cached | features=20 expires_in=14d
+21:04:22 | INFO | Generated 74 features
+21:04:22 | INFO | Regime detection complete
+21:04:22 | INFO | Generated 74 features
+21:04:22 | INFO | Regime detection complete
+21:04:22 | INFO | [UNH] Cache version mismatch (2.0 vs 3.0), retraining
+21:04:22 | INFO | UNH: training models
+21:04:22 | INFO | Training ensemble on 180 samples
+21:04:25 | INFO | CatBoost model trained successfully
+21:04:26 | INFO | LSTM training complete. Final loss: 0.3469
+21:04:26 | INFO | LSTM model added to ensemble
+21:04:26 | INFO | Ensemble training complete (5 models)
+21:04:26 | INFO | [UNH] Model cached | features=20 expires_in=14d
+21:04:26 | INFO | Generated 74 features
+21:04:26 | INFO | Regime detection complete
+21:04:26 | INFO | Generated 74 features
+21:04:26 | INFO | Regime detection complete
+21:04:26 | INFO | [ABBV] Cache version mismatch (2.0 vs 3.0), retraining
+21:04:26 | INFO | ABBV: training models
+21:04:26 | INFO | Training ensemble on 180 samples
+21:04:29 | INFO | CatBoost model trained successfully
+21:04:30 | INFO | LSTM training complete. Final loss: 0.3665
+21:04:30 | INFO | LSTM model added to ensemble
+21:04:30 | INFO | Ensemble training complete (5 models)
+21:04:30 | INFO | [ABBV] Model cached | features=20 expires_in=14d
+21:04:30 | INFO | Generated 74 features
+21:04:30 | INFO | Regime detection complete
+21:04:30 | INFO | Generated 74 features
+21:04:30 | INFO | Regime detection complete
+21:04:30 | INFO | [LLY] Cache version mismatch (2.0 vs 3.0), retraining
+21:04:30 | INFO | LLY: training models
+21:04:30 | INFO | Training ensemble on 180 samples
+21:04:33 | INFO | CatBoost model trained successfully
+21:04:34 | INFO | LSTM training complete. Final loss: 0.3930
+21:04:34 | INFO | LSTM model added to ensemble
+21:04:34 | INFO | Ensemble training complete (5 models)
+21:04:34 | INFO | [LLY] Model cached | features=20 expires_in=14d
+21:04:34 | INFO | Generated 74 features
+21:04:34 | INFO | Regime detection complete
+21:04:34 | INFO | Generated 74 features
+21:04:34 | INFO | Regime detection complete
+21:04:34 | INFO | [MRK] Cache version mismatch (2.0 vs 3.0), retraining
+21:04:34 | INFO | MRK: training models
+21:04:34 | INFO | Training ensemble on 180 samples
+21:04:37 | INFO | CatBoost model trained successfully
+21:04:38 | INFO | LSTM training complete. Final loss: 0.2055
+21:04:38 | INFO | LSTM model added to ensemble
+21:04:38 | INFO | Ensemble training complete (5 models)
+21:04:38 | INFO | [MRK] Model cached | features=20 expires_in=14d
+21:04:38 | INFO | Generated 74 features
+21:04:38 | INFO | Regime detection complete
+21:04:38 | INFO | Generated 74 features
+21:04:38 | INFO | Regime detection complete
+21:04:38 | INFO | [WMT] Cache version mismatch (2.0 vs 3.0), retraining
+21:04:38 | INFO | WMT: training models
+21:04:38 | INFO | Training ensemble on 180 samples
+21:04:40 | INFO | CatBoost model trained successfully
+21:04:41 | INFO | LSTM training complete. Final loss: 0.3429
+21:04:41 | INFO | LSTM model added to ensemble
+21:04:41 | INFO | Ensemble training complete (5 models)
+21:04:42 | INFO | [WMT] Model cached | features=20 expires_in=14d
+21:04:42 | INFO | Generated 74 features
+21:04:42 | INFO | Regime detection complete
+21:04:42 | INFO | Generated 74 features
+21:04:42 | INFO | Regime detection complete
+21:04:42 | INFO | [COST] Cache version mismatch (2.0 vs 3.0), retraining
+21:04:42 | INFO | COST: training models
+21:04:42 | INFO | Training ensemble on 180 samples
+21:04:45 | INFO | CatBoost model trained successfully
+21:04:46 | INFO | LSTM training complete. Final loss: 0.2700
+21:04:46 | INFO | LSTM model added to ensemble
+21:04:46 | INFO | Ensemble training complete (5 models)
+21:04:46 | INFO | [COST] Model cached | features=20 expires_in=14d
+21:04:46 | INFO | Generated 74 features
+21:04:46 | INFO | Regime detection complete
+21:04:46 | INFO | Generated 74 features
+21:04:46 | INFO | Regime detection complete
+21:04:46 | INFO | [HD] Cache version mismatch (2.0 vs 3.0), retraining
+21:04:46 | INFO | HD: training models
+21:04:46 | INFO | Training ensemble on 180 samples
+21:04:49 | INFO | CatBoost model trained successfully
+21:04:50 | INFO | LSTM training complete. Final loss: 0.2764
+21:04:50 | INFO | LSTM model added to ensemble
+21:04:50 | INFO | Ensemble training complete (5 models)
+21:04:50 | INFO | [HD] Model cached | features=20 expires_in=14d
+21:04:50 | INFO | Generated 74 features
+21:04:50 | INFO | Regime detection complete
+21:04:50 | INFO | Generated 74 features
+21:04:50 | INFO | Regime detection complete
+21:04:50 | INFO | [MCD] Cache version mismatch (2.0 vs 3.0), retraining
+21:04:50 | INFO | MCD: training models
+21:04:50 | INFO | Training ensemble on 180 samples
+21:04:52 | INFO | CatBoost model trained successfully
+21:04:52 | INFO | LSTM training complete. Final loss: 0.3396
+21:04:52 | INFO | LSTM model added to ensemble
+21:04:52 | INFO | Ensemble training complete (5 models)
+21:04:53 | INFO | [MCD] Model cached | features=20 expires_in=14d
+21:04:53 | INFO | Generated 74 features
+21:04:53 | INFO | Regime detection complete
+21:04:53 | INFO | Generated 74 features
+21:04:53 | INFO | Regime detection complete
+21:04:53 | INFO | [XOM] Cache version mismatch (2.0 vs 3.0), retraining
+21:04:53 | INFO | XOM: training models
+21:04:53 | INFO | Training ensemble on 180 samples
+21:04:54 | INFO | CatBoost model trained successfully
+21:04:55 | INFO | LSTM training complete. Final loss: 0.3410
+21:04:55 | INFO | LSTM model added to ensemble
+21:04:55 | INFO | Ensemble training complete (5 models)
+21:04:55 | INFO | [XOM] Model cached | features=20 expires_in=14d
+21:04:56 | INFO | Generated 74 features
+21:04:56 | INFO | Regime detection complete
+21:04:56 | INFO | Generated 74 features
+21:04:56 | INFO | Regime detection complete
+21:04:56 | INFO | [CVX] Cache version mismatch (2.0 vs 3.0), retraining
+21:04:56 | INFO | CVX: training models
+21:04:56 | INFO | Training ensemble on 180 samples
+21:04:57 | INFO | CatBoost model trained successfully
+21:04:58 | INFO | LSTM training complete. Final loss: 0.4128
+21:04:58 | INFO | LSTM model added to ensemble
+21:04:58 | INFO | Ensemble training complete (5 models)
+21:04:58 | INFO | [CVX] Model cached | features=20 expires_in=14d
+21:04:58 | INFO | Generated 74 features
+21:04:58 | INFO | Regime detection complete
+21:04:58 | INFO | Generated 74 features
+21:04:58 | INFO | Regime detection complete
+21:04:59 | INFO | [OXY] Cache version mismatch (2.0 vs 3.0), retraining
+21:04:59 | INFO | OXY: training models
+21:04:59 | INFO | Training ensemble on 180 samples
+21:05:00 | INFO | CatBoost model trained successfully
+21:05:01 | INFO | LSTM training complete. Final loss: 0.3495
+21:05:01 | INFO | LSTM model added to ensemble
+21:05:01 | INFO | Ensemble training complete (5 models)
+21:05:01 | INFO | [OXY] Model cached | features=20 expires_in=14d
+21:05:01 | INFO | Generated 74 features
+21:05:01 | INFO | Regime detection complete
+21:05:02 | INFO | Generated 74 features
+21:05:02 | INFO | Regime detection complete
+21:05:02 | INFO | [SOFI] Cache version mismatch (2.0 vs 3.0), retraining
+21:05:02 | INFO | SOFI: training models
+21:05:02 | INFO | Training ensemble on 180 samples
+21:05:04 | INFO | CatBoost model trained successfully
+21:05:05 | INFO | LSTM training complete. Final loss: 0.3962
+21:05:05 | INFO | LSTM model added to ensemble
+21:05:05 | INFO | Ensemble training complete (5 models)
+21:05:05 | INFO | [SOFI] Model cached | features=20 expires_in=14d
+21:05:05 | INFO | Generated 74 features
+21:05:05 | INFO | Regime detection complete
+21:05:05 | INFO | Generated 74 features
+21:05:05 | INFO | Regime detection complete
+21:05:05 | INFO | [PLTR] Cache version mismatch (2.0 vs 3.0), retraining
+21:05:05 | INFO | PLTR: training models
+21:05:05 | INFO | Training ensemble on 180 samples
+21:05:07 | INFO | CatBoost model trained successfully
+21:05:08 | INFO | LSTM training complete. Final loss: 0.3562
+21:05:08 | INFO | LSTM model added to ensemble
+21:05:08 | INFO | Ensemble training complete (5 models)
+21:05:08 | INFO | [PLTR] Model cached | features=20 expires_in=14d
+21:05:09 | INFO | Generated 74 features
+21:05:09 | INFO | Regime detection complete
+21:05:09 | INFO | Generated 74 features
+21:05:09 | INFO | Regime detection complete
+21:05:09 | INFO | [RIVN] Cache version mismatch (2.0 vs 3.0), retraining
+21:05:09 | INFO | RIVN: training models
+21:05:09 | INFO | Training ensemble on 180 samples
+21:05:11 | INFO | CatBoost model trained successfully
+21:05:12 | INFO | LSTM training complete. Final loss: 0.3654
+21:05:12 | INFO | LSTM model added to ensemble
+21:05:12 | INFO | Ensemble training complete (5 models)
+21:05:12 | INFO | [RIVN] Model cached | features=20 expires_in=14d
+21:05:12 | INFO | Generated 74 features
+21:05:12 | INFO | Regime detection complete
+21:05:12 | INFO | Generated 74 features
+21:05:12 | INFO | Regime detection complete
+21:05:12 | INFO | [HOOD] Cache version mismatch (2.0 vs 3.0), retraining
+21:05:12 | INFO | HOOD: training models
+21:05:12 | INFO | Training ensemble on 180 samples
+21:05:15 | INFO | CatBoost model trained successfully
+21:05:16 | INFO | LSTM training complete. Final loss: 0.3327
+21:05:16 | INFO | LSTM model added to ensemble
+21:05:16 | INFO | Ensemble training complete (5 models)
+21:05:16 | INFO | [HOOD] Model cached | features=20 expires_in=14d
+21:05:16 | INFO | Generated 74 features
+21:05:16 | INFO | Regime detection complete
+21:05:16 | INFO | Generated 74 features
+21:05:16 | INFO | Regime detection complete
+21:05:16 | INFO | [MARA] Cache version mismatch (2.0 vs 3.0), retraining
+21:05:16 | INFO | MARA: training models
+21:05:16 | INFO | Training ensemble on 180 samples
+21:05:18 | INFO | CatBoost model trained successfully
+21:05:19 | INFO | LSTM training complete. Final loss: 0.3185
+21:05:19 | INFO | LSTM model added to ensemble
+21:05:19 | INFO | Ensemble training complete (5 models)
+21:05:19 | INFO | [MARA] Model cached | features=20 expires_in=14d
+21:05:20 | INFO | Generated 74 features
+21:05:20 | INFO | Regime detection complete
+21:05:20 | INFO | Generated 74 features
+21:05:20 | INFO | Regime detection complete
+21:05:20 | INFO | [CRM] Cache version mismatch (2.0 vs 3.0), retraining
+21:05:20 | INFO | CRM: training models
+21:05:20 | INFO | Training ensemble on 180 samples
+21:05:22 | INFO | CatBoost model trained successfully
+21:05:23 | INFO | LSTM training complete. Final loss: 0.4375
+21:05:23 | INFO | LSTM model added to ensemble
+21:05:23 | INFO | Ensemble training complete (5 models)
+21:05:23 | INFO | [CRM] Model cached | features=20 expires_in=14d
+21:05:23 | INFO | Generated 74 features
+21:05:23 | INFO | Regime detection complete
+21:05:23 | INFO | Generated 74 features
+21:05:23 | INFO | Regime detection complete
+21:05:23 | INFO | [SNOW] Cache version mismatch (2.0 vs 3.0), retraining
+21:05:23 | INFO | SNOW: training models
+21:05:23 | INFO | Training ensemble on 180 samples
+21:05:26 | INFO | CatBoost model trained successfully
+21:05:26 | INFO | LSTM training complete. Final loss: 0.3477
+21:05:26 | INFO | LSTM model added to ensemble
+21:05:26 | INFO | Ensemble training complete (5 models)
+21:05:27 | INFO | [SNOW] Model cached | features=20 expires_in=14d
+21:05:27 | INFO | Generated 74 features
+21:05:27 | INFO | Regime detection complete
+21:05:27 | INFO | Generated 74 features
+21:05:27 | INFO | Regime detection complete
+21:05:27 | INFO | [NET] Cache version mismatch (2.0 vs 3.0), retraining
+21:05:27 | INFO | NET: training models
+21:05:27 | INFO | Training ensemble on 180 samples
+21:05:29 | INFO | CatBoost model trained successfully
+21:05:30 | INFO | LSTM training complete. Final loss: 0.3310
+21:05:30 | INFO | LSTM model added to ensemble
+21:05:30 | INFO | Ensemble training complete (5 models)
+21:05:30 | INFO | [NET] Model cached | features=20 expires_in=14d
+21:05:30 | INFO | Generated 74 features
+21:05:30 | INFO | Regime detection complete
+21:05:30 | INFO | Generated 74 features
+21:05:30 | INFO | Regime detection complete
+21:05:30 | INFO | [DDOG] Cache version mismatch (2.0 vs 3.0), retraining
+21:05:30 | INFO | DDOG: training models
+21:05:30 | INFO | Training ensemble on 180 samples
+21:05:33 | INFO | CatBoost model trained successfully
+21:05:33 | INFO | LSTM training complete. Final loss: 0.3579
+21:05:33 | INFO | LSTM model added to ensemble
+21:05:33 | INFO | Ensemble training complete (5 models)
+21:05:34 | INFO | [DDOG] Model cached | features=20 expires_in=14d
+21:05:34 | INFO | Generated 74 features
+21:05:34 | INFO | Regime detection complete
+21:05:34 | INFO | Generated 74 features
+21:05:34 | INFO | Regime detection complete
+21:05:34 | INFO | [CRWD] Cache version mismatch (2.0 vs 3.0), retraining
+21:05:34 | INFO | CRWD: training models
+21:05:34 | INFO | Training ensemble on 180 samples
+21:05:36 | INFO | CatBoost model trained successfully
+21:05:36 | INFO | LSTM training complete. Final loss: 0.3903
+21:05:36 | INFO | LSTM model added to ensemble
+21:05:36 | INFO | Ensemble training complete (5 models)
+21:05:36 | INFO | [CRWD] Model cached | features=20 expires_in=14d
+
+      sideways: 72 days (26.6%)
+      downtrend: 22 days (8.1%)
+   Regime distribution:
+      uptrend: 194 days (64.5%)
+      sideways: 83 days (27.6%)
+      downtrend: 24 days (8.0%)
+   Regime distribution:
+      uptrend: 151 days (55.7%)
+      sideways: 84 days (31.0%)
+      downtrend: 33 days (12.2%)
+      volatile: 3 days (1.1%)
+   Regime distribution:
+      uptrend: 165 days (54.8%)
+      sideways: 98 days (32.6%)
+      downtrend: 35 days (11.6%)
+      volatile: 3 days (1.0%)
+   Regime distribution:
+      uptrend: 175 days (64.6%)
+      sideways: 68 days (25.1%)
+      downtrend: 22 days (8.1%)
+      volatile: 6 days (2.2%)
+   Regime distribution:
+      uptrend: 195 days (64.8%)
+      sideways: 76 days (25.2%)
+      downtrend: 24 days (8.0%)
+      volatile: 6 days (2.0%)
+   Regime distribution:
+      uptrend: 191 days (70.5%)
+      sideways: 73 days (26.9%)
+      downtrend: 7 days (2.6%)
+   Regime distribution:
+      uptrend: 199 days (66.1%)
+      sideways: 78 days (25.9%)
+      downtrend: 24 days (8.0%)
+   Regime distribution:
+      uptrend: 154 days (56.8%)
+      sideways: 98 days (36.2%)
+      downtrend: 11 days (4.1%)
+      volatile: 8 days (3.0%)
+   Regime distribution:
+      uptrend: 166 days (55.1%)
+      sideways: 105 days (34.9%)
+      downtrend: 22 days (7.3%)
+      volatile: 8 days (2.7%)
+   Regime distribution:
+      downtrend: 104 days (38.4%)
+      sideways: 95 days (35.1%)
+      uptrend: 51 days (18.8%)
+      volatile: 21 days (7.7%)
+   Regime distribution:
+      downtrend: 105 days (34.9%)
+      sideways: 104 days (34.6%)
+      uptrend: 71 days (23.6%)
+      volatile: 21 days (7.0%)
+   Regime distribution:
+      uptrend: 115 days (42.4%)
+      sideways: 110 days (40.6%)
+      downtrend: 40 days (14.8%)
+      volatile: 6 days (2.2%)
+   Regime distribution:
+      uptrend: 115 days (38.2%)
+      sideways: 110 days (36.5%)
+      downtrend: 70 days (23.3%)
+      volatile: 6 days (2.0%)
+   Regime distribution:
+      sideways: 100 days (36.9%)
+      uptrend: 97 days (35.8%)
+      volatile: 41 days (15.1%)
+      downtrend: 33 days (12.2%)
+   Regime distribution:
+      sideways: 109 days (36.2%)
+      uptrend: 97 days (32.2%)
+      downtrend: 54 days (17.9%)
+      volatile: 41 days (13.6%)
+   Regime distribution:
+      uptrend: 168 days (62.0%)
+      sideways: 84 days (31.0%)
+      downtrend: 11 days (4.1%)
+      volatile: 8 days (3.0%)
+   Regime distribution:
+      uptrend: 178 days (59.1%)
+      sideways: 91 days (30.2%)
+      downtrend: 24 days (8.0%)
+      volatile: 8 days (2.7%)
+   Regime distribution:
+      uptrend: 167 days (61.6%)
+      sideways: 89 days (32.8%)
+      downtrend: 9 days (3.3%)
+      volatile: 6 days (2.2%)
+   Regime distribution:
+      uptrend: 192 days (63.8%)
+      sideways: 94 days (31.2%)
+      downtrend: 9 days (3.0%)
+      volatile: 6 days (2.0%)
+   Regime distribution:
+      downtrend: 122 days (45.0%)
+      sideways: 88 days (32.5%)
+      uptrend: 61 days (22.5%)
+   Regime distribution:
+      downtrend: 122 days (40.5%)
+      sideways: 93 days (30.9%)
+      uptrend: 86 days (28.6%)
+   Regime distribution:
+      uptrend: 103 days (38.0%)
+      sideways: 98 days (36.2%)
+      downtrend: 52 days (19.2%)
+      volatile: 18 days (6.6%)
+   Regime distribution:
+      uptrend: 103 days (34.2%)
+      sideways: 98 days (32.6%)
+      downtrend: 82 days (27.2%)
+      volatile: 18 days (6.0%)
+   Regime distribution:
+      sideways: 127 days (46.9%)
+      uptrend: 94 days (34.7%)
+      downtrend: 50 days (18.5%)
+   Regime distribution:
+      sideways: 127 days (42.2%)
+      uptrend: 94 days (31.2%)
+      downtrend: 80 days (26.6%)
+   Regime distribution:
+      uptrend: 165 days (60.9%)
+      sideways: 99 days (36.5%)
+      downtrend: 5 days (1.8%)
+      volatile: 2 days (0.7%)
+   Regime distribution:
+      uptrend: 173 days (57.5%)
+      sideways: 113 days (37.5%)
+      downtrend: 13 days (4.3%)
+      volatile: 2 days (0.7%)
+   Regime distribution:
+      uptrend: 124 days (45.8%)
+      sideways: 92 days (33.9%)
+      downtrend: 47 days (17.3%)
+      volatile: 8 days (3.0%)
+   Regime distribution:
+      uptrend: 134 days (44.5%)
+      sideways: 104 days (34.6%)
+      downtrend: 55 days (18.3%)
+      volatile: 8 days (2.7%)
+   Regime distribution:
+      uptrend: 126 days (46.5%)
+      sideways: 86 days (31.7%)
+      downtrend: 57 days (21.0%)
+      volatile: 2 days (0.7%)
+   Regime distribution:
+      uptrend: 150 days (49.8%)
+      sideways: 92 days (30.6%)
+      downtrend: 57 days (18.9%)
+      volatile: 2 days (0.7%)
+   Regime distribution:
+      uptrend: 120 days (44.3%)
+      downtrend: 77 days (28.4%)
+      sideways: 71 days (26.2%)
+      volatile: 3 days (1.1%)
+   Regime distribution:
+      uptrend: 120 days (39.9%)
+      downtrend: 102 days (33.9%)
+      sideways: 75 days (24.9%)
+      volatile: 4 days (1.3%)
+   Regime distribution:
+      uptrend: 116 days (42.8%)
+      sideways: 102 days (37.6%)
+      downtrend: 53 days (19.6%)
+   Regime distribution:
+      uptrend: 116 days (38.5%)
+      sideways: 105 days (34.9%)
+      downtrend: 80 days (26.6%)
+   Regime distribution:
+      sideways: 108 days (39.9%)
+      downtrend: 77 days (28.4%)
+      uptrend: 65 days (24.0%)
+      volatile: 21 days (7.7%)
+   Regime distribution:
+      sideways: 122 days (40.5%)
+      downtrend: 82 days (27.2%)
+      uptrend: 76 days (25.2%)
+      volatile: 21 days (7.0%)
+   Regime distribution:
+      uptrend: 113 days (41.7%)
+      downtrend: 80 days (29.5%)
+      sideways: 78 days (28.8%)
+   Regime distribution:
+      uptrend: 121 days (40.2%)
+      sideways: 93 days (30.9%)
+      downtrend: 87 days (28.9%)
+   Regime distribution:
+      downtrend: 104 days (38.4%)
+      sideways: 94 days (34.7%)
+      uptrend: 53 days (19.6%)
+      volatile: 20 days (7.4%)
+   Regime distribution:
+      downtrend: 106 days (35.2%)
+      sideways: 99 days (32.9%)
+      uptrend: 76 days (25.2%)
+      volatile: 20 days (6.6%)
+   Regime distribution:
+      downtrend: 127 days (46.9%)
+      sideways: 117 days (43.2%)
+      uptrend: 27 days (10.0%)
+   Regime distribution:
+      downtrend: 156 days (51.8%)
+      sideways: 118 days (39.2%)
+      uptrend: 27 days (9.0%)
+   Regime distribution:
+      uptrend: 87 days (32.1%)
+      downtrend: 82 days (30.3%)
+      sideways: 76 days (28.0%)
+      volatile: 26 days (9.6%)
+   Regime distribution:
+      downtrend: 112 days (37.2%)
+      uptrend: 87 days (28.9%)
+      sideways: 76 days (25.2%)
+      volatile: 26 days (8.6%)
+   Regime distribution:
+      uptrend: 116 days (42.8%)
+      sideways: 72 days (26.6%)
+      downtrend: 48 days (17.7%)
+      volatile: 35 days (12.9%)
+   Regime distribution:
+      uptrend: 136 days (45.2%)
+      sideways: 81 days (26.9%)
+      downtrend: 48 days (15.9%)
+      volatile: 36 days (12.0%)
+   Regime distribution:
+      sideways: 103 days (38.0%)
+      uptrend: 70 days (25.8%)
+      downtrend: 65 days (24.0%)
+      volatile: 33 days (12.2%)
+   Regime distribution:
+      sideways: 117 days (38.9%)
+      uptrend: 76 days (25.2%)
+      downtrend: 68 days (22.6%)
+      volatile: 40 days (13.3%)
+   Regime distribution:
+      uptrend: 86 days (31.7%)
+      downtrend: 84 days (31.0%)
+      sideways: 74 days (27.3%)
+      volatile: 27 days (10.0%)
+   Regime distribution:
+      uptrend: 101 days (33.6%)
+      downtrend: 90 days (29.9%)
+      sideways: 83 days (27.6%)
+      volatile: 27 days (9.0%)
+
+  Loading insider trading data...
+
+   Checking insider activity for 41 stocks...
+   AAPL: +0.15 HIGH insider activity 🟢
+   GOOGL: +0.15 HIGH insider activity 🟢
+   AMZN: +0.15 HIGH insider activity 🟢
+   META: +0.15 HIGH insider activity 🟢
+   TSLA: +0.10 HIGH insider activity 🟢
+   AMD: +0.15 HIGH insider activity 🟢
+   NFLX: +0.15 HIGH insider activity 🟢
+   JPM: +0.15 HIGH insider activity 🟢
+   V: +0.05 Some insider activity 🟡
+   GS: +0.15 HIGH insider activity 🟢
+   BAC: +0.15 HIGH insider activity 🟢
+   MS: +0.15 HIGH insider activity 🟢21:05:54 | INFO | [AAPL] MTF | signal=BUY composite=0.842 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [MSFT] Daily BUY blocked by monthly bear trend (monthly=-0.55)
+21:05:54 | INFO | [MSFT] MTF | signal=HOLD composite=-0.201 conf=0.500 conflicts=1 blocked_by=monthly_bearish
+21:05:54 | INFO | [GOOGL] MTF | signal=BUY composite=0.961 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [AMZN] MTF | signal=BUY composite=0.809 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [NVDA] MTF | signal=BUY composite=0.905 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [META] MTF | signal=AVOID composite=-0.441 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [TSLA] MTF | signal=BUY composite=0.536 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [AMD] MTF | signal=BUY composite=1.000 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [NFLX] MTF | signal=AVOID composite=-0.637 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [SPY] MTF | signal=BUY composite=0.668 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [QQQ] MTF | signal=BUY composite=0.849 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [IWM] MTF | signal=BUY composite=0.598 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [DIA] MTF | signal=HOLD composite=0.363 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [JPM] MTF | signal=HOLD composite=-0.077 conf=0.600 conflicts=0 blocked_by=None
+21:05:54 | INFO | [V] MTF | signal=HOLD composite=0.108 conf=0.600 conflicts=0 blocked_by=None
+21:05:54 | INFO | [GS] MTF | signal=BUY composite=0.649 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [BAC] MTF | signal=HOLD composite=-0.180 conf=0.600 conflicts=0 blocked_by=None
+21:05:54 | INFO | [MS] MTF | signal=BUY composite=0.718 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [JNJ] MTF | signal=HOLD composite=0.297 conf=0.600 conflicts=0 blocked_by=None
+21:05:54 | INFO | [PFE] MTF | signal=HOLD composite=-0.100 conf=0.600 conflicts=0 blocked_by=None
+21:05:54 | INFO | [UNH] MTF | signal=BUY composite=0.877 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [ABBV] MTF | signal=HOLD composite=0.014 conf=0.600 conflicts=0 blocked_by=None
+21:05:54 | INFO | [LLY] MTF | signal=BUY composite=0.597 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [MRK] MTF | signal=HOLD composite=0.170 conf=0.500 conflicts=1 blocked_by=None
+21:05:54 | INFO | [WMT] MTF | signal=BUY composite=0.640 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [COST] MTF | signal=BUY composite=0.687 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [HD] MTF | signal=AVOID composite=-0.909 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [MCD] MTF | signal=AVOID composite=-0.737 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [XOM] MTF | signal=BUY composite=0.663 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [CVX] MTF | signal=BUY composite=0.508 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [OXY] MTF | signal=BUY composite=0.665 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [SOFI] MTF | signal=AVOID composite=-0.830 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [PLTR] MTF | signal=AVOID composite=-0.681 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [RIVN] MTF | signal=AVOID composite=-0.832 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [HOOD] MTF | signal=AVOID composite=-0.504 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [MARA] Daily BUY blocked by monthly bear trend (monthly=-0.66)
+21:05:54 | INFO | [MARA] MTF | signal=HOLD composite=0.284 conf=0.600 conflicts=0 blocked_by=monthly_bearish
+21:05:54 | INFO | [CRM] MTF | signal=AVOID composite=-0.712 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [SNOW] Daily BUY blocked by weekly bear trend (weekly=-1.00)
+21:05:54 | INFO | [SNOW] MTF | signal=HOLD composite=-0.222 conf=0.500 conflicts=1 blocked_by=weekly_bearish
+21:05:54 | INFO | [NET] MTF | signal=HOLD composite=-0.166 conf=0.600 conflicts=0 blocked_by=None
+21:05:54 | INFO | [DDOG] MTF | signal=BUY composite=1.000 conf=0.800 conflicts=0 blocked_by=None
+21:05:54 | INFO | [CRWD] MTF | signal=BUY composite=1.000 conf=0.800 conflicts=0 blocked_by=None
+'(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)), '(Request ID: 2940bbec-e86d-4ced-a031-0891792ef654)')' thrown while requesting HEAD https://huggingface.co/ProsusAI/finbert/resolve/main/config.json
+21:06:13 | WARNING | '(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)), '(Request ID: 2940bbec-e86d-4ced-a031-0891792ef654)')' thrown while requesting HEAD https://huggingface.co/ProsusAI/finbert/resolve/main/config.json
+Retrying in 1s [Retry 1/5].
+21:06:13 | WARNING | Retrying in 1s [Retry 1/5].
+'(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)), '(Request ID: 84ffa035-07a1-45c5-b879-c1a7f2afd8a6)')' thrown while requesting HEAD https://huggingface.co/ProsusAI/finbert/resolve/main/config.json
+21:06:15 | WARNING | '(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)), '(Request ID: 84ffa035-07a1-45c5-b879-c1a7f2afd8a6)')' thrown while requesting HEAD https://huggingface.co/ProsusAI/finbert/resolve/main/config.json
+Retrying in 2s [Retry 2/5].
+21:06:15 | WARNING | Retrying in 2s [Retry 2/5].
+'(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)), '(Request ID: 349cc92f-ac63-4510-b658-572bdb8a7c95)')' thrown while requesting HEAD https://huggingface.co/ProsusAI/finbert/resolve/main/config.json
+21:06:17 | WARNING | '(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)), '(Request ID: 349cc92f-ac63-4510-b658-572bdb8a7c95)')' thrown while requesting HEAD https://huggingface.co/ProsusAI/finbert/resolve/main/config.json
+Retrying in 4s [Retry 3/5].
+21:06:17 | WARNING | Retrying in 4s [Retry 3/5].
+'(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)), '(Request ID: 143daadc-6f67-4920-8379-958ab0256208)')' thrown while requesting HEAD https://huggingface.co/api/resolve-cache/models/ProsusAI/finbert/4556d13015211d73dccd3fdd39d39232506f3e43/config.json
+21:06:21 | WARNING | '(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)), '(Request ID: 143daadc-6f67-4920-8379-958ab0256208)')' thrown while requesting HEAD https://huggingface.co/api/resolve-cache/models/ProsusAI/finbert/4556d13015211d73dccd3fdd39d39232506f3e43/config.json
+Retrying in 1s [Retry 1/5].
+21:06:21 | WARNING | Retrying in 1s [Retry 1/5].
+'(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)), '(Request ID: 552b6a17-9373-4383-b869-4a3fb5c9c2a3)')' thrown while requesting HEAD https://huggingface.co/api/resolve-cache/models/ProsusAI/finbert/4556d13015211d73dccd3fdd39d39232506f3e43/config.json
+21:06:22 | WARNING | '(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)), '(Request ID: 552b6a17-9373-4383-b869-4a3fb5c9c2a3)')' thrown while requesting HEAD https://huggingface.co/api/resolve-cache/models/ProsusAI/finbert/4556d13015211d73dccd3fdd39d39232506f3e43/config.json
+Retrying in 2s [Retry 2/5].
+21:06:22 | WARNING | Retrying in 2s [Retry 2/5].
+'(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)), '(Request ID: 58e9571a-de12-484a-aba8-af58f9e91242)')' thrown while requesting HEAD https://huggingface.co/api/resolve-cache/models/ProsusAI/finbert/4556d13015211d73dccd3fdd39d39232506f3e43/config.json
+21:06:25 | WARNING | '(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)), '(Request ID: 58e9571a-de12-484a-aba8-af58f9e91242)')' thrown while requesting HEAD https://huggingface.co/api/resolve-cache/models/ProsusAI/finbert/4556d13015211d73dccd3fdd39d39232506f3e43/config.json
+Retrying in 4s [Retry 3/5].
+21:06:25 | WARNING | Retrying in 4s [Retry 3/5].
+'(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)), '(Request ID: ab85a4b1-55f3-44b3-a432-dbf84eac8209)')' thrown while requesting HEAD https://huggingface.co/api/resolve-cache/models/ProsusAI/finbert/4556d13015211d73dccd3fdd39d39232506f3e43/config.json
+21:06:29 | WARNING | '(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)), '(Request ID: ab85a4b1-55f3-44b3-a432-dbf84eac8209)')' thrown while requesting HEAD https://huggingface.co/api/resolve-cache/models/ProsusAI/finbert/4556d13015211d73dccd3fdd39d39232506f3e43/config.json
+Retrying in 8s [Retry 4/5].
+21:06:29 | WARNING | Retrying in 8s [Retry 4/5].
+21:06:59 | INFO | AAPL: insider boost +0.15 (sizing only)
+21:06:59 | INFO | GOOGL: insider boost +0.15 (sizing only)
+21:06:59 | INFO | AMZN: insider boost +0.15 (sizing only)
+21:06:59 | INFO | META: insider boost +0.15 (sizing only)
+21:06:59 | INFO | TSLA: insider boost +0.10 (sizing only)
+21:06:59 | INFO | AMD: insider boost +0.15 (sizing only)
+21:06:59 | INFO | NFLX: insider boost +0.15 (sizing only)
+21:06:59 | INFO | JPM: insider boost +0.15 (sizing only)
+21:06:59 | INFO | GS: insider boost +0.15 (sizing only)
+21:06:59 | INFO | BAC: insider boost +0.15 (sizing only)
+21:06:59 | INFO | MS: insider boost +0.15 (sizing only)
+21:06:59 | INFO | JNJ: insider boost +0.15 (sizing only)
+21:06:59 | INFO | PFE: insider boost +0.15 (sizing only)
+21:06:59 | INFO | ABBV: insider boost +0.15 (sizing only)
+21:06:59 | INFO | LLY: insider boost +0.15 (sizing only)
+21:06:59 | INFO | MRK: insider boost +0.15 (sizing only)
+21:06:59 | INFO | WMT: insider boost +0.15 (sizing only)
+21:06:59 | INFO | OXY: insider boost +0.15 (sizing only)
+21:06:59 | INFO | SOFI: insider boost +0.10 (sizing only)
+21:06:59 | INFO | RIVN: insider boost +0.15 (sizing only)
+21:06:59 | INFO | HOOD: insider boost +0.15 (sizing only)
+21:06:59 | INFO | MARA: insider boost +0.15 (sizing only)
+21:06:59 | INFO | CRM: insider boost +0.10 (sizing only)
+21:06:59 | INFO | NET: insider boost +0.15 (sizing only)
+21:06:59 | INFO | DDOG: insider boost +0.15 (sizing only)
+21:06:59 | INFO | CRWD: insider boost +0.15 (sizing only)
+21:06:59 | INFO | Stock scan complete: 41 signals in 249.0s
+21:07:07 | INFO | Generated 74 features
+21:07:07 | INFO | Regime detection complete
+21:07:07 | INFO | Training ensemble on 107 samples
+21:07:08 | INFO | CatBoost model trained successfully
+21:07:09 | INFO | LSTM training complete. Final loss: 0.4247
+21:07:09 | INFO | LSTM model added to ensemble
+21:07:09 | INFO | Ensemble training complete (5 models)
+21:07:09 | INFO | Generated 74 features
+21:07:09 | INFO | Regime detection complete
+21:07:09 | INFO | Training ensemble on 107 samples
+21:07:10 | INFO | CatBoost model trained successfully
+21:07:11 | INFO | LSTM training complete. Final loss: 0.4803
+21:07:11 | INFO | LSTM model added to ensemble
+21:07:11 | INFO | Ensemble training complete (5 models)
+21:07:11 | INFO | Generated 74 features
+21:07:11 | INFO | Regime detection complete
+21:07:11 | INFO | Training ensemble on 107 samples
+21:07:12 | INFO | CatBoost model trained successfully
+21:07:13 | INFO | LSTM training complete. Final loss: 0.3710
+21:07:13 | INFO | LSTM model added to ensemble
+21:07:13 | INFO | Ensemble training complete (5 models)
+21:07:13 | INFO | Crypto scan complete: 1 signals in 14.0s
+21:07:13 | INFO | Phase 1+2 (scan): 264.1s
+21:07:13 | INFO | Phase 3 (execute stocks): 0.0s
+21:07:13 | INFO | Phase 4 (execute crypto): 0.0s
+
+   JNJ: +0.15 HIGH insider activity 🟢
+   PFE: +0.15 HIGH insider activity 🟢
+   UNH: +0.05 Some insider activity 🟡
+   ABBV: +0.15 HIGH insider activity 🟢
+   LLY: +0.15 HIGH insider activity 🟢
+   MRK: +0.15 HIGH insider activity 🟢
+   WMT: +0.15 HIGH insider activity 🟢
+   MCD: +0.05 Some insider activity 🟡
+   CVX: +0.05 Some insider activity 🟡
+   OXY: +0.15 HIGH insider activity 🟢
+   SOFI: +0.10 HIGH insider activity 🟢
+   PLTR: +0.05 Some insider activity 🟡
+   RIVN: +0.15 HIGH insider activity 🟢
+   HOOD: +0.15 HIGH insider activity 🟢
+   MARA: +0.15 HIGH insider activity 🟢
+   CRM: +0.10 HIGH insider activity 🟢
+   SNOW: +0.05 Some insider activity 🟡
+   NET: +0.15 HIGH insider activity 🟢
+   DDOG: +0.15 HIGH insider activity 🟢
+   CRWD: +0.15 HIGH insider activity 🟢
+   Insider activity found: 32/41 stocks
+  AAPL: MTF 84% BULLISH
+  GOOGL: MTF 96% BULLISH
+  AMZN: MTF 81% BULLISH
+  NVDA: MTF 91% BULLISH
+  TSLA: MTF 54% BULLISH
+  AMD: MTF 100% BULLISH
+  SPY: MTF 67% BULLISH
+  QQQ: MTF 85% BULLISH
+  IWM: MTF 60% BULLISH
+  GS: MTF 65% BULLISH
+  MS: MTF 72% BULLISH
+  UNH: MTF 88% BULLISH
+  LLY: MTF 60% BULLISH
+  WMT: MTF 64% BULLISH
+  COST: MTF 69% BULLISH
+  XOM: MTF 66% BULLISH
+  CVX: MTF 51% BULLISH
+  OXY: MTF 67% BULLISH
+  DDOG: MTF 100% BULLISH
+  CRWD: MTF 100% BULLISH
+
+  MTF complete: 20/41 bullish
+
+📰 Fetching news for 7 symbols...
+   [1/7] PFE... ✅ 45 articles
+   [2/7] JNJ... ✅ 63 articles
+   [3/7] XOM... ✅ 71 articles
+   [4/7] NET... ✅ 46 articles
+   [5/7] RIVN... ✅ 37 articles
+   [6/7] MRK... ✅ 48 articles
+   [7/7] GS... ✅ 41 articles
+
+   Loading sentiment model...
+   (First run will download ~250MB model)
+   ✅ FinBERT sentiment model loaded
+
+🧠 Analyzing sentiment (FinBERT)...
+   PFE... 🟢 score: +0.220 (45 articles)
+   JNJ... ⚪ score: +0.047 (63 articles)
+   XOM... 🟢 score: +0.151 (71 articles)
+   NET... ⚪ score: -0.091 (46 articles)
+   RIVN... ⚪ score: -0.031 (37 articles)
+   MRK... 🟢 score: +0.228 (48 articles)
+   GS... ⚪ score: +0.010 (41 articles)
+  ⚪ AAPL   | pred=0.294 | uptrend    | sent=+0.00 | Technology   🔄↑ | HOLD           | $300.23
+  ⚪ MSFT   | pred=0.424 | uptrend    | sent=+0.00 | Technology   🔄↑ | HOLD           | $421.92
+  ⚪ GOOGL  | pred=0.397 | uptrend    | sent=+0.00 | Technology   🔄↑ | HOLD           | $396.78
+  ⚪ AMZN   | pred=0.413 | uptrend    | sent=+0.00 | Consumer     🔄↓ | HOLD           | $264.14
+  ⚪ NVDA   | pred=0.424 | uptrend    | sent=+0.00 | Technology   🔄↑ | HOLD           | $225.32
+  ⚪ META   | pred=0.406 | sideways   | sent=+0.00 | Communications | HOLD           | $614.23
+  ⚪ TSLA   | pred=0.370 | uptrend    | sent=+0.00 | Consumer     🔄↓ | HOLD           | $422.24
+  ⚠️ AMD    | pred=0.490 | volatile   | sent=+0.00 | Technology   🔄↑ | CAUTION        | $424.10
+  🔴 NFLX   | pred=0.380 | downtrend  | sent=+0.00 | Communications | AVOID          | $87.02
+  ⚪ SPY    | pred=0.447 | uptrend    | sent=+0.00 | Market        | HOLD           | $739.17
+  ⚪ QQQ    | pred=0.364 | uptrend    | sent=+0.00 | Technology   🔄↑ | HOLD           | $708.93
+  ⚪ IWM    | pred=0.471 | uptrend    | sent=+0.00 | Market        | HOLD           | $277.60
+  ⚪ DIA    | pred=0.388 | uptrend    | sent=+0.00 | Market        | HOLD           | $495.37
+  ⚪ JPM    | pred=0.397 | sideways   | sent=+0.00 | Financials   🔄↓ | HOLD           | $297.81
+  ⚪ V      | pred=0.203 | uptrend    | sent=+0.00 | Financials   🔄↓ | HOLD           | $325.75
+  ⚪ GS     | pred=0.547 | uptrend    | sent=+0.01 | Financials   🔄↓ | HOLD           | $948.47
+  ⚪ BAC    | pred=0.442 | sideways   | sent=+0.00 | Financials   🔄↓ | HOLD           | $49.77
+  ⚪ MS     | pred=0.508 | uptrend    | sent=+0.00 | Financials   🔄↓ | HOLD           | $192.51
+  🔴 JNJ    | pred=0.776 | downtrend  | sent=+0.05 | Healthcare   🔄↓ | AVOID          | $226.71
+  🔴 PFE    | pred=0.859 | downtrend  | sent=+0.22📈 | Healthcare   🔄↓ | AVOID          | $25.33
+  ⚪ UNH    | pred=0.317 | uptrend    | sent=+0.00 | Healthcare   🔄↓ | HOLD           | $393.85
+  🔴 ABBV   | pred=0.519 | downtrend  | sent=+0.00 | Healthcare   🔄↓ | AVOID          | $210.39
+  ⚪ LLY    | pred=0.461 | sideways   | sent=+0.00 | Healthcare   🔄↓ | HOLD           | $1004.92
+  🔴 MRK    | pred=0.616 | downtrend  | sent=+0.23📈 | Healthcare   🔄↓ | AVOID          | $111.38
+  ⚪ WMT    | pred=0.418 | uptrend    | sent=+0.00 | Staples       | HOLD           | $131.45
+  ⚪ COST   | pred=0.220 | uptrend    | sent=+0.00 | Consumer     🔄↓ | HOLD           | $1048.95
+  🔴 HD     | pred=0.432 | downtrend  | sent=+0.00 | Consumer     🔄↓ | AVOID          | $297.51
+  🔴 MCD    | pred=0.530 | downtrend  | sent=+0.00 | Consumer     🔄↓ | AVOID          | $276.39
+  ⚪ XOM    | pred=0.728 | sideways   | sent=+0.15📈 | Energy       🔄↑ | HOLD           | $157.92
+  🔴 CVX    | pred=0.523 | downtrend  | sent=+0.00 | Energy       🔄↑ | AVOID          | $191.10
+  ⚪ OXY    | pred=0.477 | uptrend    | sent=+0.00 | Energy       🔄↑ | HOLD           | $59.62
+  🔴 SOFI   | pred=0.242 | downtrend  | sent=+0.00 | Financials   🔄↓ | AVOID          | $15.61
+  🔴 PLTR   | pred=0.478 | downtrend  | sent=+0.00 | Technology   🔄↑ | AVOID          | $133.99
+  ⚪ RIVN   | pred=0.622 | sideways   | sent=-0.03 | Consumer     🔄↓ | HOLD           | $13.79
+  ⚪ HOOD   | pred=0.351 | uptrend    | sent=+0.00 | Financials   🔄↓ | HOLD           | $77.14
+  ⚪ MARA   | pred=0.113 | uptrend    | sent=+0.00 | Technology   🔄↑ | HOLD           | $12.44
+  🔴 CRM    | pred=0.301 | downtrend  | sent=+0.00 | Technology   🔄↑ | AVOID          | $173.51
+  🔴 SNOW   | pred=0.180 | downtrend  | sent=+0.00 | Technology   🔄↑ | AVOID          | $157.47
+  ⚪ NET    | pred=0.667 | sideways   | sent=-0.09 | Technology   🔄↑ | HOLD           | $197.56
+  ⚠️ DDOG   | pred=0.346 | volatile   | sent=+0.00 | Technology   🔄↑ | CAUTION        | $207.98
+  ⚪ CRWD   | pred=0.488 | uptrend    | sent=+0.00 | Technology   🔄↑ | HOLD           | $594.08
+
+============================================================
+PHASE 2: CRYPTO ANALYSIS
+============================================================
+
+============================================================
+CRYPTO PREDICTION PIPELINE
+============================================================
+
+🪙 Fetching data for 3 crypto pairs...
+   [1/3] Fetching BTC/USD... ✅ 366 candles
+   [2/3] Fetching ETH/USD... ✅ 366 candles
+   [3/3] Fetching SOL/USD... ✅ 366 candles
+
+   ✅ Fetched 3/3 pairs
+   Regime distribution:
+      sideways: 68 days (40.7%)
+      downtrend: 54 days (32.3%)
+      uptrend: 41 days (24.6%)
+      volatile: 4 days (2.4%)
+
+   Training model for BTC/USD...
+   BTC/USD validation AUC: 0.397
+   ❌ BTC/USD model rejected
+   Regime distribution:
+      sideways: 69 days (41.3%)
+      downtrend: 54 days (32.3%)
+      uptrend: 43 days (25.7%)
+      volatile: 1 days (0.6%)
+
+   Training model for ETH/USD...
+   ETH/USD validation AUC: 0.473
+   ❌ ETH/USD model rejected
+   Regime distribution:
+      sideways: 83 days (49.7%)
+      downtrend: 74 days (44.3%)
+      uptrend: 7 days (4.2%)
+      volatile: 3 days (1.8%)
+
+   Training model for SOL/USD...
+   SOL/USD validation AUC: 0.591
+   ✅ SOL/USD model accepted
+  ⚪ SOL/USD    | pred=0.531 | sideways   | HOLD | $86.14 | ATR proxy $4.31
+
+============================================================
+PHASE 3: EXECUTE SIGNALS
+============================================================
+
+============================================================
+PHASE 4: CRYPTO SIGNALS
+============================================================
+
+============================================================
+PHASE 5: POSITION MANAGEMENT
+============================================================
+
+  No open positions to manage21:07:13 | INFO | Phase 5 (position mgmt): 0.0s
+21:07:13 | INFO | Phase 6 (save): 0.0s
+
+
+============================================================
+PHASE 6: SAVE DASHBOARD DATA
+============================================================
+  💾 All data saved (atomic)
+
+============================================================
+PHASE 7: PORTFOLIO SUMMARY
+============================================================
+
+============================================================
+  PAPER TRADING PORTFOLIO
+============================================================
+  Cash:              $   10,000.00
+  Daily P&L:         $       +0.00
+  Daily limit:       $      500.00  ✅ Active
+
+  Position Value:    $        0.00
+  Total Value:       $   10,000.00
+  Total PnL:         $       +0.00 (+0.0%)
+  Total Trades:                 0
+============================================================
+
+✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
+  ALPHA EDGE V5 SCAN COMPLETE
+✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
+
+  Scanned : 41 stocks + 1 crypto
+  Earnings: 3 stocks this week
+  Duration: 267.8s
+  Models  : XGB + LGB + RF + CatBoost + LSTM per stock
+
+  Dashboard → python run_dashboard.py
+             → http://localhost:8050
+
