@@ -2,16 +2,16 @@
   {
     "symbol": "HD",
     "date": "2026-05-19",
-    "days_until": 1
+    "days_until": 0
   },
   {
     "symbol": "NVDA",
     "date": "2026-05-20",
-    "days_until": 2
+    "days_until": 1
   },
   {
     "symbol": "WMT",
     "date": "2026-05-21",
-    "days_until": 3
+    "days_until": 2
   }
 ]
