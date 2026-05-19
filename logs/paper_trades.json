@@ -1,5 +1,5 @@
 {
-  "capital": 9033.367431106568,
+  "capital": 8295.799318893432,
   "starting_capital": 10000.0,
   "positions": {
     "MS": {
@@ -14,7 +14,21 @@
       "stop_loss_pct": 0.045441083565269186,
       "atr": 4.385746152566919,
       "partial_exit_done": false,
-      "current_price": 192.52499389648438
+      "current_price": 191.91000366210938
+    },
+    "SPY": {
+      "shares": 1,
+      "entry_price": 736.5681122131347,
+      "market_price": 736.2000122070312,
+      "entry_date": "2026-05-19T18:29:13.844144",
+      "highest_price": 736.5681122131347,
+      "signal": 0.33390965461928984,
+      "cost": 737.5681122131347,
+      "reason": "uptrend",
+      "stop_loss_pct": 0.02061549004588912,
+      "atr": 7.58856201171875,
+      "partial_exit_done": false,
+      "current_price": 736.2000122070312
     }
   },
   "trade_history": [
@@ -31,11 +45,25 @@
       "reason": "uptrend",
       "atr": 4.385746152566919,
       "stop_loss_pct": 0.045441083565269186
+    },
+    {
+      "action": "BUY",
+      "symbol": "SPY",
+      "shares": 1,
+      "price": 736.2000122070312,
+      "fill_price": 736.5681122131347,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "cost": 737.5681122131347,
+      "date": "2026-05-19T18:29:13.844155",
+      "reason": "uptrend",
+      "atr": 7.58856201171875,
+      "stop_loss_pct": 0.02061549004588912
     }
   ],
   "daily_realized_pnl": 0.0,
   "daily_loss_limit": 500.0,
   "last_reset_date": "2026-05-19",
   "_halt_trading": false,
-  "saved_at": "2026-05-19T16:46:38.944552"
+  "saved_at": "2026-05-19T18:29:14.337641"
 }
