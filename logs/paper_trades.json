@@ -1,5 +1,5 @@
 {
-  "capital": 8267.48090132141,
+  "capital": 8825.754350593566,
   "starting_capital": 10000.0,
   "positions": {
     "MS": {
@@ -16,19 +16,19 @@
       "partial_exit_done": false,
       "current_price": 201.02999877929688
     },
-    "UNH": {
-      "shares": 2,
-      "entry_price": 385.79280610656735,
-      "market_price": 385.6000061035156,
-      "entry_date": "2026-05-20T16:46:20.137438",
-      "highest_price": 389.72808837890625,
-      "signal": 0.3811898474660759,
-      "cost": 772.5856122131347,
+    "NET": {
+      "shares": 1,
+      "entry_price": 216.27808316802978,
+      "market_price": 216.1699981689453,
+      "entry_date": "2026-05-25T18:16:37.353210",
+      "highest_price": 216.27808316802978,
+      "signal": 0.5885536335106603,
+      "cost": 217.27808316802978,
       "reason": "uptrend",
-      "stop_loss_pct": 0.04658972005583387,
-      "atr": 8.982498168945312,
+      "stop_loss_pct": 0.08,
+      "atr": 14.522070748465401,
       "partial_exit_done": false,
-      "current_price": 388.4700012207031
+      "current_price": 216.1699981689453
     }
   },
   "trade_history": [
@@ -87,11 +87,39 @@
       "pnl_pct": 0.011810289209834055,
       "date": "2026-05-25T16:15:06.540370",
       "reason": "time_stop"
+    },
+    {
+      "action": "BUY",
+      "symbol": "NET",
+      "shares": 1,
+      "price": 216.1699981689453,
+      "fill_price": 216.27808316802978,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "cost": 217.27808316802978,
+      "date": "2026-05-25T18:16:37.353226",
+      "reason": "uptrend",
+      "atr": 14.522070748465401,
+      "stop_loss_pct": 0.08
+    },
+    {
+      "action": "SELL",
+      "symbol": "UNH",
+      "shares": 2,
+      "price": 388.4700012207031,
+      "fill_price": 388.2757662200928,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "revenue": 775.5515324401856,
+      "pnl": 2.9659202270509013,
+      "pnl_pct": 0.006435993813838985,
+      "date": "2026-05-25T18:16:37.803185",
+      "reason": "time_stop"
     }
   ],
-  "daily_realized_pnl": 6.699082427978624,
+  "daily_realized_pnl": 9.665002655029525,
   "daily_loss_limit": 500.0,
   "last_reset_date": "2026-05-25",
   "_halt_trading": false,
-  "saved_at": "2026-05-25T16:15:07.587807"
+  "saved_at": "2026-05-25T18:16:38.232883"
 }
