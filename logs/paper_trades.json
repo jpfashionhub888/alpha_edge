@@ -1,5 +1,5 @@
 {
-  "capital": 8825.754350593566,
+  "capital": 8047.42587815094,
   "starting_capital": 10000.0,
   "positions": {
     "MS": {
@@ -29,6 +29,20 @@
       "atr": 14.522070748465401,
       "partial_exit_done": false,
       "current_price": 216.1699981689453
+    },
+    "UNH": {
+      "shares": 2,
+      "entry_price": 388.66423622131344,
+      "market_price": 388.4700012207031,
+      "entry_date": "2026-05-25T21:41:33.230747",
+      "highest_price": 388.66423622131344,
+      "signal": 0.41751270030658444,
+      "cost": 778.3284724426269,
+      "reason": "uptrend",
+      "stop_loss_pct": 0.04827360361198013,
+      "atr": 9.37642342703683,
+      "partial_exit_done": false,
+      "current_price": 388.4700012207031
     }
   },
   "trade_history": [
@@ -115,11 +129,25 @@
       "pnl_pct": 0.006435993813838985,
       "date": "2026-05-25T18:16:37.803185",
       "reason": "time_stop"
+    },
+    {
+      "action": "BUY",
+      "symbol": "UNH",
+      "shares": 2,
+      "price": 388.4700012207031,
+      "fill_price": 388.66423622131344,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "cost": 778.3284724426269,
+      "date": "2026-05-25T21:41:33.230757",
+      "reason": "uptrend",
+      "atr": 9.37642342703683,
+      "stop_loss_pct": 0.04827360361198013
     }
   ],
   "daily_realized_pnl": 9.665002655029525,
   "daily_loss_limit": 500.0,
   "last_reset_date": "2026-05-25",
   "_halt_trading": false,
-  "saved_at": "2026-05-25T18:16:38.232883"
+  "saved_at": "2026-05-25T21:41:33.745287"
 }
