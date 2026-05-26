@@ -14,7 +14,7 @@
       "stop_loss_pct": 0.045441083565269186,
       "atr": 4.385746152566919,
       "partial_exit_done": false,
-      "current_price": 200.30499267578125
+      "current_price": 200.9600067138672
     },
     "NET": {
       "shares": 1,
@@ -28,7 +28,7 @@
       "stop_loss_pct": 0.08,
       "atr": 14.522070748465401,
       "partial_exit_done": false,
-      "current_price": 220.3800048828125
+      "current_price": 218.96499633789062
     },
     "UNH": {
       "shares": 2,
@@ -42,7 +42,7 @@
       "stop_loss_pct": 0.04827360361198013,
       "atr": 9.37642342703683,
       "partial_exit_done": false,
-      "current_price": 377.4501037597656
+      "current_price": 379.2950134277344
     }
   },
   "trade_history": [
@@ -149,5 +149,5 @@
   "daily_loss_limit": 500.0,
   "last_reset_date": "2026-05-25",
   "_halt_trading": false,
-  "saved_at": "2026-05-26T17:06:43.001872"
+  "saved_at": "2026-05-26T19:07:28.685115"
 }
