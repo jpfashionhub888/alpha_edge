@@ -1,34 +1,34 @@
 {
-  "capital": 8047.42587815094,
+  "capital": 8454.43176461029,
   "starting_capital": 10000.0,
   "positions": {
     "MS": {
-      "shares": 5,
+      "shares": 3,
       "entry_price": 193.1265137786865,
       "market_price": 193.02999877929688,
       "entry_date": "2026-05-15T19:14:00.098359",
-      "highest_price": 202.32000732421875,
+      "highest_price": 204.10499572753906,
       "signal": 0.3939676457437838,
-      "cost": 966.6325688934326,
+      "cost": 414.2711009543282,
       "reason": "uptrend",
       "stop_loss_pct": 0.045441083565269186,
       "atr": 4.385746152566919,
-      "partial_exit_done": false,
-      "current_price": 201.61000061035156
+      "partial_exit_done": true,
+      "current_price": 204.10499572753906
     },
     "NET": {
       "shares": 1,
       "entry_price": 216.27808316802978,
       "market_price": 216.1699981689453,
       "entry_date": "2026-05-25T18:16:37.353210",
-      "highest_price": 220.3800048828125,
+      "highest_price": 227.0,
       "signal": 0.5885536335106603,
       "cost": 217.27808316802978,
       "reason": "uptrend",
       "stop_loss_pct": 0.08,
       "atr": 14.522070748465401,
       "partial_exit_done": false,
-      "current_price": 209.22000122070312
+      "current_price": 227.0
     },
     "UNH": {
       "shares": 2,
@@ -42,7 +42,7 @@
       "stop_loss_pct": 0.04827360361198013,
       "atr": 9.37642342703683,
       "partial_exit_done": false,
-      "current_price": 384.010009765625
+      "current_price": 383.8500061035156
     }
   },
   "trade_history": [
@@ -143,11 +143,25 @@
       "reason": "uptrend",
       "atr": 9.37642342703683,
       "stop_loss_pct": 0.04827360361198013
+    },
+    {
+      "action": "PARTIAL_SELL",
+      "symbol": "MS",
+      "shares": 2,
+      "price": 204.10499572753906,
+      "fill_price": 204.0029432296753,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "revenue": 407.0058864593506,
+      "pnl": 21.752858901977618,
+      "pnl_pct": 0.05684606289446804,
+      "date": "2026-05-28T17:33:45.358684",
+      "reason": "partial_exit_5pct"
     }
   ],
   "daily_realized_pnl": 9.665002655029525,
   "daily_loss_limit": 500.0,
   "last_reset_date": "2026-05-25",
   "_halt_trading": false,
-  "saved_at": "2026-05-27T22:18:51.748165"
+  "saved_at": "2026-05-28T17:33:45.360366"
 }
