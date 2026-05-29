@@ -7,14 +7,14 @@
       "entry_price": 193.1265137786865,
       "market_price": 193.02999877929688,
       "entry_date": "2026-05-15T19:14:00.098359",
-      "highest_price": 207.39500427246094,
+      "highest_price": 208.0,
       "signal": 0.3939676457437838,
       "cost": 414.2711009543282,
       "reason": "uptrend",
       "stop_loss_pct": 0.045441083565269186,
       "atr": 4.385746152566919,
       "partial_exit_done": true,
-      "current_price": 207.17999267578125
+      "current_price": 208.0
     },
     "UNH": {
       "shares": 2,
@@ -28,7 +28,7 @@
       "stop_loss_pct": 0.04827360361198013,
       "atr": 9.37642342703683,
       "partial_exit_done": false,
-      "current_price": 381.07000732421875
+      "current_price": 380.30999755859375
     }
   },
   "trade_history": [
@@ -163,5 +163,5 @@
   "daily_loss_limit": 500.0,
   "last_reset_date": "2026-05-29",
   "_halt_trading": false,
-  "saved_at": "2026-05-29T19:18:00.409591"
+  "saved_at": "2026-05-29T22:12:18.628044"
 }
