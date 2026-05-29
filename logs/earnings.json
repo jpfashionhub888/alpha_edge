@@ -1,12 +1,7 @@
 [
   {
-    "symbol": "COST",
-    "date": "2026-05-28",
-    "days_until": 0
-  },
-  {
     "symbol": "CRWD",
     "date": "2026-06-03",
-    "days_until": 6
+    "days_until": 5
   }
 ]
