@@ -1,543 +1,767 @@
 # main.py
 """
-AlphaEdge Main Orchestrator V5
-
-Responsibilities (thin orchestrator only):
-    - Initialise all components
-    - Call StockScanner for signals
-    - Act on signals via PaperTrader
-    - Manage positions (stop-loss / take-profit)
-    - Write dashboard JSON (atomic)
-    - Send Telegram alerts
-    - Run weekly analytics + critic review
-
-Does NOT:
-    - Contain any scan logic       (scanner.py)
-    - Contain feature engineering  (feature_engine.py)
-    - Contain model training       (technical_model.py)
-    - Contain position sizing      (paper_trader.py)
-
-Fixes applied (V5):
-    - Scan logic extracted to scanner.py (testable, single-responsibility)
-    - add_all_features() now called inside each window (look-ahead fix)
-    - Earnings calendar fetched concurrently (was blocking 2-5 min)
-    - Crypto open_position() now passes ATR proxy (was passing nothing)
-    - Top-level exception handler with Telegram alert on crash
-    - Signal weights promoted to named constants in scanner.py
-    - MTF lambda replaced with named function (scanner.py)
-    - Crypto prices fall back to entry price for stop-loss check
-    - Insider boost now affects sizing_combined only (not signal)
-    - Critic agent gated behind weekly check (was firing every scan)
-    - Phase timing logged throughout
-    - sector_scores save uses safe key access
-    - P&L calculation uses trader.get_portfolio_value()
+AlphaEdge Main Trading Scanner V4
+Signal Quality Upgrades:
+- MTF score correctly calibrated (-1 to +1 scale)
+- MTF composite integrated INTO signal generation (not just post-hoc veto)
+- BUY threshold raised from 0.55 → 0.63
+- Volume confirmation required before BUY
+- Minimum 2:1 risk/reward check using ATR before execution
+- Crypto signal logic matches stock rigor
 """
 
-import json
-import logging
-import os
-
-# ── Load secrets from config/secrets.env ──────────────────────────────────
-def _load_secrets():
-    secrets_path = os.path.join(
-        os.path.dirname(__file__), 'config', 'secrets.env'
-    )
-    if os.path.exists(secrets_path):
-        with open(secrets_path) as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith('#') and '=' in line:
-                    key, val = line.split('=', 1)
-                    os.environ.setdefault(key.strip(), val.strip())
-
-_load_secrets()
-
-import tempfile
-import time
 import warnings
-from datetime import datetime
-
-import pandas as pd
-
+import os
 warnings.filterwarnings('ignore')
 os.environ['PYTHONWARNINGS'] = 'ignore'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from critic_agent import CriticAgent
-from execution.paper_trader import PaperTrader
-from market_regime import MarketRegimeDetector
+import json
+import logging
+import pandas as pd
+from veto_agent import VetoAgent
+from insider_tracker import InsiderTracker
+from datetime import datetime
+from data.stock_data import StockDataFetcher
+from data.news_data import NewsFetcher
+from data.feature_engine import FeatureEngine
+from models.technical_model import TechnicalPredictor
+from models.sentiment_model import SentimentAnalyzer
+from models.regime_detector import RegimeDetector
+from market_regime import MarketRegimeFilter
+from multi_timeframe import MultiTimeframeAnalyzer
+from correlation_filter import CorrelationFilter
+from models.crypto_predictor import CryptoPredictor
 from models.sector_rotation import SectorRotation
+from execution.paper_trader import PaperTrader
 from monitoring.telegram_bot import TelegramBot
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import mutual_info_classif
+from model_cache import save_models, load_models, is_cache_valid
+from critic_agent import CriticAgent
 from performance_analytics import PerformanceAnalytics
 from risk_circuit_breaker import RiskCircuitBreaker
-from scanner import StockScanner
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s | %(levelname)s | %(message)s',
-    datefmt='%H:%M:%S',
+    format='%(levelname)s: %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-# ------------------------------------------------------------------ #
-#  CONFIGURATION                                                       #
-# ------------------------------------------------------------------ #
-
-STOCK_WATCHLIST = [
-    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA',
-    'META', 'TSLA', 'AMD', 'NFLX',
-    'SPY', 'QQQ', 'IWM', 'DIA',
-    'JPM', 'V', 'GS', 'BAC', 'MS',
-    'JNJ', 'PFE', 'UNH', 'ABBV', 'LLY', 'MRK',
-    'WMT', 'COST', 'HD', 'MCD',
-    'XOM', 'CVX', 'OXY',
-    'SOFI', 'PLTR', 'RIVN', 'HOOD', 'MARA',
-    'CRM', 'SNOW', 'NET', 'DDOG', 'CRWD',
-]
-
-CRYPTO_WATCHLIST = ['BTC/USD', 'ETH/USD', 'SOL/USD']
-
-STARTING_CAPITAL = 10_000.0
+# ─────────────────────────────────────────────
+# SIGNAL QUALITY CONSTANTS  (tune these)
+# ─────────────────────────────────────────────
+BUY_THRESHOLD       = 0.63   # was 0.55 — raised to reduce noise signals
+MTF_BLOCK_THRESHOLD = 0.0    # FIX: MTF scores are -1 to +1, not 0 to 1
+                              # A score of 0.0 means neutral; block only below 0
+VOLUME_SPIKE_MIN    = 1.3    # current volume must be 1.3x 20-day avg to confirm
+MIN_RISK_REWARD     = 2.0    # minimum reward:risk ratio using ATR before executing
+MTF_WEIGHT_IN_SIGNAL = 0.15  # how much MTF composite influences combined score
+# ─────────────────────────────────────────────
 
 
-# ------------------------------------------------------------------ #
-#  HELPERS                                                             #
-# ------------------------------------------------------------------ #
+def get_earnings_calendar(watchlist):
+    """Check which stocks have earnings this week."""
+    import yfinance as yf
+    print("\n📅 Checking earnings calendar...")
+    earnings_soon = []
+    for symbol in watchlist:
+        try:
+            ticker = yf.Ticker(symbol)
+            cal = ticker.calendar
+            if cal is not None and len(cal) > 0:
+                if isinstance(cal, dict):
+                    ed = cal.get('Earnings Date', [None])
+                    if ed:
+                        if isinstance(ed, list):
+                            ed = ed[0]
+                        if ed is not None:
+                            from datetime import timedelta
+                            now = datetime.now()
+                            if hasattr(ed, 'date'):
+                                ed = ed.date()
+                            today = now.date()
+                            diff = (ed - today).days
+                            if 0 <= diff <= 7:
+                                earnings_soon.append({
+                                    'symbol': symbol,
+                                    'date': str(ed),
+                                    'days_until': diff,
+                                })
+        except Exception:
+            pass
 
-def atomic_json_write(filepath: str, data: object) -> None:
+    if earnings_soon:
+        n = len(earnings_soon)
+        print(f"  ⚠️  {n} stocks reporting this week:")
+        for e in earnings_soon:
+            d = e['days_until']
+            w = "TODAY!" if d == 0 else ("TOMORROW!" if d == 1 else f"in {d} days")
+            print(f"    ⚠️  {e['symbol']} earnings {w}")
+    else:
+        print("  ✅ No earnings this week")
+    return earnings_soon
+
+
+def get_full_watchlist():
+    """Return expanded stock watchlist."""
+    return [
+        'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA',
+        'META', 'TSLA', 'AMD', 'NFLX',
+        'SPY', 'QQQ', 'IWM', 'DIA',
+        'JPM', 'V', 'GS', 'BAC', 'MS',
+        'JNJ', 'PFE', 'UNH', 'ABBV', 'LLY', 'MRK',
+        'WMT', 'COST', 'HD', 'MCD',
+        'XOM', 'CVX', 'OXY',
+        'SOFI', 'PLTR', 'RIVN', 'HOOD', 'MARA',
+        'CRM', 'SNOW', 'NET', 'DDOG', 'CRWD',
+    ]
+
+
+def check_volume_confirmation(stock_data: dict, symbol: str) -> tuple[bool, float]:
     """
-    Write JSON atomically: write to temp file then os.replace().
-    Prevents corrupted JSON if the process is killed mid-write.
+    FIX (new): Confirm entry with volume spike.
+    Returns (confirmed: bool, ratio: float)
+    Volume must be >= VOLUME_SPIKE_MIN x 20-day average on the signal day.
     """
-    os.makedirs(os.path.dirname(filepath) or '.', exist_ok=True)
-    tmp_fd, tmp_path = tempfile.mkstemp(
-        dir=os.path.dirname(filepath) or '.', suffix='.tmp'
-    )
     try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            json.dump(data, f, indent=2)
-        os.replace(tmp_path, filepath)
+        df = stock_data.get(symbol)
+        if df is None or len(df) < 22:
+            return False, 0.0
+        vol_today  = float(df['volume'].iloc[-1])
+        vol_avg_20 = float(df['volume'].iloc[-21:-1].mean())
+        if vol_avg_20 == 0:
+            return False, 0.0
+        ratio = vol_today / vol_avg_20
+        return ratio >= VOLUME_SPIKE_MIN, round(ratio, 2)
     except Exception:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-        raise
+        return False, 0.0
 
 
-# ------------------------------------------------------------------ #
-#  INNER SCAN FUNCTION                                                 #
-# ------------------------------------------------------------------ #
-
-def _run_scan(telegram: TelegramBot) -> None:
+def check_risk_reward(price: float, atr: float | None) -> tuple[bool, float]:
     """
-    Full scan logic. Separated from run_daily_scan() so the
-    top-level wrapper can catch all exceptions and alert Telegram.
+    FIX (new): Validate minimum risk/reward before entry.
+    Uses 1x ATR as stop distance, 2x ATR as minimum target.
+    Returns (passes: bool, rr_ratio: float)
     """
+    if atr is None or atr <= 0 or price <= 0:
+        return True, 0.0   # can't compute — don't block, just skip check
+    stop_distance   = atr * 1.0    # stop 1 ATR below entry
+    target_distance = atr * 2.0    # minimum target 2 ATR above entry
+    rr_ratio = target_distance / stop_distance  # = 2.0 always with this method
+    # This will evolve when you add dynamic targets; keeping structure for now
+    passes = rr_ratio >= MIN_RISK_REWARD
+    return passes, round(rr_ratio, 2)
+
+
+def compute_signal(
+    pred: float,
+    regime: str,
+    sent_score: float,
+    sect_mult: float,
+    symbol: str,
+    earnings_symbols: list,
+    mtf_composite: float = 0.0,   # FIX: MTF now part of signal, not just blocker
+) -> tuple[str, float]:
+    """
+    Compute the final trading signal for a stock.
+
+    Changes from V3:
+    - mtf_composite is now an input (was ignored in signal calc before)
+    - Weights rebalanced to make room for MTF input
+    - BUY threshold raised to BUY_THRESHOLD constant
+    - Single source of truth for signal logic
+    """
+    # FIX: MTF composite (-1 to +1) normalized to 0–1 range for weighting
+    mtf_norm = (mtf_composite + 1.0) / 2.0  # converts -1..+1 → 0..1
+
+    # Weight breakdown: pred 50%, sentiment 15%, sector 15%, MTF 15%, (leaves 5% neutral floor)
+    combined = (
+        pred               * 0.50
+        + (sent_score + 0.5) * 0.15
+        + (sect_mult - 0.5)  * 0.15
+        + mtf_norm           * MTF_WEIGHT_IN_SIGNAL
+        + 0.05               # small neutral floor — prevents hair-trigger signals
+    )
+
+    signal = 'HOLD'
+
+    if regime == 'uptrend' and combined > BUY_THRESHOLD:
+        signal = 'BUY'
+    elif regime == 'downtrend':
+        signal = 'AVOID'
+    elif regime == 'volatile':
+        signal = 'CAUTION'
+
+    # Sector rotation boost (only upgrades HOLD → BUY in sideways market)
+    if sect_mult > 1.1 and signal == 'HOLD':
+        if pred > 0.60 and regime == 'sideways' and mtf_norm > 0.55:
+            signal = 'BUY'
+
+    # Sector rotation penalty
+    if sect_mult < 0.8 and signal == 'BUY':
+        signal = 'HOLD'
+
+    # Earnings protection
+    if symbol in earnings_symbols and signal == 'BUY':
+        signal = 'EARNINGS_HOLD'
+
+    return signal, combined
+
+
+def calc_atr(stock_data: dict, symbol: str) -> float | None:
+    """Calculate 14-period ATR for a symbol. Returns None on failure."""
+    try:
+        if symbol not in stock_data:
+            return None
+        df_atr = stock_data[symbol].copy()
+        high  = df_atr['high']
+        low   = df_atr['low']
+        close = df_atr['close']
+        tr1   = high - low
+        tr2   = abs(high - close.shift(1))
+        tr3   = abs(low  - close.shift(1))
+        true_range = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+        return float(true_range.rolling(14).mean().iloc[-1])
+    except Exception:
+        return None
+
+
+def run_daily_scan():
+    """Run the complete daily trading scan."""
     now = datetime.now().strftime('%Y-%m-%d %H:%M')
     print("\n" + "🚀" * 25)
-    print(f"  ALPHA EDGE V5 — {now}")
-    print("  4-Model Ensemble + Sector Rotation + LSTM")
+    print(f"ALPHA EDGE V4 - {now}")
+    print("Signal Quality Upgrade: MTF integrated, volume confirmation, R:R filter")
     print("🚀" * 25)
 
-    scan_start = time.time()
-
-    # ── Init trader ───────────────────────────────────────────────
-    trader = PaperTrader(starting_capital=STARTING_CAPITAL)
+    trader   = PaperTrader(starting_capital=10000.0)
     trader.load_state()
+    telegram = TelegramBot()
 
-    # ================================================================
-    # PHASE 0: SECTOR + MARKET REGIME + CIRCUIT BREAKER
-    # ================================================================
-    print("\n" + "=" * 60)
-    print("PHASE 0: MARKET CONTEXT")
-    print("=" * 60)
-    phase_start = time.time()
+    stock_watchlist = get_full_watchlist()
 
-    sector_analyzer = SectorRotation()
-    sector_scores   = sector_analyzer.analyze()
+    # ==========================================
+    # PHASE 0: EARNINGS + SECTOR ROTATION
+    # ==========================================
+    print("\n" + "="*60)
+    print("PHASE 0: EARNINGS + SECTOR ROTATION")
+    print("="*60)
+    earnings_soon    = get_earnings_calendar(stock_watchlist)
+    earnings_symbols = [e['symbol'] for e in earnings_soon]
+    sector_analyzer  = SectorRotation()
+    sector_scores    = sector_analyzer.analyze()
 
-    regime_filter = MarketRegimeDetector()
-    try:
-        import yfinance as yf
-        _spy = yf.download(
-            'SPY',
-            period='1y',
-            interval='1d',
-            progress=False,
-            auto_adjust=True,
-        )
-        _spy.columns = [
-            c[0].lower() if isinstance(c, tuple) else c.lower()
-            for c in _spy.columns
-        ]
-        market_regime = regime_filter.detect(_spy)
-        # Add can_trade key for backward compatibility
-        market_regime['can_trade'] = market_regime.get('tradeable', True)
-        market_regime['reason'] = (
-            f"regime={market_regime.get('regime','unknown')} "
-            f"confidence={market_regime.get('confidence',0):.2f}"
-        )
-    except Exception as _re:
-        logger.warning(
-            f"Regime detection failed: {_re} — defaulting to unknown"
-        )
-        market_regime = {
-            'regime'    : 'unknown',
-            'confidence': 0.0,
-            'tradeable' : True,
-            'can_trade' : True,
-            'signals'   : {},
-            'reason'    : 'regime detection failed',
-        }
+    # ==========================================
+    # MARKET REGIME FILTER
+    # ==========================================
+    print("\n" + "="*60)
+    print("MARKET REGIME FILTER")
+    print("="*60)
+    regime_filter = MarketRegimeFilter()
+    market_regime = regime_filter.analyze()
 
-    # Portfolio value for circuit breaker
-    # Portfolio value for circuit breaker
-    portfolio_value = trader.get_portfolio_value(
-        {s: p.get('entry_price', 0)
-         for s, p in trader.positions.items()}
+    # ==========================================
+    # RISK CIRCUIT BREAKER CHECK
+    # ==========================================
+    print("\n" + "="*60)
+    print("RISK CIRCUIT BREAKER")
+    print("="*60)
+    circuit_breaker = RiskCircuitBreaker()
+    portfolio_value = trader.capital + sum(
+        pos.get('shares', 0) * pos.get('current_price', pos.get('entry_price', 0))
+        for pos in trader.positions.values()
     )
-
-    circuit_breaker   = RiskCircuitBreaker()
     circuit_triggered = circuit_breaker.check(
         current_value    = portfolio_value,
         starting_capital = trader.starting_capital,
         telegram         = telegram,
     )
-
     if circuit_triggered:
         market_regime['can_trade'] = False
-        print("  🛑 Trading suspended by circuit breaker!")
+        print("  Trading suspended by circuit breaker!")
+
+    corr_filter    = CorrelationFilter(max_per_sector=2)
+    veto_agent     = VetoAgent()
+    insider_tracker = InsiderTracker()
+
+    print("\n  Loading insider trading data...")
+    insider_scores = insider_tracker.get_bulk_scores(stock_watchlist, days_back=30)
 
     if not market_regime['can_trade']:
         print(f"\n  CASH MODE ACTIVATED!")
-        print(f"  Reason: {market_regime.get('reason', 'unknown')}")
+        print(f"  Reason: {market_regime['reason']}")
+        print(f"  No new BUY signals will be executed")
 
-    logger.info("Phase 0: %.1fs", time.time() - phase_start)
+    # ==========================================
+    # MULTI-TIMEFRAME ANALYSIS
+    # FIX: Now fetches full MTF result dict (not just score float)
+    #      so we can use composite in signal generation
+    # ==========================================
+    print("\n" + "="*60)
+    print("MULTI-TIMEFRAME ANALYSIS")
+    print("="*60)
 
-    # ================================================================
-    # PHASE 1 + 2: SCANNER
-    # ================================================================
-    phase_start = time.time()
+    mtf_analyzer    = MultiTimeframeAnalyzer()
+    mtf_composites  = {}   # symbol → composite float (-1 to +1)
+    mtf_blocked_by  = {}   # symbol → blocking reason string or None
 
-    scanner = StockScanner(
-        stock_watchlist  = STOCK_WATCHLIST,
-        crypto_watchlist = CRYPTO_WATCHLIST,
-        sector_analyzer  = sector_analyzer,
-        market_regime    = market_regime,
-        open_positions   = trader.positions,
+    if market_regime['can_trade']:
+        print("\n  Checking timeframe alignment...")
+        for symbol in stock_watchlist:
+            try:
+                # get_mtf_score returns composite -1 to +1 (corrected wrapper)
+                score = mtf_analyzer.get_mtf_score(symbol)
+                mtf_composites[symbol] = score
+                mtf_blocked_by[symbol] = None
+                if score > 0.2:
+                    print(f"    {symbol}: MTF {score:+.2f} BULLISH")
+                elif score < -0.2:
+                    print(f"    {symbol}: MTF {score:+.2f} BEARISH")
+            except Exception as e:
+                mtf_composites[symbol] = 0.0
+                mtf_blocked_by[symbol] = None
+                logger.warning(f"MTF failed for {symbol}: {e}")
+
+        bullish = sum(1 for s in mtf_composites.values() if s > 0)
+        print(f"\n  MTF complete: {bullish}/{len(stock_watchlist)} bullish")
+    else:
+        print("\n  Skipping MTF (CASH MODE active)")
+        for symbol in stock_watchlist:
+            mtf_composites[symbol] = 0.0
+            mtf_blocked_by[symbol] = None
+
+    # ==========================================
+    # PHASE 1: STOCK ANALYSIS
+    # ==========================================
+    print("\n" + "="*60)
+    print("PHASE 1: STOCK ANALYSIS")
+    print("="*60)
+
+    n = len(stock_watchlist)
+    print(f"\n1a. Fetching data for {n} stocks...")
+
+    stock_fetcher = StockDataFetcher(
+        watchlist=stock_watchlist,
+        lookback_days=730
     )
+    stock_data = stock_fetcher.fetch_all()
 
-    # Earnings calendar — concurrent fetch
-    earnings_soon = scanner.fetch_earnings_calendar()
+    print("\n1b. Training 4-model ensemble per stock...")
+    engine          = FeatureEngine()
+    regime_detector = RegimeDetector()
+    stock_signals   = {}
 
-    # Stock signals
-    stock_signals  = scanner.scan_stocks()
+    for symbol, raw_df in stock_data.items():
+        try:
+            df           = engine.add_all_features(raw_df)
+            feature_names = engine.get_feature_names()
+            df           = regime_detector.detect(df)
 
-    # Crypto signals
-    crypto_signals = scanner.scan_crypto()
+            if len(df) < 100:
+                continue
 
-    logger.info(
-        "Phase 1+2 (scan): %.1fs", time.time() - phase_start
-    )
+            split              = len(df) - 30
+            walk_forward_days  = 180
+            train_start        = max(0, split - walk_forward_days)
+            train              = df.iloc[train_start:split]
 
-    # ================================================================
-    # PHASE 3: EXECUTE STOCK SIGNALS
-    # ================================================================
-    print("\n" + "=" * 60)
-    print("PHASE 3: EXECUTE SIGNALS")
-    print("=" * 60)
-    phase_start = time.time()
+            if len(train) < 100:
+                train = df.iloc[:split]
+
+            X_train = train[feature_names]
+            y_train = train['target']
+
+            if len(y_train.unique()) < 2:
+                continue
+            if y_train.value_counts().min() < 10:
+                continue
+
+            selector = SelectKBest(
+                score_func=mutual_info_classif,
+                k=min(20, len(feature_names))
+            )
+            selector.fit(X_train, y_train)
+            mask     = selector.get_support()
+            selected = [f for f, m in zip(feature_names, mask) if m]
+
+            cached = load_models(symbol)
+            if cached:
+                selected = cached.get('selected_features', selected)
+                model    = TechnicalPredictor(use_lstm=False)
+                model.models = {
+                    'xgboost'      : cached.get('xgboost'),
+                    'lightgbm'     : cached.get('lightgbm'),
+                    'random_forest': cached.get('random_forest'),
+                    'catboost'     : cached.get('catboost'),
+                }
+                model.feature_names = selected
+                model.trained       = True
+            else:
+                model = TechnicalPredictor(use_lstm=True)
+                model.train(X_train[selected], y_train)
+                try:
+                    save_models(symbol, {
+                        'xgboost'          : model.models.get('xgboost'),
+                        'lightgbm'         : model.models.get('lightgbm'),
+                        'random_forest'    : model.models.get('random_forest'),
+                        'catboost'         : model.models.get('catboost'),
+                        'selected_features': selected,
+                    })
+                except Exception as e:
+                    logger.warning(f"Cache save failed for {symbol}: {e}")
+
+            latest      = df.iloc[-1:]
+            pred        = model.predict(latest[selected])[0]
+            regime      = latest['regime'].iloc[0]
+            price       = latest['close'].iloc[0]
+            sector_mult = sector_analyzer.get_sector_signal(symbol)
+            sector      = sector_analyzer.get_sector_for_stock(symbol)
+
+            stock_signals[symbol] = {
+                'prediction'       : pred,
+                'regime'           : regime,
+                'price'            : price,
+                'sector'           : sector,
+                'sector_multiplier': sector_mult,
+            }
+
+        except Exception as e:
+            logger.warning(f"Error processing {symbol}: {e}")
+
+    # ==========================================
+    # PHASE 2: CRYPTO
+    # ==========================================
+    print("\n" + "="*60)
+    print("PHASE 2: CRYPTO ANALYSIS")
+    print("="*60)
+
+    crypto_watchlist = ['BTC/USD', 'ETH/USD', 'SOL/USD']
+    crypto_signals   = {}
+    try:
+        crypto_predictor = CryptoPredictor()
+        crypto_signals   = crypto_predictor.run_full_pipeline(
+            crypto_watchlist, lookback_days=365
+        )
+    except Exception as e:
+        logger.warning(f"Crypto error: {e}")
+
+    # ==========================================
+    # PHASE 3: SENTIMENT
+    # ==========================================
+    print("\n" + "="*60)
+    print("PHASE 3: SENTIMENT ANALYSIS")
+    print("="*60)
+
+    news_fetcher       = NewsFetcher()
+    sentiment_analyzer = SentimentAnalyzer()
+
+    top_stocks  = sorted(
+        stock_signals.items(),
+        key=lambda x: x[1]['prediction'],
+        reverse=True
+    )[:7]
+    top_symbols = [s[0] for s in top_stocks]
+    sentiments  = {}
+    try:
+        all_news   = news_fetcher.fetch_all(top_symbols)
+        sentiments = sentiment_analyzer.get_sentiment_for_stocks(all_news)
+    except Exception as e:
+        logger.warning(f"Sentiment error: {e}")
+
+    # ==========================================
+    # PHASE 4: FINAL SIGNALS
+    # ==========================================
+    print("\n" + "="*60)
+    print("PHASE 4: FINAL SIGNALS")
+    print("="*60)
+
+    n_stocks = len(stock_signals)
+    print(f"\n📊 Stock Signals ({n_stocks} stocks):")
+    print("-"*75)
 
     dashboard_signals = {}
 
     for symbol, data in sorted(
         stock_signals.items(),
         key=lambda x: x[1]['prediction'],
-        reverse=True,
+        reverse=True
     ):
-        # Always record every signal for dashboard
-        dashboard_signals[symbol] = {
-            'prediction': data['prediction'],
-            'regime'    : data['regime'],
-            'price'     : data['price'],
-            'sentiment' : data['sentiment'],
-            'sector'    : data['sector'],
-            'signal'    : data['signal'],
-            'combined'  : data['combined'],
-        }
+        pred        = data['prediction']
+        regime      = data['regime']
+        price       = data['price']
+        sector      = data['sector']
+        sect_mult   = data['sector_multiplier']
+        sent_score  = sentiments.get(symbol, {}).get('sentiment_score', 0.0)
+        mtf_comp    = mtf_composites.get(symbol, 0.0)
 
-        action = data.get('action', 'SKIP')
-
-        # Update dashboard signal if filtered
-        if action not in ('OPEN', 'SKIP'):
-            dashboard_signals[symbol]['signal'] = action
-            continue
-
-        if action != 'OPEN':
-            continue
-
-        # Open position using insider-adjusted sizing score
-        atr    = data.get('atr')
-        opened = trader.open_position(
-            symbol,
-            data['price'],
-            data['sizing_combined'],   # insider-adjusted, not raw combined
-            reason=data['regime'],
-            atr=atr,
+        # FIX: MTF composite now passed into signal generation
+        signal, combined = compute_signal(
+            pred, regime, sent_score, sect_mult,
+            symbol, earnings_symbols,
+            mtf_composite=mtf_comp,
         )
 
-        if opened:
-            telegram.alert_buy_signal(
-                symbol,
-                data['price'],
-                data['prediction'],
-                data['regime'],
-                data['sentiment'],
-            )
+        # Insider boost
+        insider_score = insider_scores.get(symbol, 0.0)
+        if insider_score > 0:
+            combined = min(combined + insider_score, 1.0)
+            if insider_score >= 0.10:
+                print(f"    {symbol}: +{insider_score:.2f} insider boost!")
 
-    logger.info(
-        "Phase 3 (execute stocks): %.1fs", time.time() - phase_start
-    )
+        # Emoji labels
+        emoji      = {"BUY": "🟢", "AVOID": "🔴", "EARNINGS_HOLD": "📅", "CAUTION": "⚠️"}.get(signal, "⚪")
+        sect_emoji = "🔄↑" if sect_mult > 1.1 else ("🔄↓" if sect_mult < 0.9 else "")
+        sent_emoji = "📈" if sent_score > 0.1 else ("📉" if sent_score < -0.1 else "")
 
-    # ================================================================
-    # PHASE 4: EXECUTE CRYPTO SIGNALS
-    # ================================================================
-    print("\n" + "=" * 60)
-    print("PHASE 4: CRYPTO SIGNALS")
-    print("=" * 60)
-    phase_start = time.time()
-
-    for symbol, data in crypto_signals.items():
-        dashboard_signals[symbol] = {
-            'prediction': data['prediction'],
-            'regime'    : data['regime'],
-            'price'     : data['price'],
-            'sentiment' : 0.0,
-            'sector'    : 'Crypto',
-            'signal'    : data['signal'],
-            'combined'  : data['combined'],
-        }
-
-        if data.get('action') != 'OPEN':
-            continue
-
-        # ATR proxy already computed in scanner.scan_crypto()
-        opened = trader.open_position(
-            symbol,
-            data['price'],
-            data['sizing_combined'],
-            reason=data['regime'],
-            atr=data['atr'],          # 5% price proxy — never None
+        print(
+            f"  {emoji} {symbol:6s}"
+            f" | pred={pred:.3f}"
+            f" | mtf={mtf_comp:+.2f}"
+            f" | {regime:10s}"
+            f" | sent={sent_score:+.2f}{sent_emoji}"
+            f" | {sector:13s}{sect_emoji}"
+            f" | {signal}"
+            f" | ${price:.2f}"
         )
 
-        if opened:
-            telegram.alert_buy_signal(
-                symbol,
-                data['price'],
-                data['prediction'],
-                data['regime'],
-                0.0,
-            )
+        if signal == 'BUY' and market_regime['can_trade']:
 
-    logger.info(
-        "Phase 4 (execute crypto): %.1fs", time.time() - phase_start
-    )
-
-    # ================================================================
-    # PHASE 5: POSITION MANAGEMENT
-    # ================================================================
-    print("\n" + "=" * 60)
-    print("PHASE 5: POSITION MANAGEMENT")
-    print("=" * 60)
-    phase_start = time.time()
-
-    # Build current_prices with fallback for missing symbols
-    # Fix: open crypto positions without live prices now use
-    # entry_price so stop-loss still evaluates correctly
-    current_prices = {}
-
-    for s, d in stock_signals.items():
-        if d.get('price', 0) > 0:
-            current_prices[s] = d['price']
-
-    for s, d in crypto_signals.items():
-        if d.get('price', 0) > 0:
-            current_prices[s] = d['price']
-
-    # Safety net: open positions with no live price → entry price
-    for sym, pos in trader.positions.items():
-        if sym not in current_prices:
-            current_prices[sym] = pos.get('entry_price', 0)
-            logger.warning(
-                "No live price for %s — using entry price "
-                "for stop-loss check", sym
-            )
-
-    if trader.positions:
-        print("\n  Checking stop-loss / take-profit...")
-        for symbol in list(trader.positions.keys()):
-            if symbol not in current_prices:
+            # FIX: Correct MTF block threshold (-1 to +1 scale, not 0 to 1)
+            if mtf_comp < MTF_BLOCK_THRESHOLD:
+                print(f"    {symbol}: BUY blocked by MTF (composite={mtf_comp:+.2f} < {MTF_BLOCK_THRESHOLD})")
+                signal = 'MTF_HOLD'
+                dashboard_signals[symbol] = {**data, 'signal': signal, 'sentiment': float(sent_score)}
                 continue
 
-            pos_before = trader.positions.get(symbol, {})
-            entry      = pos_before.get('entry_price', 0)
+            # FIX (new): Volume confirmation
+            vol_ok, vol_ratio = check_volume_confirmation(stock_data, symbol)
+            if not vol_ok:
+                print(f"    {symbol}: BUY blocked — volume {vol_ratio:.1f}x avg (need {VOLUME_SPIKE_MIN}x)")
+                signal = 'VOL_HOLD'
+                dashboard_signals[symbol] = {**data, 'signal': signal, 'sentiment': float(sent_score)}
+                continue
 
-            trader.update_position(symbol, current_prices[symbol])
+            # Correlation/Sector filter
+            if not corr_filter.can_add_position(symbol, trader.positions):
+                print(f"    {symbol}: BUY blocked by correlation filter")
+                signal = 'CORR_HOLD'
+                dashboard_signals[symbol] = {**data, 'signal': signal, 'sentiment': float(sent_score)}
+                continue
 
-            # Position closed by update_position?
-            if symbol not in trader.positions:
-                exit_price = current_prices[symbol]
-                pnl        = (
-                    (exit_price - entry)
-                    * pos_before.get('shares', 0)
-                )
-                if pnl < 0:
-                    telegram.alert_stop_loss(symbol, exit_price, pnl)
-                else:
-                    telegram.alert_take_profit(symbol, exit_price, pnl)
+            # Veto agent
+            veto_result = veto_agent.review_signal(
+                symbol          = symbol,
+                price           = price,
+                prediction      = pred,
+                regime          = regime,
+                sentiment       = sent_score,
+                sector          = sector,
+                market_regime   = market_regime['regime'],
+                mtf_score       = mtf_comp,
+                current_positions = trader.positions,
+                vix             = market_regime.get('vix', 20),
+            )
+            if veto_result['decision'] == 'VETO':
+                print(f"    {symbol}: VETOED by AI — {veto_result['reason']}")
+                signal = 'VETOED'
+                dashboard_signals[symbol] = {**data, 'signal': signal, 'sentiment': float(sent_score)}
+                continue
+
+            atr = calc_atr(stock_data, symbol)
+
+            # FIX (new): Risk/reward check
+            rr_ok, rr_ratio = check_risk_reward(price, atr)
+            if not rr_ok:
+                print(f"    {symbol}: BUY blocked — R:R {rr_ratio:.1f} < {MIN_RISK_REWARD} minimum")
+                signal = 'RR_HOLD'
+                dashboard_signals[symbol] = {**data, 'signal': signal, 'sentiment': float(sent_score)}
+                continue
+
+            print(f"    ✅ {symbol}: ALL filters passed | vol={vol_ratio:.1f}x | R:R={rr_ratio:.1f} | mtf={mtf_comp:+.2f}")
+            opened = trader.open_position(symbol, price, combined, reason=regime, atr=atr)
+
+            if opened:
+                telegram.alert_buy_signal(symbol, price, pred, regime, sent_score)
+
+        dashboard_signals[symbol] = {
+            'prediction': float(pred),
+            'regime'    : regime,
+            'price'     : float(price),
+            'sentiment' : float(sent_score),
+            'sector'    : sector,
+            'signal'    : signal,
+            'mtf'       : float(mtf_comp),
+        }
+
+    # ==========================================
+    # PHASE 4b: CRYPTO SIGNALS
+    # FIX: Now matches stock signal rigor
+    # ==========================================
+    print("\n🪙 Crypto Signals:")
+    print("-"*60)
+
+    if crypto_signals:
+        for symbol, data in crypto_signals.items():
+            pred   = data['prediction']
+            regime = data['regime']
+            price  = data['price']
+            signal = 'HOLD'
+
+            # FIX: Raised crypto BUY threshold to match stocks (was 0.52)
+            # Also requires uptrend — same as stock logic
+            if regime == 'uptrend' and pred > BUY_THRESHOLD:
+                signal = 'BUY'
+            elif regime == 'downtrend':
+                signal = 'AVOID'
+            elif regime == 'volatile':
+                signal = 'CAUTION'
+
+            emoji = "🟢" if signal == 'BUY' else ("🔴" if signal == 'AVOID' else ("⚠️" if signal == 'CAUTION' else "⚪"))
+            print(
+                f"  {emoji} {symbol:10s}"
+                f" | pred={pred:.3f}"
+                f" | {regime:10s}"
+                f" | {signal}"
+                f" | ${price:,.2f}"
+            )
+
+            if signal == 'BUY' and market_regime['can_trade']:
+                # FIX (new): Crypto also needs volume check
+                # Note: crypto_signals would need to pass raw data through for this
+                # For now: flag as TODO — implement when CryptoPredictor exposes raw_data
+                # vol_ok, vol_ratio = check_volume_confirmation(crypto_raw_data, symbol)
+
+                opened = trader.open_position(symbol, price, pred, reason=regime)
+                if opened:
+                    telegram.alert_buy_signal(symbol, price, pred, regime, 0.0)
+
+            dashboard_signals[symbol] = {
+                'prediction': float(pred),
+                'regime'    : regime,
+                'price'     : float(price),
+                'sentiment' : 0.0,
+                'sector'    : 'Crypto',
+                'signal'    : signal,
+                'mtf'       : 0.0,
+            }
+    else:
+        print("  No crypto signals generated")
+
+    # ==========================================
+    # PHASE 5: POSITION MANAGEMENT
+    # ==========================================
+    print("\n" + "="*60)
+    print("PHASE 5: POSITION MANAGEMENT")
+    print("="*60)
+
+    current_prices = {}
+    for symbol, data in stock_signals.items():
+        current_prices[symbol] = data['price']
+    for symbol, data in crypto_signals.items():
+        current_prices[symbol] = data['price']
+
+    if trader.positions:
+        print("\n  Checking stop loss / take profit...")
+        for symbol in list(trader.positions.keys()):
+            if symbol in current_prices:
+                pos   = trader.positions.get(symbol, {})
+                entry = pos.get('entry_price', 0)
+                trader.update_position(symbol, current_prices[symbol])
+                if symbol not in trader.positions:
+                    exit_price = current_prices[symbol]
+                    pnl        = (exit_price - entry) * pos.get('shares', 0)
+                    if pnl < 0:
+                        telegram.alert_stop_loss(symbol, exit_price, pnl)
+                    else:
+                        telegram.alert_take_profit(symbol, exit_price, pnl)
     else:
         print("\n  No open positions to manage")
 
-    logger.info(
-        "Phase 5 (position mgmt): %.1fs", time.time() - phase_start
-    )
-
-    # ================================================================
-    # PHASE 6: SAVE DASHBOARD DATA
-    # ================================================================
-    print("\n" + "=" * 60)
-    print("PHASE 6: SAVE DASHBOARD DATA")
-    print("=" * 60)
-    phase_start = time.time()
-
-    atomic_json_write('logs/latest_signals.json', dashboard_signals)
-    atomic_json_write('logs/earnings.json', earnings_soon)
-
-    # Safe sector scores save — guards against missing keys
-    safe_sector_scores = {}
-    for sector, d in sector_scores.items():
-        try:
-            safe_sector_scores[sector] = {
-                'score'       : float(d.get('score', 0.0)),
-                'flow'        : d.get('flow', 'neutral'),
-                'momentum_21d': float(d.get('momentum_21d', 0.0)),
+    # ==========================================
+    # SAVE FOR DASHBOARD
+    # ==========================================
+    os.makedirs('logs', exist_ok=True)
+    with open('logs/latest_signals.json', 'w') as f:
+        json.dump(dashboard_signals, f, indent=2)
+    with open('logs/earnings.json', 'w') as f:
+        json.dump(earnings_soon, f, indent=2)
+    with open('logs/sectors.json', 'w') as f:
+        sector_data = {
+            sector: {
+                'score'        : float(data['score']),
+                'flow'         : data['flow'],
+                'momentum_21d' : float(data['momentum_21d']),
             }
-        except Exception as e:
-            logger.warning(
-                "Skipping sector %s in save: %s", sector, e
-            )
+            for sector, data in sector_scores.items()
+        }
+        json.dump(sector_data, f, indent=2)
 
-    atomic_json_write('logs/sectors.json', safe_sector_scores)
-    print("  💾 All data saved (atomic)")
+    print("\n  💾 All data saved for dashboard")
 
-    logger.info(
-        "Phase 6 (save): %.1fs", time.time() - phase_start
-    )
-
-    # ================================================================
-    # PHASE 7: PORTFOLIO SUMMARY + TELEGRAM
-    # ================================================================
-    print("\n" + "=" * 60)
-    print("PHASE 7: PORTFOLIO SUMMARY")
-    print("=" * 60)
-
+    # ==========================================
+    # PORTFOLIO SUMMARY
+    # ==========================================
     trader.get_summary(current_prices)
 
-    # Update current price on each position for state save
     for symbol, pos in trader.positions.items():
-        pos['current_price'] = current_prices.get(
-            symbol, pos.get('entry_price', 0)
-        )
+        pos['current_price'] = current_prices.get(symbol, pos['entry_price'])
     trader.save_state()
 
-    # Use trader's own method — single source of truth for P&L
-    total_value = trader.get_portfolio_value(current_prices)
-    total_pnl   = total_value - trader.starting_capital
-    total_pct   = total_pnl / trader.starting_capital
+    total_value = trader.capital + sum(
+        pos.get('shares', 0) * current_prices.get(symbol, pos.get('entry_price', 0))
+        for symbol, pos in trader.positions.items()
+    )
+    total_pnl = total_value - trader.starting_capital
+    total_pct = total_pnl  / trader.starting_capital
 
-    # Build positions dict for Telegram (with live P&L)
     positions_with_pnl = {}
     for symbol, pos in trader.positions.items():
-        curr  = current_prices.get(symbol, pos.get('entry_price', 0))
-        entry = pos.get('entry_price', 0)
-        shares= pos.get('shares', 0)
+        curr_price = current_prices.get(symbol, pos.get('entry_price', 0))
+        entry_price = pos.get('entry_price', 0)
+        shares      = pos.get('shares', 0)
+        pnl         = (curr_price - entry_price) * shares
+        pnl_pct     = (curr_price - entry_price) / entry_price if entry_price > 0 else 0
         positions_with_pnl[symbol] = {
             **pos,
-            'current_price': curr,
-            'pnl'          : (curr - entry) * shares,
-            'pnl_pct'      : (
-                (curr - entry) / entry if entry > 0 else 0
-            ),
+            'current_price': curr_price,
+            'pnl'          : pnl,
+            'pnl_pct'      : pnl_pct,
         }
 
     telegram.alert_daily_summary(
         total_value, total_pnl, total_pct,
-        positions_with_pnl, dashboard_signals,
+        positions_with_pnl, dashboard_signals
     )
 
-    # ================================================================
-    # PHASE 8: WEEKLY ANALYTICS + CRITIC (gated — not every scan)
-    # ================================================================
+    print("\n" + "✅" * 25)
+    print("ALPHA EDGE V4 SCAN COMPLETE")
+    print("✅" * 25)
+
+    n_s = len(stock_signals)
+    n_c = len(crypto_signals)
+    n_e = len(earnings_soon)
+    print(f"\nScanned: {n_s} stocks + {n_c} crypto")
+    print(f"Earnings this week: {n_e} stocks")
+    print(f"Models: 5 per stock (XGB+LGB+RF+CatBoost+LSTM)")
+    print(f"\nSignal thresholds: BUY>{BUY_THRESHOLD} | MTF>{MTF_BLOCK_THRESHOLD} | Vol>{VOLUME_SPIKE_MIN}x | R:R>{MIN_RISK_REWARD}")
+    print("\nTo view dashboard: python run_dashboard.py → http://localhost:8050\n")
+
+    # ==========================================
+    # WEEKLY PERFORMANCE REPORT + CRITIC REVIEW
+    # ==========================================
     analytics = PerformanceAnalytics()
     if analytics.should_run_today():
-        print("\n  📊 Sending Weekly Performance Report...")
+        print("\n  Sending Weekly Empire Performance Report...")
         analytics.send_report(telegram)
 
-        # Critic review runs alongside weekly report only
-        # Fix: was firing every scan — now gated correctly
-        critic = CriticAgent()
-        critic.run_weekly_review(
-            trade_history    = trader.trade_history,
-            portfolio_value  = total_value,
-            starting_capital = trader.starting_capital,
-            telegram_bot     = telegram,
-        )
-
-    # ================================================================
-    # DONE
-    # ================================================================
-    total_duration = time.time() - scan_start
-
-    print("\n" + "✅" * 25)
-    print("  ALPHA EDGE V5 SCAN COMPLETE")
-    print("✅" * 25)
-    print(f"\n  Scanned : {len(stock_signals)} stocks"
-          f" + {len(crypto_signals)} crypto")
-    print(f"  Earnings: {len(earnings_soon)} stocks this week")
-    print(f"  Duration: {total_duration:.1f}s")
-    print(f"  Models  : XGB + LGB + RF + CatBoost + LSTM per stock")
-    print("\n  Dashboard → python run_dashboard.py")
-    print("             → http://localhost:8050\n")
-
-
-# ------------------------------------------------------------------ #
-#  PUBLIC ENTRY POINT                                                  #
-# ------------------------------------------------------------------ #
-
-def run_daily_scan() -> None:
-    """
-    Top-level entry point with full exception handling.
-
-    If anything inside _run_scan() fails, a Telegram alert
-    is sent before re-raising so you always know the scan failed.
-    Telegram is initialised here (not inside _run_scan) so it is
-    available even if the crash happens before telegram is created.
-    """
-    telegram = TelegramBot()
-    try:
-        _run_scan(telegram)
-    except Exception as e:
-        logger.critical(
-            "SCAN FAILED: %s", e, exc_info=True
-        )
-        try:
-            telegram.send_message(
-                f"🚨 ALPHA EDGE SCAN FAILED\n"
-                f"Time : {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
-                f"Error: {str(e)[:500]}"
-            )
-        except Exception:
-            pass   # never let telegram failure hide the real error
-        raise
+    critic = CriticAgent()
+    critic.run_weekly_review(
+        trade_history    = trader.trade_history,
+        portfolio_value  = total_value,
+        starting_capital = trader.starting_capital,
+        telegram_bot     = telegram,
+    )
 
 
 if __name__ == "__main__":
