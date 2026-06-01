@@ -143,6 +143,7 @@ class CryptoPredictor:
                         'prediction': pred,
                         'regime': regime,
                         'price': latest['close'].iloc[0],
+                        'raw_df': raw_df,
                     }
 
             except Exception as e:

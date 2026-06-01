@@ -627,10 +627,15 @@ def run_daily_scan():
             )
 
             if signal == 'BUY' and market_regime['can_trade']:
-                # FIX (new): Crypto also needs volume check
-                # Note: crypto_signals would need to pass raw data through for this
-                # For now: flag as TODO — implement when CryptoPredictor exposes raw_data
-                # vol_ok, vol_ratio = check_volume_confirmation(crypto_raw_data, symbol)
+                # Volume confirmation using raw_df now exposed by CryptoPredictor
+                raw_df = data.get('raw_df')
+                if raw_df is not None:
+                    vol_ok, vol_ratio = check_volume_confirmation({'symbol': raw_df}, symbol.replace('/', '_'))
+                    if not vol_ok:
+                        print(f"    {symbol}: BUY blocked — volume {vol_ratio:.1f}x avg (need {VOLUME_SPIKE_MIN}x)")
+                        signal = 'VOL_HOLD'
+                        dashboard_signals[symbol] = {**data, 'signal': signal, 'sentiment': 0.0}
+                        continue
 
                 opened = trader.open_position(symbol, price, pred, reason=regime)
                 if opened:
