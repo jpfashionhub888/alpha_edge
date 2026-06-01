@@ -1,19 +1,16 @@
 # gateio_live.py
 """
-AlphaEdge — Gate.io Realtime Trading Loop
+AlphaEdge — Gate.io Realtime Trading Loop (V2)
+Paper trading mode wired in via PaperTrader.
 
-Mirrors bybit_live.py exactly but uses Gate.io API.
-Same signal engine, same filters, same risk rules.
-Only the exchange layer differs.
+Set GATEIO_PAPER_TRADE=true  → uses PaperTrader (default, safe)
+Set GATEIO_PAPER_TRADE=false → uses live Gate.io execution
 
 How to run:
-  export GATEIO_API_KEY=your_key
-  export GATEIO_API_SECRET=your_secret
-  export GATEIO_TESTNET=true    # start here
-  pip install websocket-client
+  set GATEIO_API_KEY=your_key
+  set GATEIO_API_SECRET=your_secret
+  set GATEIO_PAPER_TRADE=true
   python gateio_live.py
-
-Symbols: Gate.io format BTC_USDT (configured below)
 """
 
 import os
@@ -28,7 +25,8 @@ from typing import Optional
 from execution.gateio_client import GateioClient
 from execution.gateio_stream  import GateioStream
 from execution.symbol_map     import SymbolMap
-from market_regime            import MarketRegimeFilter
+from execution.paper_trader   import PaperTrader
+from market_regime import MarketRegimeDetector as MarketRegimeDetector
 from multi_timeframe          import MultiTimeframeAnalyzer
 from monitoring.telegram_bot  import TelegramBot
 from risk_circuit_breaker     import RiskCircuitBreaker
@@ -37,10 +35,11 @@ logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
 # ── Config ───────────────────────────────────────────────────────────
-# Gate.io symbol format: BTC_USDT (underscore, not no-separator)
-CRYPTO_SYMBOLS  = ['BTC_USDT', 'ETH_USDT', 'SOL_USDT']
-CANDLE_INTERVAL = '15m'
-KLINE_LOOKBACK  = 200
+CRYPTO_SYMBOLS   = ['BTC_USDT', 'ETH_USDT', 'SOL_USDT']
+CANDLE_INTERVAL  = '15m'
+KLINE_LOOKBACK   = 200
+PAPER_TRADE      = os.getenv('GATEIO_PAPER_TRADE', 'true').lower() != 'false'
+PAPER_CAPITAL    = float(os.getenv('GATEIO_PAPER_CAPITAL', '10000'))
 
 BUY_THRESHOLD    = 0.63
 VOLUME_SPIKE_MIN = 1.3
@@ -53,39 +52,51 @@ SIGNAL_COOLDOWN  = 60 * 30
 
 
 class GateioLiveTrader:
-    """Realtime crypto trading system for Gate.io."""
 
     def __init__(self):
         self.client          = GateioClient()
         self.stream          = GateioStream(symbols=CRYPTO_SYMBOLS, interval=CANDLE_INTERVAL)
         self.telegram        = TelegramBot()
         self.mtf             = MultiTimeframeAnalyzer()
-        self.regime_filter   = MarketRegimeFilter()
         self.circuit_breaker = RiskCircuitBreaker()
 
-        self.positions:        dict[str, dict] = {}
-        self.history:          dict[str, list] = {}
+        # Regime detector — use correct class name from your repo
+        try:
+            self.regime_detector = MarketRegimeDetector()
+        except Exception:
+            self.regime_detector = None
+
+        # Paper trader — always initialized, used when PAPER_TRADE=true
+        self.paper = PaperTrader(
+            starting_capital = PAPER_CAPITAL,
+            log_file         = 'logs/gateio_paper_trades.json',
+        )
+        self.paper.load_state()
+
+        self.history:          dict[str, list]  = {}
         self.last_signal_time: dict[str, float] = {}
+
+        # Live positions (paper or real)
+        # symbol → {entry_price, qty, stop, target, open_time, paper}
+        self.positions: dict[str, dict] = {}
 
     # ── Startup ──────────────────────────────────────────────────────
 
     def start(self):
-        env = 'TESTNET' if os.getenv('GATEIO_TESTNET', '').lower() == 'true' else 'LIVE'
+        mode = 'PAPER TRADING' if PAPER_TRADE else ('LIVE' if self.client.connected else 'SIGNAL-ONLY')
         print('\n' + '🚀' * 25)
-        print(f'ALPHAEDGE GATE.IO LIVE  —  {datetime.now().strftime("%Y-%m-%d %H:%M")}')
-        print(f'Symbols: {CRYPTO_SYMBOLS}  |  Interval: {CANDLE_INTERVAL}  |  Mode: {env}')
+        print(f'ALPHAEDGE GATE.IO  —  {datetime.now().strftime("%Y-%m-%d %H:%M")}')
+        print(f'Symbols: {CRYPTO_SYMBOLS}  |  Interval: {CANDLE_INTERVAL}')
+        print(f'Mode: {mode}')
+        if PAPER_TRADE:
+            print(f'Paper capital: ${PAPER_CAPITAL:,.0f}  |  Available: ${self.paper.capital:,.2f}')
         print('🚀' * 25)
 
-        if not self.client.connected:
-            print('\n⚠️  No API keys — running in SIGNAL-ONLY mode (no execution)\n')
-
-        # Seed history
         print('\nLoading historical candles...')
         for symbol in CRYPTO_SYMBOLS:
             self._load_history(symbol)
             print(f'  {symbol}: {len(self.history.get(symbol, []))} bars')
 
-        # Register candle callback
         self.stream.on_candle_close(self._on_candle_close)
         self.stream.start()
 
@@ -97,13 +108,12 @@ class GateioLiveTrader:
             )
             print(f'  {prices_str}')
         else:
-            print('  Warning: no prices within 30s — check connection')
+            print('  Warning: no prices within 30s')
 
-        # Position monitor
-        threading.Thread(target=self._position_monitor_loop, daemon=True).start()
-        print(f'  Position monitor started ({MONITOR_INTERVAL}s interval)')
+        threading.Thread(target=self._monitor_loop, daemon=True).start()
+        print(f'  Position monitor started ({MONITOR_INTERVAL}s)')
 
-        if self.client.connected:
+        if not PAPER_TRADE and self.client.connected:
             self.client.get_summary()
 
         print('\n✅ System live. Waiting for candle closes...\n')
@@ -114,19 +124,17 @@ class GateioLiveTrader:
                 self._print_status()
         except KeyboardInterrupt:
             print('\n\nShutting down...')
+            self.paper.save_state()
             self.stream.stop()
 
-    # ── History loading ───────────────────────────────────────────────
+    # ── History ───────────────────────────────────────────────────────
 
     def _load_history(self, symbol: str):
-        """Seed candle cache from Gate.io REST before stream starts."""
         klines = self.client.get_klines(symbol, interval=CANDLE_INTERVAL, limit=KLINE_LOOKBACK)
         if not klines:
             logger.warning(f'History load failed: {symbol}')
             self.history[symbol] = []
             return
-
-        # Gate.io returns oldest first: [ts, vol, close, high, low, open]
         candles = []
         for k in klines:
             try:
@@ -144,7 +152,7 @@ class GateioLiveTrader:
                 continue
         self.history[symbol] = candles
 
-    # ── Candle close handler ──────────────────────────────────────────
+    # ── Candle handler ────────────────────────────────────────────────
 
     def _on_candle_close(self, symbol: str, candle: dict):
         self.history.setdefault(symbol, []).append(candle)
@@ -172,24 +180,17 @@ class GateioLiveTrader:
         if len(history) < 50:
             return
 
-        df    = self._history_to_df(history)
+        df    = self._to_df(history)
         price = float(latest_candle['close'])
 
-        # 1. Market regime
+        # 1. Circuit breaker
         try:
-            market_regime = self.regime_filter.analyze()
-            if not market_regime.get('can_trade', True):
-                logger.info(f'{symbol}: SKIP — market regime: {market_regime.get("reason")}')
-                return
-        except Exception as e:
-            logger.warning(f'Regime filter error: {e}')
-
-        # 2. Circuit breaker
-        try:
-            balance = self.client.get_usdt_balance() if self.client.connected else 10000.0
+            capital = self.paper.capital if PAPER_TRADE else (
+                self.client.get_usdt_balance() if self.client.connected else 10000.0
+            )
             if self.circuit_breaker.check(
-                current_value    = balance,
-                starting_capital = balance,
+                current_value    = capital,
+                starting_capital = PAPER_CAPITAL if PAPER_TRADE else capital,
                 telegram         = self.telegram,
             ):
                 logger.info(f'{symbol}: SKIP — circuit breaker')
@@ -197,45 +198,45 @@ class GateioLiveTrader:
         except Exception:
             pass
 
-        # 3. Technical indicators
-        indicators = self._calculate_indicators(df)
-        if indicators is None:
+        # 2. Indicators
+        ind = self._calculate_indicators(df)
+        if ind is None:
             return
 
-        regime = indicators['regime']
-        score  = indicators['score']
-        atr    = indicators['atr']
+        regime = ind['regime']
+        score  = ind['score']
+        atr    = ind['atr']
 
-        # 4. Regime gate
+        # 3. Regime gate
         if regime == 'downtrend':
-            logger.info(f'{symbol}: SKIP — local downtrend')
+            logger.info(f'{symbol}: SKIP — downtrend')
             return
         if regime == 'volatile' and score < 0.70:
-            logger.info(f'{symbol}: SKIP — volatile + low score ({score:.2f})')
+            logger.info(f'{symbol}: SKIP — volatile + score {score:.2f}')
             return
 
-        # 5. Score threshold
+        # 4. Score threshold
         if score < BUY_THRESHOLD:
             logger.info(f'{symbol}: SKIP — score {score:.2f} < {BUY_THRESHOLD}')
             return
 
-        # 6. Volume confirmation
+        # 5. Volume confirmation
         vol_ok, vol_ratio = self._check_volume(df)
         if not vol_ok:
             logger.info(f'{symbol}: SKIP — volume {vol_ratio:.1f}x < {VOLUME_SPIKE_MIN}x')
             return
 
-        # 7. MTF — pass live DataFrame directly
+        # 6. MTF
         try:
             mtf_score = self.mtf.get_mtf_score(symbol, daily_df=df)
             if mtf_score < 0.0:
                 logger.info(f'{symbol}: SKIP — MTF bearish ({mtf_score:+.2f})')
                 return
         except Exception as e:
-            logger.warning(f'MTF error for {symbol}: {e}')
+            logger.warning(f'MTF error: {e}')
             mtf_score = 0.0
 
-        # 8. Risk/reward
+        # 7. Risk/reward
         stop_price   = price - (atr * ATR_STOP_MULT)
         target_price = price + (atr * ATR_TARGET_MULT)
         stop_dist    = price - stop_price
@@ -245,7 +246,7 @@ class GateioLiveTrader:
             logger.info(f'{symbol}: SKIP — R:R {rr_ratio:.1f} < {MIN_RR_RATIO}')
             return
 
-        # ALL FILTERS PASSED
+        # ALL PASSED
         display = SymbolMap.to_base(symbol) or symbol
         logger.info(
             f'✅ BUY {display} | score={score:.2f} | vol={vol_ratio:.1f}x'
@@ -253,7 +254,7 @@ class GateioLiveTrader:
             f' | entry={price:.2f} stop={stop_price:.2f} target={target_price:.2f}'
         )
 
-        self._execute_buy(symbol, price, stop_price, target_price, score, rr_ratio, vol_ratio)
+        self._execute_buy(symbol, price, stop_price, target_price, score, atr, rr_ratio, vol_ratio)
 
     # ── Execution ─────────────────────────────────────────────────────
 
@@ -264,20 +265,46 @@ class GateioLiveTrader:
         stop_price:   float,
         target_price: float,
         score:        float,
+        atr:          float,
         rr_ratio:     float,
         vol_ratio:    float,
     ):
-        """Place spot buy order on Gate.io."""
-        usdt_amount = 0.0
-        base        = SymbolMap.to_base(symbol) or symbol.split('_')[0]
-        display     = base
+        display = SymbolMap.to_base(symbol) or symbol
 
-        if self.client.connected:
-            usdt_amount = self.client.calculate_position_size(symbol, price, stop_price)
-            if usdt_amount <= 0:
-                logger.warning(f'{symbol}: size calc returned 0 — skipping')
+        if PAPER_TRADE:
+            # ── Paper trade ───────────────────────────────────────
+            opened = self.paper.open_position(
+                symbol  = display,
+                price   = price,
+                signal_strength = score,
+                reason  = 'gateio_live',
+                atr     = atr,
+            )
+            if not opened:
+                logger.info(f'{symbol}: paper open_position returned False (max positions or daily loss limit)')
                 return
 
+            self.positions[symbol] = {
+                'entry_price': price,
+                'stop'       : stop_price,
+                'target'     : target_price,
+                'open_time'  : time.time(),
+                'score'      : score,
+                'paper'      : True,
+                'display'    : display,
+            }
+            print(
+                f'\n📝 PAPER BUY {display} @ ${price:.2f}'
+                f' | stop=${stop_price:.2f} | target=${target_price:.2f}'
+                f' | score={score:.2f} | R:R={rr_ratio:.1f}'
+                f' | capital=${self.paper.capital:,.2f}\n'
+            )
+
+        elif self.client.connected:
+            # ── Live trade ────────────────────────────────────────
+            usdt_amount = self.client.calculate_position_size(symbol, price, stop_price)
+            if usdt_amount <= 0:
+                return
             result = self.client.place_order(
                 currency_pair = symbol,
                 side          = 'buy',
@@ -285,82 +312,94 @@ class GateioLiveTrader:
                 comment       = f'score={score:.2f}',
             )
             if result is None:
-                logger.warning(f'{symbol}: order failed')
                 return
+            self.positions[symbol] = {
+                'entry_price': price,
+                'stop'       : stop_price,
+                'target'     : target_price,
+                'open_time'  : time.time(),
+                'score'      : score,
+                'paper'      : False,
+                'display'    : display,
+                'base'       : SymbolMap.to_base(symbol),
+            }
+            print(f'\n🟢 LIVE BUY {display} @ ${price:.2f} | ${usdt_amount:.2f} USDT\n')
+
         else:
-            logger.info(f'{symbol}: SIGNAL-ONLY — would buy ${usdt_amount:.2f} USDT @ {price:.2f}')
+            # ── Signal only ───────────────────────────────────────
+            print(f'\n📡 SIGNAL {display} @ ${price:.2f} | score={score:.2f} | R:R={rr_ratio:.1f}\n')
+            return
 
-        qty_base = usdt_amount / price if price > 0 else 0
-
-        self.positions[symbol] = {
-            'entry_price' : price,
-            'qty'         : qty_base,
-            'usdt_spent'  : usdt_amount,
-            'base'        : base,
-            'stop'        : stop_price,
-            'target'      : target_price,
-            'open_time'   : time.time(),
-            'score'       : score,
-        }
         self.last_signal_time[symbol] = time.time()
+        self.paper.save_state()
 
         try:
             self.telegram.alert_buy_signal(
                 display, price, score,
-                f'crypto | R:R={rr_ratio:.1f} | vol={vol_ratio:.1f}x', 0.0
+                f'{"PAPER" if PAPER_TRADE else "LIVE"} | R:R={rr_ratio:.1f} | vol={vol_ratio:.1f}x',
+                0.0,
             )
         except Exception:
             pass
 
-        print(
-            f'\n🟢 BUY {display} @ ${price:.2f}'
-            f' | stop=${stop_price:.2f} | target=${target_price:.2f}'
-            f' | score={score:.2f} | R:R={rr_ratio:.1f}\n'
-        )
-
     # ── Position monitor ──────────────────────────────────────────────
 
-    def _position_monitor_loop(self):
+    def _monitor_loop(self):
         while True:
             time.sleep(MONITOR_INTERVAL)
             self._check_positions()
+            if PAPER_TRADE:
+                self._update_paper_positions()
+
+    def _update_paper_positions(self):
+        """Push live prices into PaperTrader so trailing stops work."""
+        current_prices = {}
+        for symbol, pos in list(self.positions.items()):
+            price = self.stream.get_price(symbol)
+            if price:
+                current_prices[pos['display']] = price
+
+        for display_sym, price in current_prices.items():
+            self.paper.update_position(display_sym, price)
+            # Check if PaperTrader closed it
+            if display_sym not in self.paper.positions:
+                # Find and remove from our positions dict
+                for sym, pos in list(self.positions.items()):
+                    if pos.get('display') == display_sym:
+                        pnl = (price - pos['entry_price']) / pos['entry_price'] * 100
+                        emoji = '✅' if price >= pos['entry_price'] else '🔴'
+                        print(f'\n{emoji} PAPER CLOSE {display_sym} @ ${price:.2f} | PnL={pnl:.1f}% | capital=${self.paper.capital:,.2f}\n')
+                        del self.positions[sym]
+                        self.last_signal_time[sym] = time.time()
+                        self.paper.save_state()
 
     def _check_positions(self):
+        """Check manual stop/target for live positions."""
         for symbol in list(self.positions.keys()):
             pos   = self.positions[symbol]
+            if pos.get('paper'):
+                continue   # handled by _update_paper_positions
+
             price = self.stream.get_price(symbol)
             if price is None:
                 continue
 
-            entry      = pos['entry_price']
             hit_stop   = price <= pos['stop']
             hit_target = price >= pos['target']
-            pnl        = ((price - entry) / entry) * 100
-
             if not (hit_stop or hit_target):
                 continue
 
             reason  = 'STOP LOSS' if hit_stop else 'TAKE PROFIT'
             emoji   = '🔴' if hit_stop else '✅'
-            display = SymbolMap.to_base(symbol) or symbol
-
-            logger.info(f'{emoji} {display}: {reason} @ ${price:.2f} | PnL={pnl:.1f}%')
+            display = pos.get('display', symbol)
+            pnl     = ((price - pos['entry_price']) / pos['entry_price']) * 100
 
             if self.client.connected:
-                self.client.close_position(symbol, pos['base'])
+                self.client.close_position(symbol, pos.get('base', ''))
 
-            pnl_usd = (price - entry) * pos.get('qty', 0)
-            try:
-                if hit_stop:
-                    self.telegram.alert_stop_loss(display, price, pnl_usd)
-                else:
-                    self.telegram.alert_take_profit(display, price, pnl_usd)
-            except Exception:
-                pass
-
+            print(f'\n{emoji} {display}: {reason} @ ${price:.2f} | PnL={pnl:.1f}%\n')
             del self.positions[symbol]
             self.last_signal_time[symbol] = time.time()
-            print(f'\n{emoji} {display}: {reason} @ ${price:.2f} | PnL={pnl:.1f}%\n')
 
     # ── Indicators ────────────────────────────────────────────────────
 
@@ -370,14 +409,12 @@ class GateioLiveTrader:
             high   = df['high']
             low    = df['low']
             volume = df['volume']
-
             if len(close) < 50:
                 return None
 
             ema20  = close.ewm(span=20,  adjust=False).mean()
             ema50  = close.ewm(span=50,  adjust=False).mean()
             ema200 = close.ewm(span=200, adjust=False).mean() if len(close) >= 200 else None
-
             price          = float(close.iloc[-1])
             above_ema20    = price > float(ema20.iloc[-1])
             above_ema50    = price > float(ema50.iloc[-1])
@@ -412,10 +449,8 @@ class GateioLiveTrader:
 
             conditions = [above_ema20, above_ema50, ema20_above_50,
                           ema200_ok, rsi_ok, macd_ok, vol_ratio >= 1.0]
-            score = sum(conditions) / len(conditions)
-
             return {
-                'score'    : round(score, 3),
+                'score'    : round(sum(conditions) / len(conditions), 3),
                 'regime'   : regime,
                 'atr'      : round(atr, 4),
                 'rsi'      : round(rsi, 1),
@@ -436,9 +471,8 @@ class GateioLiveTrader:
         except Exception:
             return False, 0.0
 
-    def _history_to_df(self, history: list) -> pd.DataFrame:
-        df = pd.DataFrame(history)
-        return df.sort_values('timestamp').reset_index(drop=True)
+    def _to_df(self, history: list) -> pd.DataFrame:
+        return pd.DataFrame(history).sort_values('timestamp').reset_index(drop=True)
 
     def _print_status(self):
         now = datetime.now().strftime('%H:%M:%S')
@@ -446,10 +480,9 @@ class GateioLiveTrader:
             f"{SymbolMap.to_base(s) or s}=${self.stream.get_price(s):.2f}"
             for s in CRYPTO_SYMBOLS if self.stream.get_price(s)
         )
-        positions_str = ', '.join(
-            SymbolMap.to_base(s) or s for s in self.positions
-        ) or 'none'
-        print(f'[{now}] {prices_str} | positions: {positions_str}')
+        pos_str = ', '.join(pos.get('display', s) for s, pos in self.positions.items()) or 'none'
+        capital = f' | paper=${self.paper.capital:,.2f}' if PAPER_TRADE else ''
+        print(f'[{now}] {prices_str} | positions: {pos_str}{capital}')
 
 
 if __name__ == '__main__':
