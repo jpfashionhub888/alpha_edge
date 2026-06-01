@@ -8,8 +8,7 @@ Executes real trades on your Alpaca account.
 import os
 import logging
 from datetime import datetime
-from alpaca_trade_api.rest import REST, TimeFrame
-
+from alpaca_trade_api.rest import REST
 logger = logging.getLogger(__name__)
 
 # ==========================================
@@ -54,7 +53,7 @@ class AlpacaBroker:
     def _connect(self):
         """Connect to Alpaca API."""
 
-        if 'YOUR_API_KEY_HERE' in ALPACA_API_KEY:
+        if not ALPACA_API_KEY or not ALPACA_SECRET_KEY:
             print(
                 "   ⚠️ Alpaca not configured."
                 " Set keys in alpaca_broker.py"
@@ -94,7 +93,7 @@ class AlpacaBroker:
                 'buying_power': float(account.buying_power),
                 'portfolio_value': float(account.portfolio_value),
                 'cash': float(account.cash),
-                'equity': float(account.equity),
+                'equity': float(getattr(account, 'equity', account.portfolio_value)),
                 'status': account.status,
                 'mode': self.mode,
             }

@@ -28,7 +28,7 @@ from data.feature_engine import FeatureEngine
 from models.technical_model import TechnicalPredictor
 from models.sentiment_model import SentimentAnalyzer
 from models.regime_detector import RegimeDetector
-from market_regime import MarketRegimeFilter
+from market_regime import MarketRegimeDetector as MarketRegimeFilter
 from multi_timeframe import MultiTimeframeAnalyzer
 from correlation_filter import CorrelationFilter
 from models.crypto_predictor import CryptoPredictor

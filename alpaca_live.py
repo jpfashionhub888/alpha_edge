@@ -41,7 +41,7 @@ MAX_POSITIONS       = 5        # max open positions at once
 MARKET_TZ           = pytz.timezone('America/New_York')
 MARKET_OPEN         = dtime(9, 30)
 MARKET_CLOSE        = dtime(16, 0)
-SCAN_OUTSIDE_HOURS  = False    # set True to scan pre/post market
+SCAN_OUTSIDE_HOURS  = True    # set True to scan pre/post market
 # ─────────────────────────────────────────────────────────────────────
 
 
@@ -143,7 +143,7 @@ class AlpacaLiveTrader:
             from models.sentiment_model import SentimentAnalyzer
             from models.regime_detector import RegimeDetector
             from models.sector_rotation import SectorRotation
-            from market_regime          import MarketRegimeDetector
+            from market_regime          import MarketRegimeDetector            
             from multi_timeframe        import MultiTimeframeAnalyzer
             from correlation_filter     import CorrelationFilter
             from veto_agent             import VetoAgent
