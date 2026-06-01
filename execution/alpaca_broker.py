@@ -17,11 +17,11 @@ logger = logging.getLogger(__name__)
 # ==========================================
 ALPACA_API_KEY = os.getenv(
     'ALPACA_API_KEY',
-    'PK5TI3TNXIJLPTQ46UUPZIUHXM'
+    ''
 )
 ALPACA_SECRET_KEY = os.getenv(
     'ALPACA_SECRET_KEY',
-    'DUvwnAtnL49fZQ6RwiRDeXzb1EoNiVYs1TFvKG2w2M1A'
+    ''
 )
 
 # IMPORTANT: Use paper URL for testing first
