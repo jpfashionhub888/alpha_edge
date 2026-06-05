@@ -37,7 +37,7 @@ from typing import Optional
 from execution.bybit_client import BybitClient
 from execution.bybit_stream  import BybitStream
 from execution.symbol_map    import SymbolMap          # GAP 1 FIX
-from market_regime           import MarketRegimeFilter
+from market_regime           import MarketRegimeDetector
 from multi_timeframe         import MultiTimeframeAnalyzer
 from monitoring.telegram_bot import TelegramBot
 from risk_circuit_breaker    import RiskCircuitBreaker
@@ -70,7 +70,7 @@ class BybitLiveTrader:
         self.stream          = BybitStream(symbols=CRYPTO_SYMBOLS, interval=CANDLE_INTERVAL)
         self.telegram        = TelegramBot()
         self.mtf             = MultiTimeframeAnalyzer()
-        self.regime_filter   = MarketRegimeFilter()
+        self.regime_filter   = MarketRegimeDetector()
         self.circuit_breaker = RiskCircuitBreaker()
 
         # symbol (Bybit format) → position dict
