@@ -41,7 +41,7 @@ class PaperTrader:
                  commission         = 1.0,
                  risk_per_trade_pct = 0.02,
                  daily_loss_limit_pct = 0.05,
-                 log_file           = 'logs/paper_trades.json'):
+                 log_file           = 'logs/paper_trades_stocks_only.json'):
 
         self.starting_capital     = starting_capital
         self.capital              = starting_capital

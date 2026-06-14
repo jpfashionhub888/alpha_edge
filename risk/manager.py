@@ -115,6 +115,9 @@ class RiskManager:
 
         df = df.copy()
 
+        # Reset cooling off period state to prevent cross-stock state leak
+        self._last_stop_bar = -999
+
         # Initialise output columns
         df['managed_signal'] = 0.0
         df['managed_return'] = 0.0

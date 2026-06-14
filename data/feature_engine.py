@@ -325,19 +325,25 @@ class FeatureEngine:
             else df.index.max()
         )
 
+        if not hasattr(self, '_context_cache'):
+            self._context_cache = {}
+
         for name, ticker in context_tickers.items():
             try:
-                data = yf.Ticker(ticker).history(
-                    start='2020-01-01',
-                    end=(
-                        max_date + pd.Timedelta(days=1)
-                    ).strftime('%Y-%m-%d')
-                )
+                if ticker not in self._context_cache:
+                    # Fetch from 2020-01-01 up to today once
+                    data = yf.Ticker(ticker).history(
+                        start='2020-01-01',
+                        progress=False
+                    )
+                    if not data.empty:
+                        self._context_cache[ticker] = data
 
-                if data.empty:
+                data = self._context_cache.get(ticker)
+                if data is None or data.empty:
                     continue
 
-                close = data['Close']
+                close = data['Close'].copy()
                 close.index = close.index.tz_localize(
                     None
                 )

@@ -672,9 +672,12 @@ class WalkForwardBacktester:
         else:
             ret_col = 'strategy_return'
 
+        # Determine the signal column (managed_signal takes priority if it exists)
+        sig_col = 'managed_signal' if 'managed_signal' in df.columns else 'signal'
+
         for idx in df.index:
-            if 'signal' in df.columns:
-                signal = df.loc[idx, 'signal']
+            if sig_col in df.columns:
+                signal = df.loc[idx, sig_col]
                 if isinstance(signal, pd.Series):
                     signal = signal.iloc[0]
                 signal = float(signal)

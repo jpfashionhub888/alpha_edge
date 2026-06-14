@@ -234,7 +234,7 @@ def run_stock_backtest(config: dict, label: str = 'V4') -> dict:
                 if config.get('use_atr_stops'):
                     filtered = []
                     for idx, row in result.iterrows():
-                        if row.get('signal', 0) == 1:
+                        if row.get('signal', 0) > 0:
                             passes, details = apply_v4_filters(
                                 raw_df, float(row.get('prediction', 0)),
                                 raw_df.index.get_loc(idx) if idx in raw_df.index else -1,
@@ -244,7 +244,11 @@ def run_stock_backtest(config: dict, label: str = 'V4') -> dict:
                                 filtered.append(row)
                             else:
                                 row = row.copy()
-                                row['signal'] = 0
+                                row['signal'] = 0.0
+                                row['managed_signal'] = 0.0
+                                row['strategy_return'] = 0.0
+                                row['managed_return'] = 0.0
+                                row['adjusted_return'] = 0.0
                                 row['blocked_by'] = details.get('blocked_by', 'filter')
                                 filtered.append(row)
                         else:
@@ -261,7 +265,7 @@ def run_stock_backtest(config: dict, label: str = 'V4') -> dict:
         print("  No results generated")
         return {}
 
-    combined = pd.concat(all_results, ignore_index=True)
+    combined = pd.concat(all_results).sort_index()
 
     # ── Compute portfolio metrics ─────────────────────────────────
     print(f"\n── 3. Computing metrics ──────────────────────────────────")
@@ -343,31 +347,65 @@ def run_crypto_backtest(config: dict) -> dict:
 
 # ── Metrics helpers ───────────────────────────────────────────────────
 
-def _calc_symbol_stats(result: pd.DataFrame) -> dict:
-    """Calculate per-symbol trade statistics."""
-    try:
-        trades    = result[result.get('signal', result.get('prediction', pd.Series())) > 0.5] if 'signal' in result.columns else result
-        n_trades  = len(trades)
-        if n_trades == 0:
-            return {'n_trades': 0}
+def _get_trade_returns(df: pd.DataFrame, returns_col: str) -> list[float]:
+    """Helper to extract accumulated trade returns for a single symbol."""
+    trade_returns = []
+    in_trade = False
+    running = 0.0
+    
+    # Prioritize managed_signal over raw signal
+    sig_col = 'managed_signal' if 'managed_signal' in df.columns else 'signal'
+    
+    df_sorted = df.sort_index()
+    for idx, row in df_sorted.iterrows():
+        signal = float(row.get(sig_col, 0.0))
+        ret = float(row.get(returns_col, 0.0))
+        
+        if not in_trade and signal > 0.0:
+            in_trade = True
+            running = 0.0
+            
+        if in_trade:
+            running += ret
+            if signal == 0.0:
+                trade_returns.append(running)
+                in_trade = False
+                
+    if in_trade and running != 0.0:
+        trade_returns.append(running)
+        
+    return trade_returns
 
-        returns   = trades['return'].dropna() if 'return' in trades.columns else pd.Series()
-        wins      = (returns > 0).sum()
-        win_rate  = wins / len(returns) if len(returns) > 0 else 0
-        avg_win   = returns[returns > 0].mean() if (returns > 0).any() else 0
-        avg_loss  = returns[returns < 0].mean() if (returns < 0).any() else 0
-        profit_factor = abs(avg_win * wins) / abs(avg_loss * (len(returns) - wins)) if avg_loss != 0 else 0
+
+def _calc_symbol_stats(result: pd.DataFrame) -> dict:
+    """Calculate per-symbol trade statistics based on actual trades."""
+    try:
+        returns_col = 'managed_return' if 'managed_return' in result.columns else ('strategy_return' if 'strategy_return' in result.columns else 'returns')
+        trade_returns = _get_trade_returns(result, returns_col)
+        n_trades = len(trade_returns)
+        if n_trades == 0:
+            return {'n_trades': 0, 'win_rate': 0.0, 'avg_win': 0.0, 'avg_loss': 0.0, 'profit_factor': 0.0, 'total_return': 0.0}
+
+        wins = sum(1 for r in trade_returns if r > 0)
+        win_rate = wins / n_trades
+        avg_win = np.mean([r for r in trade_returns if r > 0]) if wins > 0 else 0.0
+        avg_loss = np.mean([r for r in trade_returns if r < 0]) if (n_trades - wins) > 0 else 0.0
+        
+        total_gains = sum(r for r in trade_returns if r > 0)
+        total_losses = abs(sum(r for r in trade_returns if r < 0))
+        profit_factor = total_gains / total_losses if total_losses > 0 else (0.0 if total_gains == 0 else float('inf'))
 
         return {
             'n_trades'     : n_trades,
             'win_rate'     : round(win_rate, 3),
             'avg_win'      : round(avg_win, 4),
             'avg_loss'     : round(avg_loss, 4),
-            'profit_factor': round(profit_factor, 3),
-            'total_return' : round(returns.sum(), 4),
+            'profit_factor': round(profit_factor, 3) if profit_factor != float('inf') else 999.0,
+            'total_return' : round(sum(trade_returns), 4),
         }
-    except Exception:
-        return {'n_trades': 0}
+    except Exception as e:
+        logger.error(f"Error in _calc_symbol_stats: {e}")
+        return {'n_trades': 0, 'win_rate': 0.0, 'avg_win': 0.0, 'avg_loss': 0.0, 'profit_factor': 0.0, 'total_return': 0.0}
 
 
 def _compute_portfolio_metrics(
@@ -375,38 +413,54 @@ def _compute_portfolio_metrics(
     symbol_stats: dict,
     label:        str,
 ) -> dict:
-    """Compute aggregate portfolio-level metrics."""
+    """Compute aggregate portfolio-level metrics using correct trade extraction and daily return pooling."""
     try:
-        returns_col = 'return' if 'return' in combined.columns else None
+        returns_col = 'managed_return' if 'managed_return' in combined.columns else ('strategy_return' if 'strategy_return' in combined.columns else None)
         if returns_col is None:
             return {'error': 'no return column in results'}
 
-        returns   = combined[returns_col].dropna()
-        n_trades  = len(returns)
-        wins      = (returns > 0).sum()
-        losses    = (returns < 0).sum()
-        win_rate  = wins / n_trades if n_trades > 0 else 0
+        # 1. Extract all actual individual trades across all symbols for trade-level metrics
+        all_trades = []
+        for symbol, stats in symbol_stats.items():
+            mask = combined['stock'] == symbol if 'stock' in combined.columns else combined['symbol'] == symbol
+            symbol_df = combined[mask]
+            all_trades.extend(_get_trade_returns(symbol_df, returns_col))
 
-        avg_win   = float(returns[returns > 0].mean()) if wins > 0 else 0
-        avg_loss  = float(returns[returns < 0].mean()) if losses > 0 else 0
+        n_trades = len(all_trades)
+        if n_trades == 0:
+            return {'error': 'no trades executed in backtest'}
+
+        wins = sum(1 for r in all_trades if r > 0)
+        losses = sum(1 for r in all_trades if r < 0)
+        win_rate = wins / n_trades if n_trades > 0 else 0
+
+        avg_win = float(np.mean([r for r in all_trades if r > 0])) if wins > 0 else 0.0
+        avg_loss = float(np.mean([r for r in all_trades if r < 0])) if losses > 0 else 0.0
         expectancy = (win_rate * avg_win) + ((1 - win_rate) * avg_loss)
 
-        # Sharpe
-        excess    = returns - (0.05 / 252)
-        sharpe    = float(excess.mean() / excess.std() * np.sqrt(252)) if excess.std() > 0 else 0
+        total_gains = sum(r for r in all_trades if r > 0)
+        total_losses = abs(sum(r for r in all_trades if r < 0))
+        profit_factor = total_gains / total_losses if total_losses > 0 else (0.0 if total_gains == 0 else float('inf'))
 
-        # Max drawdown
-        cumulative = (1 + returns).cumprod()
+        # 2. Daily portfolio aggregation for Sharpe, Drawdown, and Cumulative Returns
+        daily_portfolio_returns = combined.groupby(combined.index)[returns_col].mean().dropna()
+
+        # Sharpe ratio (excess return over daily risk-free rate of 5% / 252)
+        excess = daily_portfolio_returns - (0.05 / 252)
+        sharpe = float(excess.mean() / excess.std() * np.sqrt(252)) if excess.std() > 0 else 0.0
+
+        # Cumulative performance
+        cumulative = (1 + daily_portfolio_returns).cumprod()
         rolling_max = cumulative.cummax()
-        drawdown    = (cumulative - rolling_max) / rolling_max
-        max_dd      = float(drawdown.min())
+        drawdown = (cumulative - rolling_max) / rolling_max
+        max_dd = float(drawdown.min())
+        total_ret = float(cumulative.iloc[-1] - 1) if len(cumulative) > 0 else 0.0
 
         # Annual return
-        n_days      = len(returns)
-        total_ret   = float((1 + returns).prod() - 1)
-        annual_ret  = float((1 + total_ret) ** (252 / max(n_days, 1)) - 1) if n_days > 63 else total_ret
+        n_days = len(daily_portfolio_returns)
+        annual_ret = float((1 + total_ret) ** (252 / max(n_days, 1)) - 1) if n_days > 63 else total_ret
 
-        # Best/worst symbols
+        # Best/worst symbols based on total return
         sorted_syms = sorted(symbol_stats.items(), key=lambda x: x[1].get('total_return', 0), reverse=True)
         best_symbols  = sorted_syms[:3]
         worst_symbols = sorted_syms[-3:]
@@ -422,7 +476,7 @@ def _compute_portfolio_metrics(
             'max_drawdown_pct': round(max_dd * 100, 2),
             'total_return_pct': round(total_ret * 100, 2),
             'annual_return_pct': round(annual_ret * 100, 2),
-            'profit_factor'  : round(abs(avg_win * wins) / abs(avg_loss * losses), 3) if losses > 0 and avg_loss != 0 else 0,
+            'profit_factor'  : round(profit_factor, 3) if profit_factor != float('inf') else 999.0,
             'best_symbols'   : [(s, d.get('total_return', 0)) for s, d in best_symbols],
             'worst_symbols'  : [(s, d.get('total_return', 0)) for s, d in worst_symbols],
             'symbol_stats'   : symbol_stats,

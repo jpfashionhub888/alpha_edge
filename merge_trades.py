@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
 # ── File paths ────────────────────────────────────────────────────────
-STOCK_TRADES_FILE  = 'logs/paper_trades.json'
+STOCK_TRADES_FILE  = 'logs/paper_trades_stocks_only.json'
 CRYPTO_TRADES_FILE = 'logs/gateio_paper_trades.json'
 MERGED_FILE        = 'logs/paper_trades_merged.json'
 DASHBOARD_FILE     = 'logs/paper_trades.json'   # what dashboard reads
