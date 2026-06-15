@@ -1,0 +1,98 @@
+# config/settings.yaml
+# Central configuration file for the AlphaEdge Trading Empire
+
+system:
+  name: "AlphaEdge"
+  version: "0.2.0"
+  mode: "paper"  # "paper" or "live"
+
+watchlist:
+  stocks:
+    - 'AAPL'
+    - 'MSFT'
+    - 'GOOGL'
+    - 'AMZN'
+    - 'NVDA'
+    - 'META'
+    - 'TSLA'
+    - 'AMD'
+    - 'NFLX'
+    - 'SPY'
+    - 'QQQ'
+    - 'IWM'
+    - 'DIA'
+    - 'JPM'
+    - 'V'
+    - 'GS'
+    - 'BAC'
+    - 'MS'
+    - 'JNJ'
+    - 'PFE'
+    - 'UNH'
+    - 'ABBV'
+    - 'LLY'
+    - 'MRK'
+    - 'WMT'
+    - 'COST'
+    - 'HD'
+    - 'MCD'
+    - 'XOM'
+    - 'CVX'
+    - 'OXY'
+    - 'SOFI'
+    - 'PLTR'
+    - 'RIVN'
+    - 'HOOD'
+    - 'MARA'
+    - 'CRM'
+    - 'SNOW'
+    - 'NET'
+    - 'DDOG'
+    - 'CRWD'
+  crypto:
+    - 'BTC/USD'
+    - 'ETH/USD'
+    - 'SOL/USD'
+
+signal_thresholds:
+  buy_threshold: 0.63
+  mtf_block_threshold: 0.0
+  volume_spike_min: 1.3
+  min_risk_reward: 2.0
+  mtf_weight_in_signal: 0.15
+
+backtest_config:
+  train_window_days: 180
+  retrain_frequency_days: 30
+  top_features: 20
+  min_auc: 0.52
+  use_atr_stops: true
+  random_seed: 42
+
+risk_management:
+  max_risk_per_trade: 0.02
+  max_portfolio_risk: 0.06
+  max_position_size: 0.15
+  max_daily_loss: 0.02
+  max_drawdown: 0.10
+  max_open_positions: 5
+  max_per_sector: 2
+  cooloff_days: 5
+  
+  # Stops and Target Parameters
+  atr_stop_mult: 1.0
+  atr_target_mult: 2.5
+  trailing_stop_multiplier: 0.8
+  
+  # Kelly Criterion Position Sizing
+  kelly_position_sizing: true
+  kelly_multiplier: 0.5
+  kelly_reward_risk_ratio: 2.5
+
+execution_costs:
+  slippage_pct: 0.0005
+  commission: 1.0
+
+logging:
+  log_level: 'INFO'
+  log_file: 'logs/trading.log'

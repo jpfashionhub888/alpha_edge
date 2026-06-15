@@ -127,16 +127,38 @@ class EnsembleStrategy:
         # Fix Bug 1: replaces row-by-row df.loc[idx] iteration
         # which broke silently on duplicate datetime indexes
         # (multiple stocks on same date after pd.concat)
+        from config import settings
 
         df['signal']        = 0.0
         df['signal_reason'] = 'no_trade'
+
+        # Calculate Kelly weights if enabled
+        use_kelly = getattr(settings, 'KELLY_POSITION_SIZING', False)
+        if use_kelly:
+            p = df['prediction'].astype(float)
+            b = getattr(settings, 'KELLY_REWARD_RISK_RATIO', 2.5)
+            # Kelly formula: f* = (p * (b + 1) - 1) / b
+            kelly_f = (p * (b + 1.0) - 1.0) / b
+            kelly_f = kelly_f.clip(lower=0.0)
+            
+            # Apply Half-Kelly multiplier and cap at max position size
+            kelly_base = kelly_f * getattr(settings, 'KELLY_MULTIPLIER', 0.5)
+            kelly_base = kelly_base.clip(upper=settings.MAX_POSITION_SIZE)
+        else:
+            kelly_base = None
+
+        # Helper to get signal size based on mode and multiplier
+        def get_signal_size(multiplier, mask_size=None):
+            if use_kelly:
+                return kelly_base * multiplier
+            return SIGNAL_TIERS[mask_size] if mask_size in SIGNAL_TIERS else multiplier
 
         # ── Uptrend — trade aggressively ──────────────────────────
         up = df['regime'] == 'uptrend'
 
         # Full position: strong prediction in uptrend
         mask = up & (df['prediction'] > 0.55)
-        df.loc[mask, 'signal']        = SIGNAL_TIERS['full']
+        df.loc[mask, 'signal']        = get_signal_size(1.0, 'full')
         df.loc[mask, 'signal_reason'] = 'uptrend_strong'
 
         # Three-quarter: moderate prediction in uptrend
@@ -146,7 +168,7 @@ class EnsembleStrategy:
             & (df['prediction'] <= 0.55)
             & (df['trend_strength'] > 65)
         )
-        df.loc[mask, 'signal']        = SIGNAL_TIERS['three_q']
+        df.loc[mask, 'signal']        = get_signal_size(0.75, 'three_q')
         df.loc[mask, 'signal_reason'] = 'uptrend_moderate'
 
         # ── Sideways — no trade ───────────────────────────────────
@@ -156,7 +178,7 @@ class EnsembleStrategy:
 
         # High confidence sideways trade — reduced position size
         mask = sw & (df['prediction'] > 0.55)
-        df.loc[mask, 'signal']        = SIGNAL_TIERS['quarter']
+        df.loc[mask, 'signal']        = get_signal_size(0.25, 'quarter')
         df.loc[mask, 'signal_reason'] = 'sideways_high_conf'
 
         # Low confidence sideways — no trade
@@ -167,7 +189,7 @@ class EnsembleStrategy:
         # ── Volatile — minimal position only ─────────────────────
         vo   = df['regime'] == 'volatile'
         mask = vo & (df['prediction'] > 0.60)
-        df.loc[mask, 'signal']        = SIGNAL_TIERS['quarter']
+        df.loc[mask, 'signal']        = get_signal_size(0.25, 'quarter')
         df.loc[mask, 'signal_reason'] = 'volatile_small'
 
         # ── Downtrend — no trade ──────────────────────────────────

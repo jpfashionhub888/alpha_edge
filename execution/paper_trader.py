@@ -7,6 +7,7 @@ import json
 import os
 import tempfile
 import logging
+from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -35,29 +36,35 @@ class PaperTrader:
 
     def __init__(self,
                  starting_capital   = 10000.0,
-                 max_position_pct   = 0.15,
-                 max_positions      = 5,
-                 slippage_pct       = 0.0005,
-                 commission         = 1.0,
-                 risk_per_trade_pct = 0.02,
-                 daily_loss_limit_pct = 0.05,
+                 max_position_pct   = None,
+                 max_positions      = None,
+                 slippage_pct       = None,
+                 commission         = None,
+                 risk_per_trade_pct = None,
+                 daily_loss_limit_pct = None,
                  log_file           = 'logs/paper_trades_stocks_only.json'):
 
         self.starting_capital     = starting_capital
         self.capital              = starting_capital
-        self.max_position_pct     = max_position_pct
-        self.max_positions        = max_positions
-        self.slippage_pct         = slippage_pct
-        self.commission           = commission
-        self.risk_per_trade_pct   = risk_per_trade_pct
+        self.max_position_pct     = max_position_pct if max_position_pct is not None else settings.MAX_POSITION_SIZE
+        self.max_positions        = max_positions if max_positions is not None else settings.MAX_OPEN_POSITIONS
+        self.slippage_pct         = slippage_pct if slippage_pct is not None else settings.SLIPPAGE_PCT
+        self.commission           = commission if commission is not None else settings.COMMISSION
+        self.risk_per_trade_pct   = risk_per_trade_pct if risk_per_trade_pct is not None else settings.MAX_RISK_PER_TRADE
         self.log_file             = log_file
+
+        # Kelly Sizing Properties
+        self.kelly_position_sizing = settings.KELLY_POSITION_SIZING
+        self.kelly_multiplier      = settings.KELLY_MULTIPLIER
+        self.kelly_reward_risk_ratio = settings.KELLY_REWARD_RISK_RATIO
 
         self.positions            = {}
         self.trade_history        = []
         self.daily_pnl            = []
 
         # --- Daily loss limit tracking (Risk 2) ---
-        self.daily_loss_limit     = starting_capital * daily_loss_limit_pct
+        limit_pct = daily_loss_limit_pct if daily_loss_limit_pct is not None else settings.MAX_DAILY_LOSS
+        self.daily_loss_limit     = starting_capital * limit_pct
         self.daily_realized_pnl   = 0.0
         self.last_reset_date      = datetime.now().date()
         self._halt_trading        = False
@@ -119,9 +126,15 @@ class PaperTrader:
 
     def get_position_size(self, price, signal_strength=1.0, atr=None):
         """
-        Volatility-adjusted position sizing.
+        Position sizing using optional Kelly Criterion.
 
-        PRIMARY PATH (ATR available):
+        KELLY PATH:
+            Calculate Kelly fraction using calibrated prediction score (p)
+            and reward_risk_ratio (b): f* = (p * (b + 1) - 1) / b.
+            Apply Half-Kelly fractional multiplier.
+            Capped at max_position_pct.
+
+        STANDARD ATR PATH (ATR available):
             Risk exactly risk_per_trade_pct of capital per trade.
             Stop distance = 2 * ATR.
             shares = dollar_risk / stop_distance
@@ -130,10 +143,25 @@ class PaperTrader:
         FALLBACK PATH (no ATR):
             Fixed-fractional sizing using max_position_pct,
             scaled by discrete signal-strength tier.
-
-        Per-trade max loss cap is enforced in open_position()
-        after this method returns.
         """
+        if getattr(self, 'kelly_position_sizing', False):
+            p = float(signal_strength)
+            b = getattr(self, 'kelly_reward_risk_ratio', 2.5)
+            if p > 0.0:
+                kelly_f = (p * (b + 1.0) - 1.0) / b
+                kelly_f = max(0.0, kelly_f)
+            else:
+                kelly_f = 0.0
+            allocation_fraction = kelly_f * getattr(self, 'kelly_multiplier', 0.5)
+            allocation_fraction = min(allocation_fraction, self.max_position_pct)
+            dollar_allocation = self.capital * allocation_fraction
+            shares = int(dollar_allocation / price)
+            logger.info(
+                f"Kelly sizing: p={p:.3f} | b={b:.1f} | f*={kelly_f:.3f} | "
+                f"alloc_pct={allocation_fraction:.1%} | shares={shares}"
+            )
+            return max(shares, 0)
+
         size_multiplier = self._signal_to_size_multiplier(signal_strength)
 
         if atr and atr > 0:

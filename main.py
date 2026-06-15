@@ -23,6 +23,7 @@ from veto_agent import VetoAgent
 from insider_tracker import InsiderTracker
 from datetime import datetime
 from data.stock_data import StockDataFetcher
+from config import settings
 from data.news_data import NewsFetcher
 from data.feature_engine import FeatureEngine
 from models.technical_model import TechnicalPredictor
@@ -49,14 +50,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────
-# SIGNAL QUALITY CONSTANTS  (tune these)
+# SIGNAL QUALITY CONSTANTS  (loaded from settings)
 # ─────────────────────────────────────────────
-BUY_THRESHOLD       = 0.63   # was 0.55 — raised to reduce noise signals
-MTF_BLOCK_THRESHOLD = 0.0    # FIX: MTF scores are -1 to +1, not 0 to 1
-                              # A score of 0.0 means neutral; block only below 0
-VOLUME_SPIKE_MIN    = 1.3    # current volume must be 1.3x 20-day avg to confirm
-MIN_RISK_REWARD     = 2.0    # minimum reward:risk ratio using ATR before executing
-MTF_WEIGHT_IN_SIGNAL = 0.15  # how much MTF composite influences combined score
+BUY_THRESHOLD       = settings.BUY_THRESHOLD
+PREDICTION_THRESHOLD = BUY_THRESHOLD
+MTF_BLOCK_THRESHOLD = settings.MTF_BLOCK_THRESHOLD
+VOLUME_SPIKE_MIN    = settings.VOLUME_SPIKE_MIN
+MIN_RISK_REWARD     = settings.MIN_RISK_REWARD
+MTF_WEIGHT_IN_SIGNAL = settings.MTF_WEIGHT_IN_SIGNAL
 # ─────────────────────────────────────────────
 
 
@@ -104,18 +105,8 @@ def get_earnings_calendar(watchlist):
 
 
 def get_full_watchlist():
-    """Return expanded stock watchlist."""
-    return [
-        'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA',
-        'META', 'TSLA', 'AMD', 'NFLX',
-        'SPY', 'QQQ', 'IWM', 'DIA',
-        'JPM', 'V', 'GS', 'BAC', 'MS',
-        'JNJ', 'PFE', 'UNH', 'ABBV', 'LLY', 'MRK',
-        'WMT', 'COST', 'HD', 'MCD',
-        'XOM', 'CVX', 'OXY',
-        'SOFI', 'PLTR', 'RIVN', 'HOOD', 'MARA',
-        'CRM', 'SNOW', 'NET', 'DDOG', 'CRWD',
-    ]
+    """Return expanded stock watchlist loaded from centralized config."""
+    return settings.STOCK_WATCHLIST
 
 
 def check_volume_confirmation(stock_data: dict, symbol: str) -> tuple[bool, float]:
