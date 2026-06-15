@@ -35,6 +35,7 @@ from datetime import datetime
 from data.stock_data    import StockDataFetcher
 from data.feature_engine import FeatureEngine
 from backtest.walk_forward import WalkForwardBacktester
+from config import settings
 
 logging.basicConfig(
     level=logging.INFO,
@@ -44,53 +45,59 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ── Constants ─────────────────────────────────────────────────────────
-RANDOM_SEED = 42
+RANDOM_SEED = settings.RANDOM_SEED
 
-# V4 signal thresholds (must match main.py exactly)
-BUY_THRESHOLD    = 0.63
-VOLUME_SPIKE_MIN = 1.3
-MIN_RR_RATIO     = 2.0
-ATR_STOP_MULT    = 1.0
-ATR_TARGET_MULT  = 2.5
+# V4 signal thresholds (loaded dynamically from settings)
+BUY_THRESHOLD    = settings.BUY_THRESHOLD
+VOLUME_SPIKE_MIN = settings.VOLUME_SPIKE_MIN
+MIN_RR_RATIO     = settings.MIN_RISK_REWARD
+ATR_STOP_MULT    = settings.ATR_STOP_MULT
+ATR_TARGET_MULT  = settings.ATR_TARGET_MULT
 
 # Sector-balanced watchlist
 WATCHLIST = {
-    'tech'      : ['AAPL', 'MSFT', 'NVDA', 'AMD', 'GOOGL'],
-    'consumer'  : ['AMZN', 'TSLA', 'NFLX', 'WMT', 'META'],
-    'financials': ['JPM', 'V', 'GS', 'BAC'],
-    'healthcare': ['JNJ', 'UNH', 'LLY'],
-    'etf'       : ['SPY', 'QQQ'],
-    'energy'    : ['XOM', 'CVX'],
+    'tech'      : [s for s in settings.STOCK_WATCHLIST if s in ['AAPL', 'MSFT', 'NVDA', 'AMD', 'GOOGL', 'SOFI', 'PLTR', 'CRM', 'SNOW', 'NET', 'DDOG', 'CRWD']],
+    'consumer'  : [s for s in settings.STOCK_WATCHLIST if s in ['AMZN', 'TSLA', 'NFLX', 'WMT', 'META', 'COST', 'HD', 'MCD', 'RIVN', 'HOOD', 'MARA']],
+    'financials': [s for s in settings.STOCK_WATCHLIST if s in ['JPM', 'V', 'GS', 'BAC', 'MS']],
+    'healthcare': [s for s in settings.STOCK_WATCHLIST if s in ['JNJ', 'UNH', 'LLY', 'PFE', 'ABBV', 'MRK']],
+    'etf'       : [s for s in settings.STOCK_WATCHLIST if s in ['SPY', 'QQQ', 'IWM', 'DIA']],
+    'energy'    : [s for s in settings.STOCK_WATCHLIST if s in ['XOM', 'CVX', 'OXY']],
 }
 
-CRYPTO_WATCHLIST = ['BTC/USD', 'ETH/USD', 'SOL/USD']
+# Add any custom symbols from settings that are not in the sector list to tech as a catch-all
+flat_watchlist_sectors = [s for sector in WATCHLIST.values() for s in sector]
+for s in settings.STOCK_WATCHLIST:
+    if s not in flat_watchlist_sectors:
+        WATCHLIST['tech'].append(s)
+
+CRYPTO_WATCHLIST = settings.CRYPTO_WATCHLIST
 
 # V4 config (ATR-based — no fixed pct stops)
 BACKTEST_CONFIG_V4 = {
-    'train_window_days'      : 180,
-    'retrain_frequency_days' : 30,
-    'top_features'           : 20,
-    'min_auc'                : 0.52,
+    'train_window_days'      : settings.TRAIN_WINDOW_DAYS,
+    'retrain_frequency_days' : settings.RETRAIN_FREQUENCY_DAYS,
+    'top_features'           : settings.TOP_FEATURES,
+    'min_auc'                : settings.MIN_AUC,
     'buy_threshold'          : BUY_THRESHOLD,
     'volume_spike_min'       : VOLUME_SPIKE_MIN,
     'min_rr_ratio'           : MIN_RR_RATIO,
     'atr_stop_mult'          : ATR_STOP_MULT,
     'atr_target_mult'        : ATR_TARGET_MULT,
-    'daily_loss_limit_pct'   : 0.02,
+    'daily_loss_limit_pct'   : settings.MAX_DAILY_LOSS,
     'random_seed'            : RANDOM_SEED,
-    'use_atr_stops'          : True,
+    'use_atr_stops'          : settings.USE_ATR_STOPS,
 }
 
 # V5 config (old fixed-pct stops — for comparison)
 BACKTEST_CONFIG_V5 = {
-    'train_window_days'      : 180,
-    'retrain_frequency_days' : 30,
-    'top_features'           : 20,
-    'min_auc'                : 0.52,
-    'stop_loss_pct'          : 0.015,
-    'take_profit_pct'        : 0.045,
-    'trailing_stop_pct'      : 0.015,
-    'daily_loss_limit_pct'   : 0.02,
+    'train_window_days'      : settings.TRAIN_WINDOW_DAYS,
+    'retrain_frequency_days' : settings.RETRAIN_FREQUENCY_DAYS,
+    'top_features'           : settings.TOP_FEATURES,
+    'min_auc'                : settings.MIN_AUC,
+    'stop_loss_pct'          : settings.STOP_LOSS_PCT,
+    'take_profit_pct'        : settings.TAKE_PROFIT_PCT,
+    'trailing_stop_pct'      : settings.TRAILING_STOP_PCT,
+    'daily_loss_limit_pct'   : settings.MAX_DAILY_LOSS,
     'random_seed'            : RANDOM_SEED,
     'use_atr_stops'          : False,
 }
@@ -443,7 +450,45 @@ def _compute_portfolio_metrics(
         profit_factor = total_gains / total_losses if total_losses > 0 else (0.0 if total_gains == 0 else float('inf'))
 
         # 2. Daily portfolio aggregation for Sharpe, Drawdown, and Cumulative Returns
-        daily_portfolio_returns = combined.groupby(combined.index)[returns_col].mean().dropna()
+        daily_returns_list = []
+        dates = combined.index.unique()
+        
+        for date in dates:
+            day_data = combined.loc[[date]]
+            if isinstance(day_data, pd.Series):
+                day_data = day_data.to_frame().T
+                
+            daily_pnl_sum = 0.0
+            
+            for _, row in day_data.iterrows():
+                sig = float(row.get('managed_signal', 0.0))
+                ret = float(row.get(returns_col, 0.0))
+                
+                if sig > 0.0:
+                    if settings.KELLY_POSITION_SIZING:
+                        p = float(row.get('prediction', 0.5))
+                        b = settings.KELLY_REWARD_RISK_RATIO
+                        kelly_f = (p * (b + 1.0) - 1.0) / b if p > 0.0 else 0.0
+                        kelly_f = max(0.0, kelly_f)
+                        weight = kelly_f * settings.KELLY_MULTIPLIER
+                        weight = min(weight, settings.MAX_POSITION_SIZE)
+                    else:
+                        pred = float(row.get('prediction', 0.5))
+                        if pred >= 0.80:
+                            mult = 1.00
+                        elif pred >= 0.70:
+                            mult = 0.75
+                        elif pred >= 0.60:
+                            mult = 0.50
+                        else:
+                            mult = 0.25
+                        weight = settings.MAX_POSITION_SIZE * mult
+                        
+                    daily_pnl_sum += ret * weight
+            
+            daily_returns_list.append(daily_pnl_sum)
+            
+        daily_portfolio_returns = pd.Series(daily_returns_list, index=dates).dropna()
 
         # Sharpe ratio (excess return over daily risk-free rate of 5% / 252)
         excess = daily_portfolio_returns - (0.05 / 252)
