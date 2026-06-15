@@ -19,9 +19,9 @@ logging.getLogger('sklearn').setLevel(logging.ERROR)
 
 from monitoring.dashboard import create_app
 
-print("\n" + "🌐" * 25)
+print("\n" + "=" * 50)
 print("ALPHAEDGE DASHBOARD")
-print("🌐" * 25)
+print("=" * 50)
 print("\nOpen browser: http://localhost:8050")
 print("Press Ctrl+C to stop\n")
 

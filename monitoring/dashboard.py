@@ -1,8 +1,9 @@
 # monitoring/dashboard.py
 
 """
-AlphaEdge Web Dashboard - Upgraded V2
-Matches BharatEdge style with enhanced features.
+AlphaEdge Web Dashboard - Upgraded V3 (Institutional Grade)
+Matches the premium styling, custom dark themes, dynamic Kelly positioning calculations,
+and System Risk limits inspection.
 """
 
 import json
@@ -14,6 +15,45 @@ from dash import Dash, html, dcc, dash_table
 from dash.dependencies import Input, Output
 import plotly.graph_objects as go
 
+# ── Load Live Settings ────────────────────────────────────────────────────────
+try:
+    from config import settings
+    kelly_active = getattr(settings, 'KELLY_POSITION_SIZING', True)
+    kelly_mult = getattr(settings, 'KELLY_MULTIPLIER', 0.5)
+    kelly_rr = getattr(settings, 'KELLY_REWARD_RISK_RATIO', 2.5)
+    max_pos_pct = getattr(settings, 'MAX_POSITION_SIZE', 0.15)
+    buy_threshold = getattr(settings, 'BUY_THRESHOLD', 0.63)
+    max_dd_limit = getattr(settings, 'MAX_DRAWDOWN', 0.10)
+    max_daily_loss = getattr(settings, 'MAX_DAILY_LOSS', 0.02)
+    max_positions = getattr(settings, 'MAX_OPEN_POSITIONS', 5)
+    atr_stop_mult = getattr(settings, 'ATR_STOP_MULT', 1.0)
+    atr_target_mult = getattr(settings, 'ATR_TARGET_MULT', 2.5)
+    trailing_mult = getattr(settings, 'TRAILING_STOP_MULTIPLIER', 0.8)
+    max_risk_per_trade = getattr(settings, 'MAX_RISK_PER_TRADE', 0.02)
+    max_portfolio_risk = getattr(settings, 'MAX_PORTFOLIO_RISK', 0.06)
+    volume_spike_min = getattr(settings, 'VOLUME_SPIKE_MIN', 1.3)
+    min_risk_reward = getattr(settings, 'MIN_RISK_REWARD', 2.0)
+    mtf_weight = getattr(settings, 'MTF_WEIGHT_IN_SIGNAL', 0.15)
+    watchlist_len = len(getattr(settings, 'STOCK_WATCHLIST', []))
+except Exception as e:
+    # Fallback defaults
+    kelly_active = True
+    kelly_mult = 0.5
+    kelly_rr = 2.5
+    max_pos_pct = 0.15
+    buy_threshold = 0.63
+    max_dd_limit = 0.10
+    max_daily_loss = 0.02
+    max_positions = 5
+    atr_stop_mult = 1.0
+    atr_target_mult = 2.5
+    trailing_mult = 0.8
+    max_risk_per_trade = 0.02
+    max_portfolio_risk = 0.06
+    volume_spike_min = 1.3
+    min_risk_reward = 2.0
+    mtf_weight = 0.15
+    watchlist_len = 41
 
 TRADES_FILE   = 'logs/paper_trades.json'
 SIGNALS_FILE  = 'logs/latest_signals.json'
@@ -21,18 +61,18 @@ SECTORS_FILE  = 'logs/sectors.json'
 EARNINGS_FILE = 'logs/earnings.json'
 
 COLORS = {
-    'bg'      : '#0a0e1a',
-    'card'    : '#111827',
-    'card2'   : '#1a2235',
-    'border'  : '#1e2d45',
-    'text'    : '#e2e8f0',
+    'bg'      : '#060814',
+    'card'    : '#0f172a',
+    'card2'   : '#1e293b',
+    'border'  : 'rgba(255, 255, 255, 0.06)',
+    'text'    : '#f8fafc',
     'text_dim': '#94a3b8',
-    'green'   : '#00ff88',
-    'red'     : '#ff4444',
-    'yellow'  : '#ffd700',
+    'green'   : '#10b981',
+    'red'     : '#f43f5e',
+    'yellow'  : '#f59e0b',
     'blue'    : '#3b82f6',
     'orange'  : '#f97316',
-    'accent'  : '#00d4ff',
+    'accent'  : '#0ea5e9',
 }
 
 CARD_STYLE = {
@@ -87,10 +127,25 @@ def signal_color(signal):
     }.get(signal, COLORS['text_dim'])
 
 
+def get_kelly_sizing(prediction):
+    if not kelly_active:
+        return 0.0, 0.0
+    p = float(prediction)
+    b = kelly_rr
+    if p > 0.0:
+        kelly_f = (p * (b + 1.0) - 1.0) / b
+        kelly_f = max(0.0, kelly_f)
+    else:
+        kelly_f = 0.0
+    alloc_fraction = kelly_f * kelly_mult
+    alloc_fraction = min(alloc_fraction, max_pos_pct)
+    return kelly_f, alloc_fraction
+
+
 def create_app():
     app = Dash(
         __name__,
-        title                       = 'AlphaEdge Dashboard',
+        title                       = 'AlphaEdge Trading Terminal',
         update_title                = None,
         suppress_callback_exceptions= True,
     )
@@ -100,12 +155,12 @@ def create_app():
             'backgroundColor': COLORS['bg'],
             'minHeight'      : '100vh',
             'padding'        : '24px',
-            'fontFamily'     : "'Segoe UI', Arial, sans-serif",
+            'fontFamily'     : "'Plus Jakarta Sans', Arial, sans-serif",
             'color'          : COLORS['text'],
         },
         children=[
 
-            # Auto refresh
+            # Auto refresh every 60s
             dcc.Interval(
                 id      ='refresh',
                 interval=60 * 1000,
@@ -115,7 +170,7 @@ def create_app():
             # Header
             html.Div(
                 style={
-                    'backgroundColor': COLORS['card2'],
+                    'backgroundColor': COLORS['card'],
                     'border'         : f"1px solid {COLORS['border']}",
                     'borderRadius'   : '16px',
                     'padding'        : '24px 32px',
@@ -127,21 +182,21 @@ def create_app():
                 children=[
                     html.Div([
                         html.H1(
-                            "AlphaEdge Trading Dashboard",
+                            "AlphaEdge Trading Terminal",
                             style={
-                                'color'       : COLORS['accent'],
-                                'fontSize'    : '28px',
+                                'color'       : COLORS['text'],
+                                'fontSize'    : '26px',
                                 'margin'      : '0',
-                                'fontWeight'  : '700',
-                                'letterSpacing': '1px',
+                                'fontWeight'  : '800',
+                                'letterSpacing': '-0.5px',
                             }
                         ),
                         html.P(
-                            "AI-Powered US Stock Trading System",
+                            "Institutional AIUS Market Scanning System",
                             style={
                                 'color'    : COLORS['text_dim'],
                                 'margin'   : '4px 0 0 0',
-                                'fontSize' : '14px',
+                                'fontSize' : '13px',
                             }
                         ),
                     ]),
@@ -152,6 +207,7 @@ def create_app():
                                 'color'    : COLORS['text_dim'],
                                 'fontSize' : '12px',
                                 'margin'   : '0',
+                                'fontFamily': "'JetBrains Mono', monospace",
                                 'textAlign': 'right',
                             }
                         ),
@@ -160,7 +216,8 @@ def create_app():
                                 'display'       : 'flex',
                                 'alignItems'    : 'center',
                                 'gap'           : '8px',
-                                'marginTop'     : '4px',
+                                'marginTop'     : '6px',
+                                'justifyContent': 'flex-end',
                             },
                             children=[
                                 html.Div(
@@ -169,14 +226,16 @@ def create_app():
                                         'height'         : '8px',
                                         'borderRadius'   : '50%',
                                         'backgroundColor': COLORS['green'],
+                                        'boxShadow'      : f"0 0 6px {COLORS['green']}",
                                     }
                                 ),
                                 html.Span(
-                                    "LIVE",
+                                    "LIVE SCAN ACTIVE",
                                     style={
                                         'color'    : COLORS['green'],
-                                        'fontSize' : '12px',
-                                        'fontWeight': '600',
+                                        'fontSize' : '11px',
+                                        'fontWeight': '700',
+                                        'letterSpacing': '0.5px',
                                     }
                                 ),
                             ]
@@ -210,13 +269,14 @@ def create_app():
                         style=CARD_STYLE,
                         children=[
                             html.H3(
-                                "Portfolio Performance",
+                                "Equity Growth Curve",
                                 style={
-                                    'color'       : COLORS['accent'],
-                                    'fontSize'    : '16px',
+                                    'color'       : COLORS['text'],
+                                    'fontSize'    : '14px',
+                                    'fontWeight'  : '800',
                                     'marginTop'   : '0',
                                     'marginBottom': '16px',
-                                    'letterSpacing': '1px',
+                                    'letterSpacing': '0.5px',
                                 }
                             ),
                             dcc.Graph(
@@ -230,13 +290,14 @@ def create_app():
                         style=CARD_STYLE,
                         children=[
                             html.H3(
-                                "Portfolio Allocation",
+                                "Capital Allocation",
                                 style={
-                                    'color'       : COLORS['accent'],
-                                    'fontSize'    : '16px',
+                                    'color'       : COLORS['text'],
+                                    'fontSize'    : '14px',
+                                    'fontWeight'  : '800',
                                     'marginTop'   : '0',
                                     'marginBottom': '16px',
-                                    'letterSpacing': '1px',
+                                    'letterSpacing': '0.5px',
                                 }
                             ),
                             dcc.Graph(
@@ -262,13 +323,14 @@ def create_app():
                         style=CARD_STYLE,
                         children=[
                             html.H3(
-                                "Sector Rotation",
+                                "Sector Strength & Flows",
                                 style={
-                                    'color'       : COLORS['accent'],
-                                    'fontSize'    : '16px',
+                                    'color'       : COLORS['text'],
+                                    'fontSize'    : '14px',
+                                    'fontWeight'  : '800',
                                     'marginTop'   : '0',
                                     'marginBottom': '16px',
-                                    'letterSpacing': '1px',
+                                    'letterSpacing': '0.5px',
                                 }
                             ),
                             html.Div(id='sector-table'),
@@ -279,13 +341,14 @@ def create_app():
                         style=CARD_STYLE,
                         children=[
                             html.H3(
-                                "Earnings Calendar",
+                                "Earnings Safety Calendar",
                                 style={
-                                    'color'       : COLORS['accent'],
-                                    'fontSize'    : '16px',
+                                    'color'       : COLORS['text'],
+                                    'fontSize'    : '14px',
+                                    'fontWeight'  : '800',
                                     'marginTop'   : '0',
                                     'marginBottom': '16px',
-                                    'letterSpacing': '1px',
+                                    'letterSpacing': '0.5px',
                                 }
                             ),
                             html.Div(id='earnings-table'),
@@ -299,13 +362,14 @@ def create_app():
                 style=CARD_STYLE,
                 children=[
                     html.H3(
-                        "Open Positions",
+                        "Active Open Positions",
                         style={
-                            'color'       : COLORS['accent'],
-                            'fontSize'    : '16px',
+                            'color'       : COLORS['text'],
+                            'fontSize'    : '14px',
+                            'fontWeight'  : '800',
                             'marginTop'   : '0',
                             'marginBottom': '16px',
-                            'letterSpacing': '1px',
+                            'letterSpacing': '0.5px',
                         }
                     ),
                     html.Div(id='positions-table'),
@@ -317,16 +381,66 @@ def create_app():
                 style=CARD_STYLE,
                 children=[
                     html.H3(
-                        "Live AI Signals (41 Stocks)",
+                        "AI Scan Signals & Kelly Allocations",
                         style={
-                            'color'       : COLORS['accent'],
-                            'fontSize'    : '16px',
+                            'color'       : COLORS['text'],
+                            'fontSize'    : '14px',
+                            'fontWeight'  : '800',
                             'marginTop'   : '0',
                             'marginBottom': '16px',
-                            'letterSpacing': '1px',
+                            'letterSpacing': '0.5px',
                         }
                     ),
                     html.Div(id='signals-table'),
+                ]
+            ),
+
+            # System Config Panel
+            html.Div(
+                style=CARD_STYLE,
+                children=[
+                    html.H3(
+                        "Live System Configuration & Risk Limits",
+                        style={
+                            'color'       : COLORS['text'],
+                            'fontSize'    : '14px',
+                            'fontWeight'  : '800',
+                            'marginTop'   : '0',
+                            'marginBottom': '16px',
+                            'letterSpacing': '0.5px',
+                        }
+                    ),
+                    html.Div(
+                        style={
+                            'display': 'grid',
+                            'gridTemplateColumns': '1fr 1fr',
+                            'gap': '32px',
+                            'fontSize': '13px',
+                        },
+                        children=[
+                            html.Div([
+                                html.H4("Signal Generation & Sizing", style={'color': COLORS['accent'], 'fontWeight': '700', 'marginBottom': '10px'}),
+                                html.P(f"Watchlist Size: {watchlist_len} Tickers", style={'margin': '6px 0'}),
+                                html.P(f"Buy Signal Score Threshold: {buy_threshold}", style={'margin': '6px 0'}),
+                                html.P(f"Minimum Volume Spike Ratio: {volume_spike_min}x", style={'margin': '6px 0'}),
+                                html.P(f"Minimum Risk-Reward Target: {min_risk_reward:.1f} R:R", style={'margin': '6px 0'}),
+                                html.P(f"Kelly Position Sizing: {'ENABLED' if kelly_active else 'DISABLED'}", style={'color': COLORS['green'] if kelly_active else COLORS['red'], 'fontWeight': '700', 'margin': '6px 0'}),
+                                html.P(f"Fractional Kelly Multiplier: {kelly_mult} (Half-Kelly)", style={'margin': '6px 0'}),
+                                html.P(f"Kelly Calibrated R/R Ratio: {kelly_rr:.1f}x", style={'margin': '6px 0'}),
+                            ]),
+                            html.Div([
+                                html.H4("Portfolio Risk Rules & Stops", style={'color': COLORS['accent'], 'fontWeight': '700', 'marginBottom': '10px'}),
+                                html.P(f"Max Concurrent Positions Limit: {max_positions}", style={'margin': '6px 0'}),
+                                html.P(f"Max Position Cap (Capital %): {max_pos_pct*100:.1f}%", style={'margin': '6px 0'}),
+                                html.P(f"Max Volatility Risk Per Trade: {max_risk_per_trade*100:.1f}%", style={'margin': '6px 0'}),
+                                html.P(f"Max Portfolio Risk Limit: {max_portfolio_risk*100:.1f}%", style={'margin': '6px 0'}),
+                                html.P(f"Max Daily Realized Loss Limit: {max_daily_loss*100:.1f}%", style={'margin': '6px 0'}),
+                                html.P(f"Max Portfolio Drawdown Limit: {max_dd_limit*100:.1f}%", style={'margin': '6px 0'}),
+                                html.P(f"ATR Stop Loss Multiplier: {atr_stop_mult}x ATR", style={'margin': '6px 0'}),
+                                html.P(f"ATR Take Profit Multiplier: {atr_target_mult}x ATR", style={'margin': '6px 0'}),
+                            ]),
+                        ]
+                    ),
                 ]
             ),
 
@@ -335,13 +449,14 @@ def create_app():
                 style=CARD_STYLE,
                 children=[
                     html.H3(
-                        "Trade History",
+                        "Trade Execution History",
                         style={
-                            'color'       : COLORS['accent'],
-                            'fontSize'    : '16px',
+                            'color'       : COLORS['text'],
+                            'fontSize'    : '14px',
+                            'fontWeight'  : '800',
                             'marginTop'   : '0',
                             'marginBottom': '16px',
-                            'letterSpacing': '1px',
+                            'letterSpacing': '0.5px',
                         }
                     ),
                     html.Div(id='history-table'),
@@ -354,17 +469,17 @@ def create_app():
                     'textAlign' : 'center',
                     'padding'   : '24px',
                     'color'     : COLORS['text_dim'],
-                    'fontSize'  : '12px',
+                    'fontSize'  : '11px',
                     'borderTop' : f"1px solid {COLORS['border']}",
                     'marginTop' : '24px',
                 },
                 children=[
                     html.P(
-                        "AlphaEdge V3 | "
-                        "4-Model Ensemble (XGB+LGB+RF+LSTM) | "
-                        "Sector Rotation | "
-                        "News Sentiment | "
-                        "Cloud Automated"
+                        "AlphaEdge V6 Terminal | "
+                        "Ensemble Learning Engine (XGB+LGB+RF+CatBoost+LSTM) | "
+                        "ATR Volatility Stops | "
+                        "Kelly Sizing Integration | "
+                        "Automated Execution"
                     ),
                 ]
             ),
@@ -406,7 +521,7 @@ def create_app():
         )
         total_value = capital + position_value
         total_pnl   = total_value - starting
-        total_pct   = (total_pnl / starting) * 100
+        total_pct   = (total_pnl / starting) * 100 if starting > 0 else 0
 
         sells      = [t for t in history if t.get('action') == 'SELL']
         wins       = len([t for t in sells if t.get('pnl', 0) > 0])
@@ -420,7 +535,7 @@ def create_app():
             return html.Div(
                 style={
                     'backgroundColor': COLORS['card'],
-                    'border'         : f"1px solid {color}33",
+                    'border'         : f"1px solid {COLORS['border']}",
                     'borderRadius'   : '12px',
                     'padding'        : '16px',
                     'borderTop'      : f"3px solid {color}",
@@ -430,9 +545,10 @@ def create_app():
                         label,
                         style={
                             'color'        : COLORS['text_dim'],
-                            'fontSize'     : '11px',
-                            'margin'       : '0 0 8px 0',
+                            'fontSize'     : '10px',
+                            'margin'       : '0 0 6px 0',
                             'letterSpacing': '1px',
+                            'fontWeight'   : '700',
                             'textTransform': 'uppercase',
                         }
                     ),
@@ -441,8 +557,9 @@ def create_app():
                         style={
                             'color'     : color,
                             'margin'    : '0',
-                            'fontSize'  : '22px',
-                            'fontWeight': '700',
+                            'fontSize'  : '20px',
+                            'fontWeight': '800',
+                            'fontFamily': "'JetBrains Mono', monospace",
                         }
                     ),
                     html.P(
@@ -461,16 +578,16 @@ def create_app():
 
         cards = [
             make_card(
-                "Total Value",
+                "Total Net Liq",
                 f"${total_value:,.2f}",
-                COLORS['accent'],
+                COLORS['text'],
                 f"Started: ${starting:,.2f}"
             ),
             make_card(
                 "Cash Available",
                 f"${capital:,.2f}",
                 COLORS['blue'],
-                f"{capital/total_value*100:.1f}% of portfolio"
+                f"{capital/total_value*100:.1f}% cash" if total_value > 0 else ""
             ),
             make_card(
                 "Total P&L",
@@ -482,19 +599,19 @@ def create_app():
                 "Realized P&L",
                 f"${total_realized_pnl:+,.2f}",
                 pnl_color,
-                f"From {total_closed} closed trades"
+                f"{total_closed} closed trades"
             ),
             make_card(
-                "Open Positions",
-                str(len(positions)),
+                "Active Slots",
+                f"{len(positions)} / {max_positions}",
                 COLORS['yellow'],
-                f"Max 5 allowed"
+                f"Invested: ${position_value:,.2f}"
             ),
             make_card(
-                "Win Rate",
-                f"{win_rate:.0f}%",
+                "Trade Win Rate",
+                f"{win_rate:.1f}%",
                 wr_color,
-                f"{wins}W / {losses}L"
+                f"{wins} Wins / {losses} Losses"
             ),
         ]
 
@@ -511,52 +628,52 @@ def create_app():
         dates.append('Now')
 
         line_color = COLORS['green'] if values[-1] >= values[0] else COLORS['red']
-        fill_color = 'rgba(0,255,136,0.08)' if values[-1] >= values[0] else 'rgba(255,68,68,0.08)'
+        fill_color = 'rgba(16,185,129,0.04)' if values[-1] >= values[0] else 'rgba(244,63,94,0.04)'
 
         portfolio_fig = go.Figure()
         portfolio_fig.add_trace(go.Scatter(
             x         = dates,
             y         = values,
             mode      = 'lines+markers',
-            line      = dict(color=line_color, width=2),
-            marker    = dict(size=6, color=line_color),
+            line      = dict(color=line_color, width=2.5, shape='spline'),
+            marker    = dict(size=5, color=line_color),
             fill      = 'tozeroy',
             fillcolor = fill_color,
-            name      = 'Portfolio Value',
+            name      = 'Net Asset Value',
         ))
         portfolio_fig.add_hline(
             y         = starting,
             line_dash = 'dash',
             line_color= COLORS['text_dim'],
-            opacity   = 0.5,
+            opacity   = 0.4,
         )
         portfolio_fig.update_layout(
             plot_bgcolor = COLORS['card'],
             paper_bgcolor= COLORS['card'],
-            font         = dict(color=COLORS['text'], size=11),
+            font         = dict(color=COLORS['text'], size=10, family="JetBrains Mono"),
             xaxis        = dict(
-                gridcolor = COLORS['border'],
+                gridcolor = 'rgba(255,255,255,0.03)',
                 showgrid  = True,
             ),
             yaxis        = dict(
-                gridcolor  = COLORS['border'],
+                gridcolor  = 'rgba(255,255,255,0.03)',
                 showgrid   = True,
                 tickprefix = '$',
             ),
-            margin       = dict(l=60, r=20, t=10, b=40),
-            height       = 280,
+            margin       = dict(l=55, r=15, t=10, b=35),
+            height       = 240,
             showlegend   = False,
         )
 
         # ── Allocation Chart ───────────────────────────────────
         alloc_labels = ['Cash']
         alloc_values = [capital]
-        alloc_colors = [COLORS['blue']]
+        alloc_colors = ['#1e293b']
 
         pie_colors = [
-            COLORS['green'], COLORS['yellow'],
-            COLORS['orange'], COLORS['accent'],
-            '#aa88ff', '#ff88aa',
+            COLORS['accent'], COLORS['green'],
+            COLORS['yellow'], COLORS['orange'],
+            '#a855f7', '#06b6d4',
         ]
 
         for i, (sym, pos) in enumerate(positions.items()):
@@ -572,10 +689,10 @@ def create_app():
             values      = alloc_values,
             marker      = dict(
                 colors = alloc_colors,
-                line   = dict(color=COLORS['bg'], width=2),
+                line   = dict(color=COLORS['card'], width=2),
             ),
-            hole        = 0.5,
-            textfont    = dict(color=COLORS['text'], size=11),
+            hole        = 0.6,
+            textfont    = dict(color=COLORS['text'], size=10, family="Plus Jakarta Sans"),
             textinfo    = 'label+percent',
         )])
         alloc_fig.update_layout(
@@ -583,7 +700,7 @@ def create_app():
             paper_bgcolor= COLORS['card'],
             font         = dict(color=COLORS['text']),
             margin       = dict(l=10, r=10, t=10, b=10),
-            height       = 280,
+            height       = 240,
             showlegend   = False,
         )
 
@@ -605,35 +722,37 @@ def create_app():
                             'display'        : 'flex',
                             'justifyContent' : 'space-between',
                             'alignItems'     : 'center',
-                            'padding'        : '8px 12px',
-                            'marginBottom'   : '4px',
-                            'backgroundColor': COLORS['card2'],
+                            'padding'        : '8px 16px',
+                            'marginBottom'   : '6px',
+                            'backgroundColor': COLORS['card'],
+                            'border'         : f"1px solid {COLORS['border']}",
                             'borderRadius'   : '8px',
-                            'borderLeft'     : f"3px solid {color}",
+                            'borderLeft'     : f"4px solid {color}",
                         },
                         children=[
                             html.Span(
                                 name,
                                 style={
                                     'color'   : COLORS['text'],
-                                    'fontSize': '13px',
-                                    'fontWeight': '600',
+                                    'fontSize': '12px',
+                                    'fontWeight': '700',
                                 }
                             ),
                             html.Span(
-                                f"{mom:+.1f}%",
+                                f"{mom:+.2f}%",
                                 style={
                                     'color'   : COLORS['green'] if mom >= 0 else COLORS['red'],
-                                    'fontSize': '13px',
+                                    'fontSize': '12px',
+                                    'fontFamily': "'JetBrains Mono', monospace",
                                 }
                             ),
                             html.Span(
                                 flow,
                                 style={
                                     'color'       : color,
-                                    'fontSize'    : '11px',
-                                    'fontWeight'  : '700',
-                                    'letterSpacing': '1px',
+                                    'fontSize'    : '10px',
+                                    'fontWeight'  : '800',
+                                    'letterSpacing': '0.5px',
                                 }
                             ),
                         ]
@@ -666,34 +785,36 @@ def create_app():
                         style={
                             'display'        : 'flex',
                             'justifyContent' : 'space-between',
-                            'padding'        : '8px 12px',
-                            'marginBottom'   : '4px',
-                            'backgroundColor': COLORS['card2'],
+                            'padding'        : '8px 16px',
+                            'marginBottom'   : '6px',
+                            'backgroundColor': COLORS['card'],
+                            'border'         : f"1px solid {COLORS['border']}",
                             'borderRadius'   : '8px',
-                            'borderLeft'     : f"3px solid {color}",
+                            'borderLeft'     : f"4px solid {color}",
                         },
                         children=[
                             html.Span(
                                 e.get('symbol', ''),
                                 style={
                                     'color'     : COLORS['text'],
-                                    'fontWeight': '600',
-                                    'fontSize'  : '13px',
+                                    'fontWeight': '700',
+                                    'fontSize'  : '12px',
                                 }
                             ),
                             html.Span(
                                 e.get('date', ''),
                                 style={
                                     'color'   : COLORS['text_dim'],
-                                    'fontSize': '12px',
+                                    'fontSize': '11px',
+                                    'fontFamily': "'JetBrains Mono', monospace",
                                 }
                             ),
                             html.Span(
                                 label,
                                 style={
                                     'color'     : color,
-                                    'fontSize'  : '12px',
-                                    'fontWeight': '600',
+                                    'fontSize'  : '11px',
+                                    'fontWeight': '700',
                                 }
                             ),
                         ]
@@ -716,12 +837,17 @@ def create_app():
                 pnl     = (current - entry) * shares
                 pnl_pct = (current - entry) / entry * 100 if entry > 0 else 0
                 cost    = pos.get('cost', shares * entry)
+                
+                # Kelly target size reference
+                entry_kelly_alloc = get_kelly_sizing(pos.get('signal', 0.5))[1]
+                
                 pos_rows.append({
                     'Symbol'       : sym,
                     'Shares'       : shares,
                     'Entry Price'  : f"${entry:.2f}",
                     'Current Price': f"${current:.2f}",
                     'Cost'         : f"${cost:.2f}",
+                    'Kelly Size'   : f"{entry_kelly_alloc * 100:.1f}%",
                     'P&L'          : f"${pnl:+.2f}",
                     'P&L %'        : f"{pnl_pct:+.2f}%",
                     'Entry Date'   : pos.get('entry_date', '')[:10],
@@ -733,11 +859,11 @@ def create_app():
                 data    = pos_df.to_dict('records'),
                 columns = [{'name': c, 'id': c} for c in pos_df.columns],
                 style_header={
-                    'backgroundColor': COLORS['card2'],
-                    'color'          : COLORS['yellow'],
-                    'fontWeight'     : 'bold',
+                    'backgroundColor': COLORS['card'],
+                    'color'          : COLORS['text_dim'],
+                    'fontWeight'     : '800',
                     'border'         : f"1px solid {COLORS['border']}",
-                    'fontSize'       : '12px',
+                    'fontSize'       : '10px',
                     'letterSpacing'  : '1px',
                 },
                 style_cell={
@@ -745,8 +871,9 @@ def create_app():
                     'color'          : COLORS['text'],
                     'border'         : f"1px solid {COLORS['border']}",
                     'textAlign'      : 'center',
-                    'padding'        : '10px',
-                    'fontSize'       : '13px',
+                    'padding'        : '12px',
+                    'fontSize'       : '12px',
+                    'fontFamily'     : "'JetBrains Mono', monospace",
                 },
                 style_data_conditional=[
                     {
@@ -760,6 +887,16 @@ def create_app():
                         'color'          : COLORS['red'],
                         'column_id'      : 'P&L',
                         'fontWeight'     : 'bold',
+                    },
+                    {
+                        'if'             : {'filter_query': '{P&L %} contains "+"'},
+                        'color'          : COLORS['green'],
+                        'column_id'      : 'P&L %',
+                    },
+                    {
+                        'if'             : {'filter_query': '{P&L %} contains "-"'},
+                        'color'          : COLORS['red'],
+                        'column_id'      : 'P&L %',
                     },
                 ],
             )
@@ -778,14 +915,22 @@ def create_app():
                 reverse= True
             ):
                 sig = data.get('signal', 'HOLD')
+                pred = data.get('prediction', 0)
+                
+                # Calculate Kelly Sizing
+                kelly_f, alloc_frac = get_kelly_sizing(pred)
+                target_allocation_dollars = total_value * alloc_frac
+                
                 sig_rows.append({
-                    'Symbol'    : sym,
-                    'Signal'    : sig,
-                    'AI Score'  : f"{data.get('prediction', 0):.3f}",
-                    'Regime'    : data.get('regime', ''),
-                    'Sentiment' : f"{data.get('sentiment', 0):+.2f}",
-                    'Sector'    : data.get('sector', ''),
-                    'Price'     : f"${data.get('price', 0):.2f}",
+                    'Symbol'        : sym,
+                    'Signal'        : sig,
+                    'AI Score'      : f"{pred * 100:.1f}%",
+                    'Regime'        : data.get('regime', ''),
+                    'Sentiment'     : f"{data.get('sentiment', 0):+.2f}",
+                    'Kelly Fraction': f"{kelly_f * 100:.1f}%",
+                    'Target Size'   : f"{alloc_frac * 100:.1f}%",
+                    'Target Alloc'  : f"${target_allocation_dollars:,.2f}",
+                    'Price'         : f"${data.get('price', 0):.2f}",
                 })
 
             sig_df = pd.DataFrame(sig_rows)
@@ -793,11 +938,11 @@ def create_app():
                 data    = sig_df.to_dict('records'),
                 columns = [{'name': c, 'id': c} for c in sig_df.columns],
                 style_header={
-                    'backgroundColor': COLORS['card2'],
-                    'color'          : COLORS['accent'],
-                    'fontWeight'     : 'bold',
+                    'backgroundColor': COLORS['card'],
+                    'color'          : COLORS['text_dim'],
+                    'fontWeight'     : '800',
                     'border'         : f"1px solid {COLORS['border']}",
-                    'fontSize'       : '12px',
+                    'fontSize'       : '10px',
                     'letterSpacing'  : '1px',
                 },
                 style_cell={
@@ -805,8 +950,9 @@ def create_app():
                     'color'          : COLORS['text'],
                     'border'         : f"1px solid {COLORS['border']}",
                     'textAlign'      : 'center',
-                    'padding'        : '10px',
-                    'fontSize'       : '13px',
+                    'padding'        : '12px',
+                    'fontSize'       : '12px',
+                    'fontFamily'     : "'JetBrains Mono', monospace",
                 },
                 style_data_conditional=[
                     {
@@ -864,7 +1010,7 @@ def create_app():
                     'Price' : f"${trade.get('price', 0):.2f}",
                     'P&L'   : (
                         f"${pnl:+.2f}"
-                        if trade.get('action') == 'SELL'
+                        if trade.get('action') in ['SELL', 'PARTIAL_SELL']
                         else '-'
                     ),
                     'Reason': trade.get('reason', ''),
@@ -875,11 +1021,11 @@ def create_app():
                 data    = hist_df.to_dict('records'),
                 columns = [{'name': c, 'id': c} for c in hist_df.columns],
                 style_header={
-                    'backgroundColor': COLORS['card2'],
-                    'color'          : '#aa88ff',
-                    'fontWeight'     : 'bold',
+                    'backgroundColor': COLORS['card'],
+                    'color'          : COLORS['text_dim'],
+                    'fontWeight'     : '800',
                     'border'         : f"1px solid {COLORS['border']}",
-                    'fontSize'       : '12px',
+                    'fontSize'       : '10px',
                     'letterSpacing'  : '1px',
                 },
                 style_cell={
@@ -887,8 +1033,9 @@ def create_app():
                     'color'          : COLORS['text'],
                     'border'         : f"1px solid {COLORS['border']}",
                     'textAlign'      : 'center',
-                    'padding'        : '10px',
-                    'fontSize'       : '13px',
+                    'padding'        : '12px',
+                    'fontSize'       : '12px',
+                    'fontFamily'     : "'JetBrains Mono', monospace",
                 },
                 style_data_conditional=[
                     {
@@ -953,7 +1100,7 @@ def create_app():
 
 
 if __name__ == '__main__':
-    print("\nStarting AlphaEdge Dashboard...")
+    print("\nStarting AlphaEdge Dashboard Server...")
     print("Open browser: http://localhost:8050")
     app = create_app()
     app.run(debug=False, host='0.0.0.0', port=8050)

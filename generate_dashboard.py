@@ -1,11 +1,8 @@
 # generate_dashboard.py
-# AlphaEdge V5 — Institutional-Grade Dashboard (Full Width)
-# Upgrades: Drawdown curve, Weight results tab, Signal sort,
-#           Per-symbol P&L chart, Daily returns histogram,
-#           Regime badge, Unrealized P&L total, Sector charts,
-#           Dark/light mode, CSS bug fixes
+# AlphaEdge V6 — Institutional-Grade Dashboard (Full Width & Glassmorphic Dark Theme)
+# Upgrades: Glassmorphic dark styling, Google Fonts (Plus Jakarta Sans, JetBrains Mono),
+#           Auto-refresh timer, Kelly position sizing displays, System Config inspector.
 # Run: python generate_dashboard.py
-# Auto-refreshes every 5 minutes when open in browser
 
 import os
 import json
@@ -20,6 +17,46 @@ WEIGHTS_FILE  = 'logs/weight_results.json'
 DASHBOARD_DIR = 'docs'
 DASHBOARD_FILE = f'{DASHBOARD_DIR}/index.html'
 
+# ── Load Live Settings ────────────────────────────────────────────────────────
+try:
+    from config import settings
+    kelly_active = getattr(settings, 'KELLY_POSITION_SIZING', True)
+    kelly_mult = getattr(settings, 'KELLY_MULTIPLIER', 0.5)
+    kelly_rr = getattr(settings, 'KELLY_REWARD_RISK_RATIO', 2.5)
+    max_pos_pct = getattr(settings, 'MAX_POSITION_SIZE', 0.15)
+    buy_threshold = getattr(settings, 'BUY_THRESHOLD', 0.63)
+    max_dd_limit = getattr(settings, 'MAX_DRAWDOWN', 0.10)
+    max_daily_loss = getattr(settings, 'MAX_DAILY_LOSS', 0.02)
+    max_positions = getattr(settings, 'MAX_OPEN_POSITIONS', 5)
+    atr_stop_mult = getattr(settings, 'ATR_STOP_MULT', 1.0)
+    atr_target_mult = getattr(settings, 'ATR_TARGET_MULT', 2.5)
+    trailing_mult = getattr(settings, 'TRAILING_STOP_MULTIPLIER', 0.8)
+    max_risk_per_trade = getattr(settings, 'MAX_RISK_PER_TRADE', 0.02)
+    max_portfolio_risk = getattr(settings, 'MAX_PORTFOLIO_RISK', 0.06)
+    volume_spike_min = getattr(settings, 'VOLUME_SPIKE_MIN', 1.3)
+    min_risk_reward = getattr(settings, 'MIN_RISK_REWARD', 2.0)
+    mtf_weight = getattr(settings, 'MTF_WEIGHT_IN_SIGNAL', 0.15)
+    watchlist_len = len(getattr(settings, 'STOCK_WATCHLIST', []))
+except Exception as e:
+    print(f"Warning parsing config from settings.py: {e}")
+    # Fallback defaults
+    kelly_active = True
+    kelly_mult = 0.5
+    kelly_rr = 2.5
+    max_pos_pct = 0.15
+    buy_threshold = 0.63
+    max_dd_limit = 0.10
+    max_daily_loss = 0.02
+    max_positions = 5
+    atr_stop_mult = 1.0
+    atr_target_mult = 2.5
+    trailing_mult = 0.8
+    max_risk_per_trade = 0.02
+    max_portfolio_risk = 0.06
+    volume_spike_min = 1.3
+    min_risk_reward = 2.0
+    mtf_weight = 0.15
+    watchlist_len = 41
 
 # ── Data loaders ─────────────────────────────────────────────────────────────
 
@@ -31,7 +68,6 @@ def load_json(filepath, default):
             return json.load(f)
     except Exception:
         return default
-
 
 # ── Metric calculators ────────────────────────────────────────────────────────
 
@@ -45,9 +81,7 @@ def calculate_sharpe(trade_history):
     std = math.sqrt(sum((r - avg) ** 2 for r in returns) / (n - 1))
     return round((avg / std) * math.sqrt(252), 2) if std > 0 else 0.0
 
-
 def calculate_drawdown_series(trade_history, starting_capital):
-    """Returns list of (label, drawdown_pct) for charting."""
     sells  = [t for t in trade_history if t.get('action') == 'SELL']
     if not sells:
         return [0.0], ['Start']
@@ -64,10 +98,8 @@ def calculate_drawdown_series(trade_history, starting_capital):
         labels.append(t.get('date', '')[:10])
     return dds, labels
 
-
 def calculate_max_drawdown(dd_series):
     return round(max(dd_series) / 100, 4) if dd_series else 0.0
-
 
 def calculate_profit_factor(trade_history):
     sells        = [t for t in trade_history if t.get('action') == 'SELL']
@@ -75,9 +107,7 @@ def calculate_profit_factor(trade_history):
     gross_losses = abs(sum(t.get('pnl', 0) for t in sells if t.get('pnl', 0) < 0))
     return round(gross_wins / gross_losses, 2) if gross_losses > 0 else 0.0
 
-
 def calculate_daily_returns(trade_history):
-    """Bucket closed trade P&L % into daily bins for histogram."""
     sells = [t for t in trade_history if t.get('action') == 'SELL']
     by_date = {}
     for t in sells:
@@ -90,9 +120,7 @@ def calculate_daily_returns(trade_history):
     labels = list(by_date.keys())
     return vals, labels
 
-
 def calculate_symbol_pnl(trade_history):
-    """Per-symbol realized P&L for bar chart."""
     by_sym = {}
     for t in trade_history:
         if t.get('action') == 'SELL':
@@ -100,6 +128,19 @@ def calculate_symbol_pnl(trade_history):
             by_sym[s] = by_sym.get(s, 0) + t.get('pnl', 0)
     return dict(sorted(by_sym.items(), key=lambda x: x[1], reverse=True))
 
+def get_kelly_sizing(prediction):
+    if not kelly_active:
+        return 0.0, 0.0
+    p = float(prediction)
+    b = kelly_rr
+    if p > 0.0:
+        kelly_f = (p * (b + 1.0) - 1.0) / b
+        kelly_f = max(0.0, kelly_f)
+    else:
+        kelly_f = 0.0
+    alloc_fraction = kelly_f * kelly_mult
+    alloc_fraction = min(alloc_fraction, max_pos_pct)
+    return kelly_f, alloc_fraction
 
 # ── Dashboard generator ───────────────────────────────────────────────────────
 
@@ -115,9 +156,6 @@ def generate_dashboard():
     earnings     = load_json(EARNINGS_FILE, [])
     weight_data_raw = load_json(WEIGHTS_FILE, [])
 
-    # Handle both list and dict formats
-    # Load weight results — handle dict or list format
-    weight_data_raw = load_json(WEIGHTS_FILE, [])
     if isinstance(weight_data_raw, dict):
         weight_data = list(weight_data_raw.values())
     elif isinstance(weight_data_raw, list):
@@ -173,8 +211,8 @@ def generate_dashboard():
     dominant_regime = max(regime_counts, key=regime_counts.get) if regime_counts else 'unknown'
     regime_icon = {'uptrend': '↑ UPTREND', 'downtrend': '↓ DOWNTREND',
                    'sideways': '→ SIDEWAYS', 'volatile': '⚡ VOLATILE'}.get(dominant_regime, '— UNKNOWN')
-    regime_color = {'uptrend': '#00d4aa', 'downtrend': '#f87171',
-                    'sideways': '#f0b429', 'volatile': '#a855f7'}.get(dominant_regime, '#6b7280')
+    regime_color = {'uptrend': '#10b981', 'downtrend': '#f43f5e',
+                    'sideways': '#f59e0b', 'volatile': '#a855f7'}.get(dominant_regime, '#6b7280')
 
     # Equity curve
     chart_vals   = [starting]
@@ -221,9 +259,9 @@ def generate_dashboard():
             is_best   = rank == 1
             row_cls   = 'wt-best' if is_best else ''
             rank_html = '🏆' if is_best else f'#{rank}'
-            sh_c      = '#00d4aa' if sh >= 1.5 else '#f0b429' if sh >= 0.5 else '#f87171'
-            wr_c      = '#00d4aa' if wr >= 60 else '#f0b429' if wr >= 45 else '#f87171'
-            ret_c     = '#00d4aa' if ret >= 0 else '#f87171'
+            sh_c      = '#10b981' if sh >= 1.5 else '#f59e0b' if sh >= 0.5 else '#f43f5e'
+            wr_c      = '#10b981' if wr >= 60 else '#f59e0b' if wr >= 45 else '#f43f5e'
+            ret_c     = '#10b981' if ret >= 0 else '#f43f5e'
             weight_rows_html += f'''
             <tr class="trow {row_cls}">
               <td class="px-5 py-4 tc fw mono">{rank_html}</td>
@@ -241,8 +279,8 @@ def generate_dashboard():
                   </div>
                   <div class="wt-bar-row">
                     <span class="wt-lbl">SECT</span>
-                    <div class="bar-bg"><div class="bar-fill" style="width:{int(secw*100)}%;background:#f0b429"></div></div>
-                    <span class="mono fw" style="color:#f0b429">{secw:.1f}</span>
+                    <div class="bar-bg"><div class="bar-fill" style="width:{int(secw*100)}%;background:#f59e0b"></div></div>
+                    <span class="mono fw" style="color:#f59e0b">{secw:.1f}</span>
                   </div>
                 </div>
               </td>
@@ -250,7 +288,7 @@ def generate_dashboard():
               <td class="px-5 py-4 tc mono" style="color:{wr_c}">{wr:.1f}%</td>
               <td class="px-5 py-4 tc mono" style="color:{ret_c}">{ret:+.2f}%</td>
               <td class="px-5 py-4 tc mono">{trades}</td>
-              <td class="px-5 py-4 tc mono" style="color:#f87171">{dd:.2f}%</td>
+              <td class="px-5 py-4 tc mono" style="color:#f43f5e">{dd:.2f}%</td>
               <td class="px-5 py-4 tc mono">{pf2:.2f}x</td>
             </tr>'''
     else:
@@ -280,7 +318,7 @@ def generate_dashboard():
           </div>
           <div class="best-right">
             <div class="best-stat">
-              <div class="best-stat-val" style="color:#00d4aa">{bsh:.2f}</div>
+              <div class="best-stat-val" style="color:#10b981">{bsh:.2f}</div>
               <div class="best-stat-lbl">Sharpe</div>
             </div>
             <div class="best-stat">
@@ -288,28 +326,26 @@ def generate_dashboard():
               <div class="best-stat-lbl">Win Rate</div>
             </div>
             <div class="best-stat">
-              <div class="best-stat-val mono" style="color:#f0b429">{bp:.1f} / {bs:.1f} / {bsc:.1f}</div>
+              <div class="best-stat-val mono" style="color:#f59e0b">{bp:.1f} / {bs:.1f} / {bsc:.1f}</div>
               <div class="best-stat-lbl">Pred / Sent / Sect</div>
             </div>
           </div>
         </div>'''
 
-    # ── HTML fragments ────────────────────────────────────────────────────────
-
     def kpi_color(val, low_bad=True, thresholds=(0, 0)):
         lo, hi = thresholds
         if low_bad:
-            return '#00d4aa' if val >= hi else '#f0b429' if val >= lo else '#f87171'
+            return '#10b981' if val >= hi else '#f59e0b' if val >= lo else '#f43f5e'
         else:
-            return '#f87171' if val >= hi else '#f0b429' if val >= lo else '#00d4aa'
+            return '#f43f5e' if val >= hi else '#f59e0b' if val >= lo else '#10b981'
 
-    pnl_c   = '#00d4aa' if total_pnl >= 0 else '#f87171'
+    pnl_c   = '#10b981' if total_pnl >= 0 else '#f43f5e'
     pnl_sgn = '+' if total_pnl >= 0 else ''
     wr_c    = kpi_color(win_rate,   True,  (45, 60))
     sh_c    = kpi_color(sharpe,     True,  (0.5, 1.5))
     dd_c    = kpi_color(max_dd * 100, False, (10, 20))
     pf_c    = kpi_color(pf,         True,  (1.0, 1.5))
-    unr_c   = '#00d4aa' if unrealized >= 0 else '#f87171'
+    unr_c   = '#10b981' if unrealized >= 0 else '#f43f5e'
     unr_sgn = '+' if unrealized >= 0 else ''
 
     # Positions table
@@ -324,14 +360,18 @@ def generate_dashboard():
         target  = entry * (1 + pos.get('take_profit_pct', 0.08))
         ml      = pos.get('signal', 0.5)
         ml_pct  = int(ml * 100)
-        p_c     = '#00d4aa' if pnl_pos >= 0 else '#f87171'
+        p_c     = '#10b981' if pnl_pos >= 0 else '#f43f5e'
         sgn     = '+' if pnl_pos >= 0 else ''
+        
+        # Kelly size target allocation for reference
+        _, entry_kelly_alloc = get_kelly_sizing(ml)
+        
         days    = 0
         try:
             days = (datetime.now() - datetime.fromisoformat(pos.get('entry_date', ''))).days
         except Exception:
             pass
-        bar_c = '#00d4aa' if ml_pct >= 65 else '#f0b429' if ml_pct >= 55 else '#f87171'
+        bar_c = '#10b981' if ml_pct >= 65 else '#f59e0b' if ml_pct >= 55 else '#f43f5e'
         pos_rows += f'''
         <tr class="trow">
           <td class="px-5 py-4">
@@ -348,6 +388,7 @@ def generate_dashboard():
             <div class="sub stop">${stop:.2f}</div>
             <div class="sub tgt">${target:.2f}</div>
           </td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">{entry_kelly_alloc * 100:.1f}%</td>
           <td class="px-5 py-4">
             <div class="bar-row">
               <div class="bar-bg"><div class="bar-fill" style="width:{ml_pct}%;background:{bar_c}"></div></div>
@@ -368,13 +409,13 @@ def generate_dashboard():
           <td class="px-5 py-3 tc mono fw" style="color:{unr_c}">
             {unr_sgn}${unrealized:,.2f}
           </td>
-          <td colspan="3" class="px-5 py-3 sub tc">
+          <td colspan="4" class="px-5 py-3 sub tc">
             Invested ${pos_value:,.2f} · {len(positions)} positions
           </td>
         </tr>'''
 
     if not pos_rows:
-        pos_rows = '''<tr><td colspan="8" class="empty-state">
+        pos_rows = '''<tr><td colspan="9" class="empty-state">
           <div class="empty-icon">◎</div>
           <p>No open positions</p>
           <p class="sub">Waiting for high-confidence signals</p>
@@ -391,23 +432,29 @@ def generate_dashboard():
         sector = d.get('sector', '—')
         comb   = d.get('combined', pred)
         ml_pct = int(pred * 100)
+        
+        # Calculate Kelly sizing parameters
+        kelly_f, alloc_frac = get_kelly_sizing(pred)
+        target_allocation_dollars = total_value * alloc_frac
+        
         sig_cls = {'BUY': 'badge-buy', 'AVOID': 'badge-avoid', 'CAUTION': 'badge-caution',
                    'EARNINGS_HOLD': 'badge-earn', 'VETOED': 'badge-veto',
                    'MTF_HOLD': 'badge-hold', 'CORR_HOLD': 'badge-hold'}.get(sig, 'badge-hold')
         row_cls = {'BUY': 'row-buy', 'AVOID': 'row-avoid'}.get(sig, '')
-        bar_c   = '#00d4aa' if ml_pct >= 65 else '#f0b429' if ml_pct >= 55 else '#6b7280'
-        sent_c  = '#00d4aa' if sent > 0.1 else '#f87171' if sent < -0.1 else '#9ca3af'
+        bar_c   = '#10b981' if ml_pct >= 65 else '#f59e0b' if ml_pct >= 55 else '#6b7280'
+        sent_c  = '#10b981' if sent > 0.1 else '#f43f5e' if sent < -0.1 else '#9ca3af'
         sent_sgn = '+' if sent > 0 else ''
         reg_icon = {'uptrend': '↑', 'downtrend': '↓', 'sideways': '→',
                     'volatile': '⚡'}.get(regime, '—')
         layers  = min(9, max(0, int(comb * 9)))
         squares = ''.join(
-            f'<span class="sq" style="background:{"#00d4aa" if i < layers else "#1f2937"}"></span>'
+            f'<span class="sq" style="background:{"#10b981" if i < layers else "#1e293b"}"></span>'
             for i in range(9)
         )
         sig_rows += f'''
         <tr class="trow {row_cls}" data-pred="{pred}" data-sent="{sent}"
-            data-price="{price}" data-sig="{sig}" data-sym="{sym}">
+            data-price="{price}" data-sig="{sig}" data-sym="{sym}"
+            data-kellyf="{kelly_f}" data-kellyalloc="{alloc_frac}" data-kellyval="{target_allocation_dollars}">
           <td class="px-5 py-4">
             <div class="sym">{sym}</div>
             <div class="sub">{sector}</div>
@@ -423,6 +470,9 @@ def generate_dashboard():
             <span class="regime-tag">{reg_icon} {regime}</span>
           </td>
           <td class="px-5 py-4 tc mono" style="color:{sent_c}">{sent_sgn}{sent:.2f}</td>
+          <td class="px-5 py-4 tc mono fw" style="color:{"#10b981" if kelly_f > 0 else "var(--sub)"}">{kelly_f * 100:.1f}%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:{"#0ea5e9" if alloc_frac > 0 else "var(--sub)"}">{alloc_frac * 100:.1f}%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:{"#10b981" if target_allocation_dollars > 0 else "var(--sub)"}">${target_allocation_dollars:,.2f}</td>
           <td class="px-5 py-4 tc mono fw">${price:.2f}</td>
           <td class="px-5 py-4">
             <div class="squares">{squares}</div>
@@ -436,10 +486,10 @@ def generate_dashboard():
         flow  = d.get('flow', 'NEUTRAL')
         score = d.get('score', 0)
         mom   = d.get('momentum_21d', 0)
-        fc    = {'INFLOW': '#00d4aa', 'OUTFLOW': '#f87171'}.get(flow, '#9ca3af')
+        fc    = {'INFLOW': '#10b981', 'OUTFLOW': '#f43f5e'}.get(flow, '#9ca3af')
         bc    = {'INFLOW': 'card-inflow', 'OUTFLOW': 'card-outflow'}.get(flow, 'card-neutral')
         bar_w = min(100, abs(score) * 2000)
-        mom_c = '#00d4aa' if mom >= 0 else '#f87171'
+        mom_c = '#10b981' if mom >= 0 else '#f43f5e'
         mom_s = '+' if mom >= 0 else ''
         sector_cards += f'''
         <div class="sector-card {bc}">
@@ -465,9 +515,9 @@ def generate_dashboard():
         sym  = e.get('symbol', '')
         dt   = e.get('date', '')
         if days == 0:
-            lbl, lc, bc2 = 'TODAY',    '#f87171', 'earn-today'
+            lbl, lc, bc2 = 'TODAY',    '#f43f5e', 'earn-today'
         elif days <= 2:
-            lbl, lc, bc2 = f'In {days}d', '#f0b429', 'earn-soon'
+            lbl, lc, bc2 = f'In {days}d', '#f59e0b', 'earn-soon'
         else:
             lbl, lc, bc2 = f'In {days}d', '#9ca3af', 'earn-later'
         earn_rows += f'''
@@ -487,7 +537,7 @@ def generate_dashboard():
         price  = t.get('price', 0)
         dt     = t.get('date', '')[:10]
         reason = t.get('reason', '')
-        pnl_c2 = '#00d4aa' if pnl >= 0 else '#f87171'
+        pnl_c2 = '#10b981' if pnl >= 0 else '#f43f5e'
         sgn    = '+' if pnl >= 0 else ''
         act_c  = 'badge-buy' if action == 'BUY' else 'badge-avoid'
         pnl_txt = f'{sgn}${pnl:.2f}' if action == 'SELL' else '—'
@@ -512,14 +562,14 @@ def generate_dashboard():
       <td class="px-5 py-3">
         <div class="bar-row">
           <div class="bar-bg">
-            <div class="bar-fill" style="width:{int(d.get("prediction",0)*100)}%;background:#00d4aa"></div>
+            <div class="bar-fill" style="width:{int(d.get("prediction",0)*100)}%;background:#10b981"></div>
           </div>
-          <span class="bar-lbl mono" style="color:#00d4aa">{int(d.get("prediction",0)*100)}%</span>
+          <span class="bar-lbl mono" style="color:#10b981">{int(d.get("prediction",0)*100)}%</span>
         </div>
       </td>
       <td class="px-5 py-3 tc"><span class="regime-tag">{d.get("regime","—")}</span></td>
       <td class="px-5 py-3 tc mono"
-          style="color:{('#00d4aa' if d.get('sentiment',0)>0.1 else '#f87171' if d.get('sentiment',0)<-0.1 else '#9ca3af')}">
+          style="color:{('#10b981' if d.get('sentiment',0)>0.1 else '#f43f5e' if d.get('sentiment',0)<-0.1 else '#9ca3af')}">
         {('+' if d.get('sentiment',0)>0 else '')}{d.get('sentiment',0):.2f}
       </td>
       <td class="px-5 py-3 tc mono fw">${d.get("price",0):.2f}</td>
@@ -530,12 +580,12 @@ def generate_dashboard():
     import json as _json
 
     up_trend   = chart_vals[-1] >= chart_vals[0] if len(chart_vals) > 1 else True
-    line_color = '#00d4aa' if up_trend else '#f87171'
+    line_color = '#10b981' if up_trend else '#f43f5e'
 
     sym_pnl_keys = _json.dumps(list(sym_pnl.keys()))
     sym_pnl_vals = _json.dumps([round(v, 2) for v in sym_pnl.values()])
     sym_pnl_colors = _json.dumps([
-        '#00d4aa' if v >= 0 else '#f87171' for v in sym_pnl.values()
+        '#10b981' if v >= 0 else '#f43f5e' for v in sym_pnl.values()
     ])
 
     daily_vals_json   = _json.dumps([round(v, 4) for v in daily_ret_vals])
@@ -543,68 +593,75 @@ def generate_dashboard():
     dd_vals_json      = _json.dumps(dd_series)
     dd_labels_json    = _json.dumps(dd_labels)
 
+    # Pre-built outside f-string — dicts inside {{}} cause TypeError
+    sector_chart_data = [
+        {'name': k, 'mom': v.get('momentum_21d', 0), 'flow': v.get('flow', 'NEUTRAL')}
+        for k, v in sectors.items()
+    ]
+    sector_chart_json = _json.dumps(sector_chart_data)
+
     # ── FULL HTML ─────────────────────────────────────────────────────────────
     html = f'''<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <meta http-equiv="refresh" content="300">
-  <title>AlphaEdge V5 — Institutional Dashboard</title>
+  <title>AlphaEdge — Institutional Trading Terminal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    /* ── Reset ───────────────────────────────────────────────────── */
+    /* ── Reset & Variable Tokens ─────────────────────────────────── */
     *, *::before, *::after {{ box-sizing:border-box; margin:0; padding:0; }}
 
-    /* ── Theme tokens ────────────────────────────────────────────── */
     :root {{
-      --bg:        #070b0f;
-      --surface:   #0d1117;
-      --surface2:  #111820;
-      --border:    #1a2433;
-      --border2:   #243040;
-      --text:      #e2eaf5;
-      --sub:       #5a7090;
-      --accent:    #00d4aa;
-      --accent2:   #0ea5e9;
-      --warn:      #f0b429;
-      --danger:    #f87171;
-      --purple:    #a855f7;
-      --font-ui:   'Sora', sans-serif;
-      --font-mono: 'IBM Plex Mono', monospace;
+      --bg:           #060814;
+      --surface:      rgba(15, 23, 42, 0.65);
+      --surface-solid: #0f172a;
+      --surface2:     rgba(30, 41, 59, 0.45);
+      --border:       rgba(255, 255, 255, 0.06);
+      --border2:      rgba(255, 255, 255, 0.12);
+      --text:         #f8fafc;
+      --sub:          #94a3b8;
+      --accent:       #10b981;
+      --accent2:      #0ea5e9;
+      --warn:         #f59e0b;
+      --danger:       #f43f5e;
+      --purple:       #a855f7;
+      --font-ui:      'Plus Jakarta Sans', sans-serif;
+      --font-mono:    'JetBrains Mono', monospace;
     }}
     [data-theme="light"] {{
-      --bg:       #f0f4f8;
-      --surface:  #ffffff;
-      --surface2: #f8fafc;
-      --border:   #e2e8f0;
-      --border2:  #cbd5e1;
-      --text:     #0f172a;
-      --sub:      #64748b;
+      --bg:           #f1f5f9;
+      --surface:      rgba(255, 255, 255, 0.8);
+      --surface-solid: #ffffff;
+      --surface2:     rgba(241, 245, 249, 0.9);
+      --border:       rgba(15, 23, 42, 0.08);
+      --border2:      rgba(15, 23, 42, 0.15);
+      --text:         #0f172a;
+      --sub:          #64748b;
     }}
 
-    /* ── Base ────────────────────────────────────────────────────── */
-    html {{ scroll-behavior:smooth; }}
+    /* ── Base Terminal Styles ────────────────────────────────────── */
     body {{
       font-family: var(--font-ui);
-      background: var(--bg);
+      background: radial-gradient(circle at 50% 0%, var(--bg) 0%, #03050a 100%) no-repeat fixed;
       color: var(--text);
       font-size: 13px;
       line-height: 1.5;
       min-height: 100vh;
       overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
     }}
-    ::-webkit-scrollbar {{ width:5px; height:5px; }}
-    ::-webkit-scrollbar-track {{ background:var(--bg); }}
-    ::-webkit-scrollbar-thumb {{ background:var(--border2); border-radius:3px; }}
+    ::-webkit-scrollbar {{ width:6px; height:6px; }}
+    ::-webkit-scrollbar-track {{ background:rgba(0,0,0,0.1); }}
+    ::-webkit-scrollbar-thumb {{ background:var(--border2); border-radius:4px; }}
 
-    /* ── Utility ─────────────────────────────────────────────────── */
+    /* ── Utility & Typo ──────────────────────────────────────────── */
     .mono   {{ font-family: var(--font-mono); }}
     .fw     {{ font-weight: 600; }}
-    .sym    {{ font-weight: 700; font-size: 13px; color: var(--text); }}
-    .sub    {{ font-size: 11px; color: var(--sub); }}
+    .sym    {{ font-weight: 700; font-size: 13px; color: var(--text); letter-spacing:-0.2px; }}
+    .sub    {{ font-size: 11px; color: var(--sub); font-weight: 400; }}
     .tc     {{ text-align: center; }}
     .stop   {{ color: var(--danger); }}
     .tgt    {{ color: var(--accent); }}
@@ -615,64 +672,78 @@ def generate_dashboard():
     .mt-3   {{ margin-top: 12px; }}
     .flex-1 {{ flex: 1; }}
 
-    /* ── Spacing (fixed from V4) ─────────────────────────────────── */
+    /* ── Padding & Spacing ───────────────────────────────────────── */
     .px-5   {{ padding-left: 20px; padding-right: 20px; }}
     .py-3   {{ padding-top: 10px; padding-bottom: 10px; }}
-    .py-3-5  {{ padding-top: 12px; padding-bottom: 12px; }}
     .py-4   {{ padding-top: 14px; padding-bottom: 14px; }}
 
-    /* ── Header ──────────────────────────────────────────────────── */
+    /* ── Header Terminal Glass ───────────────────────────────────── */
     .header {{
       background: var(--surface);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
       position: sticky; top:0; z-index:100;
       padding: 0 28px;
-      height: 54px;
+      height: 60px;
       display: flex; align-items:center; justify-content:space-between;
     }}
     .logo {{ display:flex; align-items:center; gap:10px; }}
     .logo-mark {{
-      width:30px; height:30px;
+      width:32px; height:32px;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      border-radius: 7px;
+      border-radius: 8px;
       display:flex; align-items:center; justify-content:center;
-      font-size:15px; font-weight:800; color:#070b0f;
+      font-size:16px; font-weight:800; color:#070b0f;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
     }}
     .logo-text {{
-      font-size:16px; font-weight:800; letter-spacing:-0.3px;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      font-size:18px; font-weight:800; letter-spacing:-0.5px;
+      background: linear-gradient(90deg, var(--text), var(--sub));
       -webkit-background-clip:text; -webkit-text-fill-color:transparent;
     }}
-    .header-right {{ display:flex; align-items:center; gap:14px; }}
+    .header-right {{ display:flex; align-items:center; gap:16px; }}
     .pulse-dot {{
-      width:7px; height:7px; border-radius:50%;
+      width:8px; height:8px; border-radius:50%;
       background:var(--accent);
+      box-shadow: 0 0 8px var(--accent);
       animation: pulse 2.5s ease-in-out infinite;
     }}
-    @keyframes pulse {{ 0%,100%{{opacity:1;transform:scale(1)}} 50%{{opacity:.4;transform:scale(.85)}} }}
+    @keyframes pulse {{ 0%,100%{{opacity:1;transform:scale(1)}} 50%{{opacity:.4;transform:scale(.8)}} }}
     .chip {{
       padding:2px 8px; border-radius:4px;
-      font-size:10px; font-weight:700; letter-spacing:.5px;
+      font-size:9px; font-weight:700; letter-spacing:.5px;
       border:1px solid;
     }}
-    .chip-paper {{ background:#0ea5e920; color:#0ea5e9; border-color:#0ea5e940; }}
-    .chip-v5    {{ background:#00d4aa20; color:#00d4aa; border-color:#00d4aa40; }}
+    .chip-paper {{ background:#0ea5e91a; color:#0ea5e9; border-color:#0ea5e933; }}
+    .chip-v5    {{ background:#10b9811a; color:#10b981; border-color:#10b98133; }}
     .regime-chip {{
       padding:3px 10px; border-radius:4px; font-size:10px; font-weight:700;
       border:1px solid; letter-spacing:.4px;
     }}
     .theme-btn {{
       background: var(--surface2); border:1px solid var(--border);
-      border-radius:6px; padding:4px 10px;
-      color:var(--sub); font-size:11px; cursor:pointer;
+      border-radius:6px; padding:6px 12px;
+      color:var(--text); font-size:11px; cursor:pointer;
       font-family:var(--font-ui); transition:.15s;
     }}
-    .theme-btn:hover {{ color:var(--text); border-color:var(--border2); }}
+    .theme-btn:hover {{ background:var(--border2); }}
     .ts {{ font-size:11px; color:var(--sub); font-family:var(--font-mono); }}
 
-    /* ── KPI Strip ───────────────────────────────────────────────── */
+    /* ── Progress countdown bar ──────────────────────────────────── */
+    .refresh-container {{
+      display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+    }}
+    .refresh-bar-bg {{
+      width: 120px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden;
+    }}
+    .refresh-bar-fill {{
+      height: 100%; width: 100%; background: var(--accent2); transition: width 1s linear;
+    }}
+
+    /* ── KPI Grid Section ────────────────────────────────────────── */
     .kpi-strip {{
-      background: var(--surface);
+      background: rgba(10, 15, 30, 0.4);
       border-bottom: 1px solid var(--border);
       padding: 0 28px;
       display: grid;
@@ -680,81 +751,90 @@ def generate_dashboard():
       gap: 0;
     }}
     .kpi {{
-      padding:14px 16px;
+      padding:18px 16px;
       border-right:1px solid var(--border);
       position:relative;
+      transition: background 0.2s;
+    }}
+    .kpi:hover {{
+      background: rgba(255,255,255,0.01);
     }}
     .kpi:last-child {{ border-right:none; }}
     .kpi-label {{
-      font-size:10px; font-weight:600; letter-spacing:.8px;
-      color:var(--sub); text-transform:uppercase; margin-bottom:4px;
+      font-size:10px; font-weight:700; letter-spacing:1px;
+      color:var(--sub); text-transform:uppercase; margin-bottom:6px;
     }}
     .kpi-value {{
-      font-family:var(--font-mono); font-size:20px; font-weight:600;
+      font-family:var(--font-mono); font-size:22px; font-weight:700;
       line-height:1.1; letter-spacing:-0.5px;
     }}
-    .kpi-sub   {{ font-size:10px; color:var(--sub); margin-top:3px; }}
-    .kpi-bar   {{ position:absolute; bottom:0; left:0; right:0; height:2px; opacity:.6; }}
+    .kpi-sub   {{ font-size:10px; color:var(--sub); margin-top:5px; }}
+    .kpi-bar   {{ position:absolute; bottom:0; left:0; right:0; height:3px; opacity:.7; }}
 
-    /* ── Tab nav ─────────────────────────────────────────────────── */
+    /* ── Navigation Tab Bar ──────────────────────────────────────── */
     .tabnav {{
       background:var(--surface);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border-bottom:1px solid var(--border);
       padding:0 28px;
-      display:flex; gap:0;
-      position:sticky; top:54px; z-index:90;
+      display:flex; gap:4px;
+      position:sticky; top:60px; z-index:90;
       overflow-x:auto;
     }}
     .tab-btn {{
-      padding:12px 18px;
+      padding:16px 20px;
       font-size:12px; font-weight:600; letter-spacing:.3px;
       color:var(--sub); background:none; border:none;
-      border-bottom:2px solid transparent;
+      border-bottom:3px solid transparent;
       cursor:pointer; white-space:nowrap;
       font-family:var(--font-ui);
-      transition:color .15s, border-color .15s;
+      transition:all .2s;
     }}
-    .tab-btn:hover  {{ color:var(--text); }}
-    .tab-btn.active {{ color:var(--accent); border-bottom-color:var(--accent); }}
+    .tab-btn:hover  {{ color:var(--text); background: rgba(255,255,255,0.02); }}
+    .tab-btn.active {{ color:var(--text); border-bottom-color:var(--accent2); font-weight:700; }}
     .tab-count {{
       display:inline-flex; align-items:center; justify-content:center;
-      min-width:16px; height:16px; border-radius:8px; padding:0 4px;
+      min-width:18px; height:18px; border-radius:9px; padding:0 5px;
       background:var(--border2); font-size:9px; font-weight:700;
-      margin-left:5px; color:var(--sub);
+      margin-left:6px; color:var(--sub);
     }}
-    .tab-count.green {{ background:#00d4aa25; color:var(--accent); }}
-    .tab-count.red   {{ background:#f8717125; color:var(--danger); }}
-    .tab-count.gold  {{ background:#f0b42925; color:var(--warn); }}
+    .tab-count.green {{ background:rgba(16, 185, 129, 0.15); color:var(--accent); }}
+    .tab-count.red   {{ background:rgba(244, 63, 94, 0.15); color:var(--danger); }}
+    .tab-count.gold  {{ background:rgba(245, 158, 11, 0.15); color:var(--warn); }}
 
-    /* ── Content ─────────────────────────────────────────────────── */
-    .content {{ padding:24px 28px; }}
+    /* ── Panels Layout ───────────────────────────────────────────── */
+    .content {{ padding:28px; }}
     .hidden  {{ display:none !important; }}
 
-    /* ── Panels ──────────────────────────────────────────────────── */
     .panel {{
       background:var(--surface);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border:1px solid var(--border);
-      border-radius:10px;
+      border-radius:12px;
       overflow:hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     }}
     .panel-header {{
-      padding:14px 20px;
+      padding:16px 24px;
       border-bottom:1px solid var(--border);
       display:flex; align-items:center; justify-content:space-between;
+      background: rgba(255,255,255,0.01);
     }}
     .panel-title {{
-      font-size:11px; font-weight:700; letter-spacing:.8px;
+      font-size:11px; font-weight:800; letter-spacing:1px;
       text-transform:uppercase; color:var(--sub);
     }}
-    .panel-body {{ padding:20px; }}
+    .panel-body {{ padding:24px; }}
 
     /* ── Grids ───────────────────────────────────────────────────── */
-    .stack   {{ display:flex; flex-direction:column; gap:20px; }}
-    .grid-2  {{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }}
-    .grid-3  {{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; }}
-    .grid-4  {{ display:grid; grid-template-columns:repeat(4,1fr); gap:20px; }}
-    .grid-32 {{ display:grid; grid-template-columns:2fr 1fr; gap:20px; }}
-    .grid-23 {{ display:grid; grid-template-columns:1fr 2fr; gap:20px; }}
+    .stack   {{ display:flex; flex-direction:column; gap:24px; }}
+    .grid-2  {{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }}
+    .grid-3  {{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:24px; }}
+    .grid-4  {{ display:grid; grid-template-columns:repeat(4,1fr); gap:24px; }}
+    .grid-32 {{ display:grid; grid-template-columns:2fr 1fr; gap:24px; }}
+    .grid-23 {{ display:grid; grid-template-columns:1fr 2fr; gap:24px; }}
 
     @media(max-width:1200px) {{
       .grid-32,.grid-23 {{ grid-template-columns:1fr; }}
@@ -765,142 +845,160 @@ def generate_dashboard():
       .kpi-strip {{ grid-template-columns:repeat(2,1fr); }}
     }}
 
-    /* ── Tables ──────────────────────────────────────────────────── */
+    /* ── Tables & Data Grid Lists ────────────────────────────────── */
     .tbl {{ width:100%; border-collapse:collapse; }}
     .tbl thead tr {{
-      background:var(--surface2);
-      border-bottom:1px solid var(--border2);
+      background:rgba(255,255,255,0.015);
+      border-bottom:1px solid var(--border);
     }}
     .tbl thead th {{
-      padding:10px 20px;
-      font-size:10px; font-weight:700; letter-spacing:.7px;
+      padding:12px 20px;
+      font-size:10px; font-weight:800; letter-spacing:1px;
       text-transform:uppercase; color:var(--sub); text-align:left;
       user-select:none;
     }}
     .tbl thead th.tc {{ text-align:center; }}
     .tbl thead th.sortable {{ cursor:pointer; }}
     .tbl thead th.sortable:hover {{ color:var(--text); }}
-    .sort-arrow {{ margin-left:4px; opacity:.4; }}
-    .sort-arrow.active {{ opacity:1; color:var(--accent); }}
-    .trow {{ border-bottom:1px solid var(--border); transition:background .1s; }}
-    .trow:hover {{ background:#ffffff05; }}
+    .sort-arrow {{ margin-left:4px; opacity:.4; font-family:var(--font-mono); }}
+    .sort-arrow.active {{ opacity:1; color:var(--accent2); }}
+    
+    .trow {{ border-bottom:1px solid var(--border); transition:background .15s; }}
+    .trow:hover {{ background:rgba(255, 255, 255, 0.02); }}
     .trow:last-child {{ border-bottom:none; }}
-    .row-buy   {{ background:#00d4aa08; }}
-    .row-avoid {{ background:#f8717108; }}
+    .row-buy   {{ background:rgba(16, 185, 129, 0.02); }}
+    .row-avoid {{ background:rgba(244, 63, 94, 0.02); }}
 
     /* ── Badges ──────────────────────────────────────────────────── */
     .badge {{
-      display:inline-block; padding:2px 7px; border-radius:4px;
-      font-size:9px; font-weight:700; letter-spacing:.6px;
+      display:inline-block; padding:3px 8px; border-radius:4px;
+      font-size:9px; font-weight:800; letter-spacing:.7px;
       text-transform:uppercase; border:1px solid;
     }}
-    .badge-buy    {{ background:#00d4aa20; color:#00d4aa; border-color:#00d4aa50; }}
-    .badge-avoid  {{ background:#f8717120; color:#f87171; border-color:#f8717150; }}
-    .badge-caution{{ background:#f0b42920; color:#f0b429; border-color:#f0b42950; }}
-    .badge-hold   {{ background:#ffffff10; color:#6b7280; border-color:#ffffff20; }}
-    .badge-earn   {{ background:#0ea5e920; color:#0ea5e9; border-color:#0ea5e950; }}
-    .badge-veto   {{ background:#a855f720; color:#a855f7; border-color:#a855f750; }}
+    .badge-buy    {{ background:rgba(16, 185, 129, 0.15); color:var(--accent); border-color:rgba(16, 185, 129, 0.3); }}
+    .badge-avoid  {{ background:rgba(244, 63, 94, 0.15); color:var(--danger); border-color:rgba(244, 63, 94, 0.3); }}
+    .badge-caution{{ background:rgba(245, 158, 11, 0.15); color:var(--warn); border-color:rgba(245, 158, 11, 0.3); }}
+    .badge-hold   {{ background:rgba(255,255,255,0.05); color:var(--sub); border-color:var(--border); }}
+    .badge-earn   {{ background:rgba(14, 165, 233, 0.15); color:var(--accent2); border-color:rgba(14, 165, 233, 0.3); }}
+    .badge-veto   {{ background:rgba(168, 85, 247, 0.15); color:var(--purple); border-color:rgba(168, 85, 247, 0.3); }}
 
-    /* ── Progress bars ───────────────────────────────────────────── */
+    /* ── Confidence Indicator Bars ───────────────────────────────── */
     .bar-row  {{ display:flex; align-items:center; gap:8px; }}
     .bar-bg   {{ flex:1; background:var(--border2); border-radius:2px; height:4px; min-width:60px; }}
     .bar-fill {{ height:4px; border-radius:2px; transition:width .4s; }}
-    .bar-lbl  {{ font-size:10px; font-weight:600; min-width:28px; text-align:right; }}
+    .bar-lbl  {{ font-size:10px; font-weight:700; min-width:28px; text-align:right; }}
 
-    /* ── Filter squares ──────────────────────────────────────────── */
+    /* ── Squares Filter Matrix ───────────────────────────────────── */
     .squares {{ display:flex; gap:3px; }}
     .sq {{ width:7px; height:7px; border-radius:1.5px; }}
 
-    /* ── Regime tag ──────────────────────────────────────────────── */
+    /* ── Regime Indicators ───────────────────────────────────────── */
     .regime-tag {{
-      font-size:10px; font-weight:600; padding:2px 6px;
-      border-radius:3px; background:var(--border2); color:var(--sub);
+      font-size:10px; font-weight:700; padding:2px 6px;
+      border-radius:3px; background:var(--border); color:var(--sub);
     }}
 
-    /* ── Signal pills ────────────────────────────────────────────── */
-    .sig-pills {{ display:flex; gap:10px; flex-wrap:wrap; }}
+    /* ── Quick Summary Pills ──────────────────────────────────────── */
+    .sig-pills {{ display:flex; gap:12px; flex-wrap:wrap; }}
     .sig-pill {{
-      display:flex; align-items:center; gap:8px;
-      padding:8px 16px; border-radius:8px; border:1px solid;
+      display:flex; align-items:center; gap:10px;
+      padding:10px 18px; border-radius:8px; border:1px solid var(--border);
       font-size:11px; font-weight:700;
+      background: var(--surface2);
     }}
-    .pill-buy    {{ background:#00d4aa15; border-color:#00d4aa40; color:#00d4aa; }}
-    .pill-avoid  {{ background:#f8717115; border-color:#f8717140; color:#f87171; }}
-    .pill-hold   {{ background:#ffffff08; border-color:#ffffff15; color:#6b7280; }}
-    .pill-caution{{ background:#f0b42915; border-color:#f0b42940; color:#f0b429; }}
-    .pill-num    {{ font-size:22px; font-weight:800; }}
+    .pill-buy    {{ border-color:rgba(16, 185, 129, 0.2); color:var(--accent); }}
+    .pill-avoid  {{ border-color:rgba(244, 63, 94, 0.2); color:var(--danger); }}
+    .pill-hold   {{ border-color:var(--border); color:var(--sub); }}
+    .pill-caution{{ border-color:rgba(245, 158, 11, 0.2); color:var(--warn); }}
+    .pill-num    {{ font-size:20px; font-weight:800; }}
 
-    /* ── Stat cards ──────────────────────────────────────────────── */
-    .stat-grid {{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }}
+    /* ── Grid Metrics & Stat Cards ───────────────────────────────── */
+    .stat-grid {{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }}
     .stat-card {{
-      background:var(--surface2); border:1px solid var(--border);
-      border-radius:8px; padding:14px;
+      background:rgba(255,255,255,0.015); border:1px solid var(--border);
+      border-radius:8px; padding:16px;
+      transition: all 0.2s;
     }}
-    .stat-label {{ font-size:10px; letter-spacing:.6px; text-transform:uppercase; color:var(--sub); margin-bottom:4px; }}
-    .stat-value {{ font-family:var(--font-mono); font-size:18px; font-weight:600; }}
+    .stat-card:hover {{ border-color: var(--border2); transform: translateY(-1px); }}
+    .stat-label {{ font-size:10px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:var(--sub); margin-bottom:6px; }}
+    .stat-value {{ font-family:var(--font-mono); font-size:18px; font-weight:700; }}
 
-    /* ── Sector cards ────────────────────────────────────────────── */
-    .sectors-grid {{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; }}
+    /* ── Sector Momentum Panels ──────────────────────────────────── */
+    .sectors-grid {{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }}
     .sector-card {{
-      border:1px solid; border-radius:8px; padding:14px;
-      transition:border-color .2s;
+      border:1px solid var(--border); border-radius:8px; padding:16px;
+      transition: border-color .2s, transform .2s;
     }}
-    .card-inflow  {{ background:#00d4aa0a; border-color:#00d4aa30; }}
-    .card-outflow {{ background:#f871710a; border-color:#f8717130; }}
-    .card-neutral {{ background:var(--surface2); border-color:var(--border); }}
+    .sector-card:hover {{ transform:translateY(-1px); }}
+    .card-inflow  {{ background:rgba(16, 185, 129, 0.04); border-color:rgba(16, 185, 129, 0.2); }}
+    .card-outflow {{ background:rgba(244, 63, 94, 0.04); border-color:rgba(244, 63, 94, 0.2); }}
+    .card-neutral {{ background:rgba(255,255,255,0.01); border-color:var(--border); }}
     .sec-header   {{ display:flex; justify-content:space-between; align-items:center; }}
     .sec-name     {{ font-weight:700; font-size:13px; }}
     .sec-badge {{
       font-size:9px; font-weight:700; letter-spacing:.5px;
       border:1px solid; border-radius:3px; padding:1px 5px;
     }}
-    .sec-bar-bg   {{ background:var(--border2); border-radius:2px; height:3px; }}
+    .sec-bar-bg   {{ background:var(--border); border-radius:2px; height:3px; }}
     .sec-bar-fill {{ height:3px; border-radius:2px; }}
-    .sec-footer   {{ display:flex; justify-content:space-between; margin-top:8px; }}
+    .sec-footer   {{ display:flex; justify-content:space-between; margin-top:10px; }}
 
     /* ── Earnings ────────────────────────────────────────────────── */
-    .earn-list {{ display:flex; flex-direction:column; gap:8px; }}
+    .earn-list {{ display:flex; flex-direction:column; gap:10px; }}
     .earn-row {{
       display:flex; justify-content:space-between; align-items:center;
-      padding:10px 14px; border-radius:6px; border:1px solid;
+      padding:12px 16px; border-radius:8px; border:1px solid var(--border);
     }}
-    .earn-today {{ background:#f871710a; border-color:#f8717140; }}
-    .earn-soon  {{ background:#f0b4290a; border-color:#f0b42940; }}
-    .earn-later {{ background:var(--surface2); border-color:var(--border); }}
+    .earn-today {{ background:rgba(244, 63, 94, 0.04); border-color:rgba(244, 63, 94, 0.2); }}
+    .earn-soon  {{ background:rgba(245, 158, 11, 0.04); border-color:rgba(245, 158, 11, 0.2); }}
+    .earn-later {{ background:rgba(255,255,255,0.01); border-color:var(--border); }}
 
-    /* ── History ─────────────────────────────────────────────────── */
+    /* ── History List Rows ───────────────────────────────────────── */
     .hist-row {{
-      display:flex; align-items:flex-start; padding:10px 0;
+      display:flex; align-items:flex-start; padding:12px 0;
       border-bottom:1px solid var(--border);
     }}
     .hist-row:last-child {{ border-bottom:none; }}
 
-    /* ── Empty state ─────────────────────────────────────────────── */
-    .empty-state {{ text-align:center; padding:48px 24px; color:var(--sub); }}
-    .empty-icon  {{ font-size:28px; margin-bottom:10px; opacity:.3; }}
+    /* ── System Config Inspection Styles ─────────────────────────── */
+    .config-grid {{ display:grid; grid-template-columns: 1fr 1fr; gap:24px; }}
+    .config-card {{
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius:12px; padding: 24px;
+    }}
+    .config-title {{ font-size: 13px; font-weight: 800; letter-spacing: .5px; margin-bottom:16px; text-transform: uppercase; color: var(--accent2); }}
+    .config-row {{ display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }}
+    .config-row:last-child {{ border-bottom: none; }}
+    .config-label {{ font-weight:500; color:var(--sub); }}
+    .config-val {{ font-family:var(--font-mono); font-weight:700; color:var(--text); }}
 
-    /* ── Weight results ──────────────────────────────────────────── */
+    /* ── Empty Empty State ───────────────────────────────────────── */
+    .empty-state {{ text-align:center; padding:54px 24px; color:var(--sub); }}
+    .empty-icon  {{ font-size:32px; margin-bottom:12px; opacity:.3; }}
+
+    /* ── Weight Optimization ──────────────────────────────────────── */
     .best-banner {{
-      background: linear-gradient(135deg, #00d4aa12, #0ea5e912);
-      border: 1px solid #00d4aa40;
-      border-radius: 10px; padding: 18px 24px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(14, 165, 233, 0.08));
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 12px; padding: 20px 24px;
       display: flex; align-items:center; justify-content:space-between;
       gap: 20px; flex-wrap:wrap;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.05);
     }}
-    .best-left  {{ display:flex; align-items:center; gap:14px; }}
-    .best-right {{ display:flex; gap:24px; }}
-    .best-crown {{ font-size:24px; }}
-    .best-title {{ font-weight:700; font-size:13px; margin-bottom:4px; }}
+    .best-left  {{ display:flex; align-items:center; gap:16px; }}
+    .best-right {{ display:flex; gap:28px; }}
+    .best-crown {{ font-size:26px; }}
+    .best-title {{ font-weight:800; font-size:14px; margin-bottom:4px; }}
     .best-formula {{
       font-size:11px; color:var(--accent);
-      background:var(--surface); padding:4px 10px;
-      border-radius:4px; border:1px solid var(--border2);
+      background:rgba(0,0,0,0.2); padding:5px 12px;
+      border-radius:6px; border:1px solid var(--border2);
     }}
     .best-stat     {{ text-align:center; }}
-    .best-stat-val {{ font-family:var(--font-mono); font-size:20px; font-weight:700; }}
-    .best-stat-lbl {{ font-size:10px; color:var(--sub); text-transform:uppercase; letter-spacing:.5px; }}
+    .best-stat-val {{ font-family:var(--font-mono); font-size:22px; font-weight:700; }}
+    .best-stat-lbl {{ font-size:10px; color:var(--sub); text-transform:uppercase; letter-spacing:1px; }}
 
-    .wt-best {{ background:linear-gradient(90deg,#00d4aa08,transparent) !important; }}
+    .wt-best {{ background:linear-gradient(90deg,rgba(16, 185, 129, 0.04),transparent) !important; }}
     .wt-bars  {{ display:flex; flex-direction:column; gap:5px; min-width:200px; }}
     .wt-bar-row {{ display:flex; align-items:center; gap:6px; }}
     .wt-lbl {{
@@ -908,37 +1006,38 @@ def generate_dashboard():
       color:var(--sub); width:28px; text-transform:uppercase;
     }}
 
-    /* ── Search / filter ─────────────────────────────────────────── */
+    /* ── Search & Filter Bars ────────────────────────────────────── */
     .filter-bar {{
-      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      display:flex; gap:12px; align-items:center; flex-wrap:wrap;
     }}
     .search-box {{
       background:var(--surface2); border:1px solid var(--border);
-      border-radius:6px; padding:6px 12px;
+      border-radius:6px; padding:8px 16px;
       color:var(--text); font-size:12px; font-family:var(--font-ui);
-      outline:none; width:200px;
+      outline:none; width:220px;
       transition:border-color .15s;
     }}
-    .search-box:focus {{ border-color:var(--border2); }}
+    .search-box:focus {{ border-color:var(--accent2); }}
     .filter-btn {{
-      padding:5px 12px; border-radius:5px; border:1px solid var(--border);
+      padding:7px 14px; border-radius:6px; border:1px solid var(--border);
       background:var(--surface2); color:var(--sub);
       font-size:11px; font-weight:600; cursor:pointer;
       font-family:var(--font-ui); transition:.15s;
     }}
     .filter-btn:hover,
     .filter-btn.active {{ background:var(--border2); color:var(--text); border-color:var(--border2); }}
-    .filter-btn.f-buy.active    {{ background:#00d4aa20; color:#00d4aa; border-color:#00d4aa50; }}
-    .filter-btn.f-avoid.active  {{ background:#f8717120; color:#f87171; border-color:#f8717150; }}
-    .filter-btn.f-caution.active{{ background:#f0b42920; color:#f0b429; border-color:#f0b42950; }}
+    .filter-btn.f-buy.active    {{ background:rgba(16, 185, 129, 0.15); color:var(--accent); border-color:rgba(16, 185, 129, 0.3); }}
+    .filter-btn.f-avoid.active  {{ background:rgba(244, 63, 94, 0.15); color:var(--danger); border-color:rgba(244, 63, 94, 0.3); }}
+    .filter-btn.f-caution.active{{ background:rgba(245, 158, 11, 0.15); color:var(--warn); border-color:rgba(245, 158, 11, 0.3); }}
 
     /* ── Footer ──────────────────────────────────────────────────── */
     .footer {{
       border-top:1px solid var(--border);
-      padding:14px 28px;
+      padding:18px 28px;
       display:flex; justify-content:space-between; align-items:center;
-      font-size:10px; color:var(--sub); letter-spacing:.3px;
-      margin-top:32px;
+      font-size:10px; color:var(--sub); letter-spacing:.5px;
+      margin-top:36px;
+      background: rgba(10,15,30,0.2);
     }}
   </style>
 </head>
@@ -948,19 +1047,24 @@ def generate_dashboard():
 <header class="header">
   <div class="logo">
     <div class="logo-mark">α</div>
-    <span class="logo-text">AlphaEdge</span>
+    <span class="logo-text">AlphaEdge Terminal</span>
     <span class="chip chip-paper">PAPER</span>
-    <span class="chip chip-v5">V5</span>
+    <span class="chip chip-v5">V6</span>
     <span class="regime-chip"
-          style="color:{regime_color};border-color:{regime_color}40;background:{regime_color}12">
+          style="color:{regime_color};border-color:{regime_color}33;background:{regime_color}12">
       {regime_icon}
     </span>
   </div>
   <div class="header-right">
     <div class="pulse-dot"></div>
-    <span class="ts">Updated {now_str}</span>
+    <div class="refresh-container">
+      <span class="ts" id="refreshTimer" style="font-weight:700">Refresh in 5m 00s</span>
+      <div class="refresh-bar-bg">
+        <div class="refresh-bar-fill" id="refreshBar"></div>
+      </div>
+    </div>
     <span class="ts" style="color:var(--border2)">|</span>
-    <span class="ts">Last scan: {saved_at}</span>
+    <span class="ts">Updated {now_str}</span>
     <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">☀ Light</button>
   </div>
 </header>
@@ -1011,7 +1115,7 @@ def generate_dashboard():
   </div>
   <div class="kpi">
     <div class="kpi-label">Positions</div>
-    <div class="kpi-value" style="color:var(--accent2)">{len(positions)}/5</div>
+    <div class="kpi-value" style="color:var(--accent2)">{len(positions)}/{max_positions}</div>
     <div class="kpi-sub">Cash ${capital:,.0f}</div>
     <div class="kpi-bar" style="background:var(--accent2)"></div>
   </div>
@@ -1041,6 +1145,7 @@ def generate_dashboard():
     Weights
     <span class="tab-count {'gold' if weight_data else ''}">{len(weight_data) if weight_data else 0}</span>
   </button>
+  <button class="tab-btn"        onclick="showTab('config')"    id="t-config">System Config</button>
 </nav>
 
 <!-- ══════════════════════════════════════════════════════ CONTENT -->
@@ -1126,19 +1231,19 @@ def generate_dashboard():
           <div class="stat-grid">
             <div class="stat-card">
               <div class="stat-label">Avg Win</div>
-              <div class="stat-value" style="color:#00d4aa">+${avg_win:.2f}</div>
+              <div class="stat-value" style="color:#10b981">+${avg_win:.2f}</div>
             </div>
             <div class="stat-card">
               <div class="stat-label">Avg Loss</div>
-              <div class="stat-value" style="color:#f87171">-${avg_loss:.2f}</div>
+              <div class="stat-value" style="color:#f43f5e">-${avg_loss:.2f}</div>
             </div>
             <div class="stat-card">
               <div class="stat-label">Expectancy</div>
-              <div class="stat-value" style="color:{('#00d4aa' if expectancy>=0 else '#f87171')}">${expectancy:+.2f}</div>
+              <div class="stat-value" style="color:{('#10b981' if expectancy>=0 else '#f43f5e')}">${expectancy:+.2f}</div>
             </div>
             <div class="stat-card">
               <div class="stat-label">Realized P&amp;L</div>
-              <div class="stat-value mono" style="color:{('#00d4aa' if realized>=0 else '#f87171')}">{('+' if realized>=0 else '')}${realized:,.2f}</div>
+              <div class="stat-value mono" style="color:{('#10b981' if realized>=0 else '#f43f5e')}">{('+' if realized>=0 else '')}${realized:,.2f}</div>
             </div>
             <div class="stat-card">
               <div class="stat-label">Unrealized P&amp;L</div>
@@ -1177,7 +1282,7 @@ def generate_dashboard():
   <div id="c-positions" class="hidden">
     <div class="panel">
       <div class="panel-header">
-        <span class="panel-title">Open Positions — {len(positions)}/5 slots</span>
+        <span class="panel-title">Open Positions — {len(positions)}/{max_positions} slots</span>
         <span class="ts">Invested ${pos_value:,.2f} · Cash ${capital:,.2f}</span>
       </div>
       <div style="overflow-x:auto">
@@ -1189,6 +1294,7 @@ def generate_dashboard():
             <th class="tc">Current</th>
             <th class="tc">P&amp;L</th>
             <th class="tc">Stop / Target</th>
+            <th class="tc">Kelly Size</th>
             <th>ML Confidence</th>
             <th class="tc">Held</th>
           </tr></thead>
@@ -1240,6 +1346,15 @@ def generate_dashboard():
                 <th class="tc">Regime</th>
                 <th class="sortable tc" onclick="sortTable('sent')">
                   Sentiment <span class="sort-arrow" id="sa-sent">↕</span>
+                </th>
+                <th class="sortable tc" onclick="sortTable('kellyf')">
+                  Kelly Fraction (f*) <span class="sort-arrow" id="sa-kellyf">↕</span>
+                </th>
+                <th class="sortable tc" onclick="sortTable('kellyalloc')">
+                  Target Size (%) <span class="sort-arrow" id="sa-kellyalloc">↕</span>
+                </th>
+                <th class="sortable tc" onclick="sortTable('kellyval')">
+                  Target Allocation ($) <span class="sort-arrow" id="sa-kellyval">↕</span>
                 </th>
                 <th class="sortable tc" onclick="sortTable('price')">
                   Price <span class="sort-arrow" id="sa-price">↕</span>
@@ -1339,11 +1454,11 @@ def generate_dashboard():
         <div class="panel-body">
           <div style="background:var(--surface2);border:1px solid var(--border2);
                       border-radius:6px;padding:14px 18px;font-family:var(--font-mono);
-                      font-size:12px;color:var(--accent);line-height:1.8">
+                      font-size:12px;color:var(--accent2);line-height:1.8">
             <span style="color:var(--sub)"># Current (V4 hardcoded)</span><br>
-            combined = pred × <span style="color:#f0b429">0.6</span> +
-                       (sent + 0.5) × <span style="color:#f0b429">0.2</span> +
-                       (sect - 0.5) × <span style="color:#f0b429">0.2</span><br><br>
+            combined = pred × <span style="color:#f59e0b">0.6</span> +
+                       (sent + 0.5) × <span style="color:#f59e0b">0.2</span> +
+                       (sect - 0.5) × <span style="color:#f59e0b">0.2</span><br><br>
             <span style="color:var(--sub)"># After optimization — update main.py with winning weights above</span>
           </div>
         </div>
@@ -1352,18 +1467,103 @@ def generate_dashboard():
     </div>
   </div>
 
+  <!-- ── SYSTEM CONFIG ──────────────────────────────────────────────── -->
+  <div id="c-config" class="hidden">
+    <div class="config-grid">
+      <div class="config-card">
+        <div class="config-title">Signal Configuration &amp; Sizing Model</div>
+        
+        <div class="config-row">
+          <span class="config-label">Active Stocks Watchlist</span>
+          <span class="config-val">{watchlist_len} Tickers</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">Buy Score Threshold</span>
+          <span class="config-val">{buy_threshold}</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">Minimum Volume Spike Ratio</span>
+          <span class="config-val">{volume_spike_min}x</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">Multi-Timeframe Alignment Weight</span>
+          <span class="config-val">{mtf_weight * 100:.0f}%</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">Minimum Risk-Reward Target</span>
+          <span class="config-val">{min_risk_reward:.1f} R:R</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">Kelly Sizing Engine Status</span>
+          <span class="config-val" style="color:{"var(--accent)" if kelly_active else "var(--danger)"}">
+            {"ENABLED" if kelly_active else "DISABLED"}
+          </span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">Fractional Kelly Multiplier</span>
+          <span class="config-val">{kelly_mult} (Half-Kelly)</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">Calibrated Kelly R/R Ratio (b)</span>
+          <span class="config-val">{kelly_rr:.1f}x</span>
+        </div>
+      </div>
+      
+      <div class="config-card">
+        <div class="config-title">Portfolio Risk Management &amp; Stops</div>
+        
+        <div class="config-row">
+          <span class="config-label">Max Open Positions Slots</span>
+          <span class="config-val">{max_positions} Stocks</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">Max Position Size Cap</span>
+          <span class="config-val">{max_pos_pct * 100:.1f}% of capital</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">Max Risk Per Trade (Vol)</span>
+          <span class="config-val">{max_risk_per_trade * 100:.1f}% of capital</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">Max Allowed Portfolio Risk Limit</span>
+          <span class="config-val">{max_portfolio_risk * 100:.1f}%</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">Max Daily Realized Loss Limit</span>
+          <span class="config-val">{max_daily_loss * 100:.1f}%</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">Max Account Drawdown Limit</span>
+          <span class="config-val">{max_dd_limit * 100:.1f}%</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">ATR Stop Loss Multiplier</span>
+          <span class="config-val">{atr_stop_mult}x ATR</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">ATR Take Profit Multiplier</span>
+          <span class="config-val">{atr_target_mult}x ATR</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">Trailing Stop Trigger Threshold</span>
+          <span class="config-val">{trailing_mult}x ATR</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <!-- ══════════════════════════════════════════════════════ FOOTER -->
 <footer class="footer">
-  <span>AlphaEdge V5 · XGB + CatBoost + RF + LogReg Ensemble · 9-Layer Signal Filter · AI Veto Agent</span>
+  <span>AlphaEdge V6 Terminal · XGB + CatBoost + RF + LogReg Ensemble · 9-Layer Signal Filter · AI Veto Agent</span>
   <span>Full-width · Auto-refresh 5 min · Paper trading mode · Dark/Light mode</span>
 </footer>
 
 <!-- ═══════════════════════════════════════════════════════ SCRIPTS -->
 <script>
 // ── Tab system ────────────────────────────────────────────────────────────
-const TABS = ['overview','positions','signals','sectors','earnings','history','weights'];
+const TABS = ['overview','positions','signals','sectors','earnings','history','weights','config'];
 function showTab(name) {{
   TABS.forEach(t => {{
     document.getElementById('c-' + t).classList.add('hidden');
@@ -1379,6 +1579,21 @@ function showTab(name) {{
   }}
 }}
 
+// ── Auto-refresh countdown timer ──────────────────────────────────────────
+let timeLeft = 300;
+const timerEl = document.getElementById('refreshTimer');
+const progressBar = document.getElementById('refreshBar');
+setInterval(() => {{
+  timeLeft--;
+  if (timeLeft <= 0) {{
+    window.location.reload();
+  }}
+  const min = Math.floor(timeLeft / 60);
+  const sec = timeLeft % 60;
+  timerEl.textContent = `Refresh in ${{min}}m ${{sec.toString().padStart(2, '0')}}s`;
+  progressBar.style.width = `${{(timeLeft / 300) * 100}}%`;
+}}, 1000);
+
 // ── Dark / Light mode ─────────────────────────────────────────────────────
 function toggleTheme() {{
   const html = document.documentElement;
@@ -1392,8 +1607,8 @@ function toggleTheme() {{
 // ── Chart global registry ─────────────────────────────────────────────────
 const allCharts = {{}};
 
-Chart.defaults.color = '#5a7090';
-Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.font.family = "'JetBrains Mono', monospace";
 Chart.defaults.font.size   = 10;
 
 // ── Equity curve ──────────────────────────────────────────────────────────
@@ -1418,7 +1633,7 @@ Chart.defaults.font.size   = 10;
         }},
         {{
           data: labels.map(() => {starting}),
-          borderColor: '#243040', borderDash: [5,4],
+          borderColor: '#334155', borderDash: [5,4],
           borderWidth: 1, pointRadius: 0, fill: false,
         }}
       ]
@@ -1429,62 +1644,62 @@ Chart.defaults.font.size   = 10;
       plugins: {{
         legend: {{ display:false }},
         tooltip: {{
-          backgroundColor:'#0d1117', borderColor:'#1a2433', borderWidth:1,
+          backgroundColor:'#0f172a', borderColor:'rgba(255,255,255,0.08)', borderWidth:1,
           callbacks: {{ label: c => ' $' + c.parsed.y.toLocaleString('en-US',{{minimumFractionDigits:2}}) }}
         }}
       }},
       scales: {{
-        y: {{ grid:{{color:'#1a2433'}}, ticks:{{ callback: v => '$'+(v>=1000?(v/1000).toFixed(1)+'k':v.toFixed(0)) }} }},
+        y: {{ grid:{{color:'rgba(255,255,255,0.03)'}}, ticks:{{ callback: v => '$'+(v>=1000?(v/1000).toFixed(1)+'k':v.toFixed(0)) }} }},
         x: {{ grid:{{display:false}}, ticks:{{maxTicksLimit:8,maxRotation:0}} }}
       }}
     }}
   }});
-}})();
+}}())
 
 // ── Allocation donut ──────────────────────────────────────────────────────
-(function() {{
+;(function() {{
   const ctx    = document.getElementById('allocChart').getContext('2d');
   const labels = {_json.dumps(alloc_labels)};
   const vals   = {_json.dumps(alloc_vals)};
-  const COLORS = ['#0ea5e9','#00d4aa','#f0b429','#f87171','#a855f7','#06b6d4','#84cc16'];
+  const COLORS = ['#0ea5e9','#10b981','#f59e0b','#f43f5e','#a855f7','#06b6d4','#84cc16'];
   allCharts.alloc = new Chart(ctx, {{
     type: 'doughnut',
     data: {{
       labels,
       datasets: [{{ data:vals, backgroundColor:COLORS.slice(0,vals.length),
-                    borderColor:'#070b0f', borderWidth:3, hoverOffset:6 }}]
+                    borderColor:'#060814', borderWidth:3, hoverOffset:6 }}]
     }},
     options: {{
       responsive:true, cutout:'65%',
       plugins: {{
         legend: {{ position:'bottom', labels:{{ padding:12, usePointStyle:true,
-                   pointStyleWidth:8, color:'#9ca3af', font:{{size:10}} }} }},
+                   pointStyleWidth:8, color:'#94a3b8', font:{{size:10}} }} }},
         tooltip: {{
-          backgroundColor:'#0d1117', borderColor:'#1a2433', borderWidth:1,
+          backgroundColor:'#0f172a', borderColor:'rgba(255,255,255,0.08)', borderWidth:1,
           callbacks: {{ label: c => ' $'+c.parsed.toLocaleString('en-US',{{minimumFractionDigits:2}}) }}
         }}
       }}
     }}
   }});
-}})();
+}}())
 
 // ── Drawdown curve ────────────────────────────────────────────────────────
-(function() {{
+;(function() {{
   const ctx    = document.getElementById('ddChart').getContext('2d');
   const vals   = {dd_vals_json};
   const labels = {dd_labels_json};
   const grad   = ctx.createLinearGradient(0, 0, 0, 200);
-  grad.addColorStop(0, '#f8717130');
-  grad.addColorStop(1, '#f8717100');
+  grad.addColorStop(0, '#f43f5e30');
+  grad.addColorStop(1, '#f43f5e00');
   allCharts.dd = new Chart(ctx, {{
     type: 'line',
     data: {{
       labels,
       datasets: [{{
-        data: vals, borderColor:'#f87171', backgroundColor: grad,
+        data: vals, borderColor:'#f43f5e', backgroundColor: grad,
         borderWidth: 1.5, fill: true, tension: 0.3,
         pointRadius: vals.length < 20 ? 2 : 0, pointHoverRadius: 4,
-        pointBackgroundColor:'#f87171',
+        pointBackgroundColor:'#f43f5e',
       }}]
     }},
     options: {{
@@ -1493,24 +1708,24 @@ Chart.defaults.font.size   = 10;
       plugins: {{
         legend: {{ display:false }},
         tooltip: {{
-          backgroundColor:'#0d1117', borderColor:'#1a2433', borderWidth:1,
+          backgroundColor:'#0f172a', borderColor:'rgba(255,255,255,0.08)', borderWidth:1,
           callbacks: {{ label: c => ' DD: ' + c.parsed.y.toFixed(2) + '%' }}
         }}
       }},
       scales: {{
         y: {{
           reverse: true,
-          grid: {{ color:'#1a2433' }},
+          grid: {{ color:'rgba(255,255,255,0.03)' }},
           ticks: {{ callback: v => v.toFixed(1)+'%' }}
         }},
         x: {{ grid:{{display:false}}, ticks:{{maxTicksLimit:8,maxRotation:0}} }}
       }}
     }}
   }});
-}})();
+}}())
 
 // ── Per-symbol P&L bar chart ──────────────────────────────────────────────
-(function() {{
+;(function() {{
   const ctx    = document.getElementById('symPnlChart').getContext('2d');
   const labels = {sym_pnl_keys};
   const vals   = {sym_pnl_vals};
@@ -1531,7 +1746,7 @@ Chart.defaults.font.size   = 10;
       plugins: {{
         legend: {{ display:false }},
         tooltip: {{
-          backgroundColor:'#0d1117', borderColor:'#1a2433', borderWidth:1,
+          backgroundColor:'#0f172a', borderColor:'rgba(255,255,255,0.08)', borderWidth:1,
           callbacks: {{
             label: c => ' $' + c.parsed.x.toFixed(2)
           }}
@@ -1539,22 +1754,22 @@ Chart.defaults.font.size   = 10;
       }},
       scales: {{
         x: {{
-          grid: {{ color:'#1a2433' }},
+          grid: {{ color:'rgba(255,255,255,0.03)' }},
           ticks: {{ callback: v => '$'+v.toFixed(0) }}
         }},
         y: {{ grid:{{display:false}} }}
       }}
     }}
   }});
-}})();
+}}())
 
 // ── Daily returns histogram ───────────────────────────────────────────────
-(function() {{
+;(function() {{
   const ctx    = document.getElementById('histChart').getContext('2d');
   const vals   = {daily_vals_json};
   const labels = {daily_labels_json};
-  const colors = vals.map(v => v >= 0 ? '#00d4aa88' : '#f8717188');
-  const border = vals.map(v => v >= 0 ? '#00d4aa' : '#f87171');
+  const colors = vals.map(v => v >= 0 ? 'rgba(16, 185, 129, 0.5)' : 'rgba(244, 63, 94, 0.5)');
+  const border = vals.map(v => v >= 0 ? '#10b981' : '#f43f5e');
   allCharts.hist = new Chart(ctx, {{
     type: 'bar',
     data: {{
@@ -1570,7 +1785,7 @@ Chart.defaults.font.size   = 10;
       plugins: {{
         legend: {{ display:false }},
         tooltip: {{
-          backgroundColor:'#0d1117', borderColor:'#1a2433', borderWidth:1,
+          backgroundColor:'#0f172a', borderColor:'rgba(255,255,255,0.08)', borderWidth:1,
           callbacks: {{
             label: c => ' ' + (c.parsed.y >= 0 ? '+' : '') + (c.parsed.y * 100).toFixed(2) + '%'
           }}
@@ -1578,35 +1793,32 @@ Chart.defaults.font.size   = 10;
       }},
       scales: {{
         y: {{
-          grid: {{ color:'#1a2433' }},
+          grid: {{ color:'rgba(255,255,255,0.03)' }},
           ticks: {{ callback: v => (v*100).toFixed(1)+'%' }}
         }},
         x: {{ grid:{{display:false}}, ticks:{{maxTicksLimit:10,maxRotation:45}} }}
       }}
     }}
   }});
-}})();
+}}())
 
 // ── Sector momentum chart ─────────────────────────────────────────────────
 let sectorChart = null;
-(function() {{
+;(function() {{
   const el = document.getElementById('sectorChart');
   if (!el) return;
   const ctx     = el.getContext('2d');
-  const rawData = {_json.dumps([
-      {{'name': k, 'mom': v.get('momentum_21d', 0), 'flow': v.get('flow','NEUTRAL')}}
-      for k, v in sectors.items()
-  ])};
+  const rawData = {sector_chart_json};
   if (!rawData.length) {{ el.parentElement.innerHTML = '<div class="empty-state">No sector data</div>'; return; }}
   const labels = rawData.map(d => d.name);
   const vals   = rawData.map(d => d.mom);
   const colors = rawData.map(d =>
-    d.flow === 'INFLOW'  ? '#00d4aa88' :
-    d.flow === 'OUTFLOW' ? '#f8717188' : '#6b728088'
+    d.flow === 'INFLOW'  ? 'rgba(16, 185, 129, 0.5)' :
+    d.flow === 'OUTFLOW' ? 'rgba(244, 63, 94, 0.5)' : 'rgba(107, 114, 128, 0.5)'
   );
   const border = rawData.map(d =>
-    d.flow === 'INFLOW'  ? '#00d4aa' :
-    d.flow === 'OUTFLOW' ? '#f87171' : '#6b7280'
+    d.flow === 'INFLOW'  ? '#10b981' :
+    d.flow === 'OUTFLOW' ? '#f43f5e' : '#6b7280'
   );
   sectorChart = new Chart(ctx, {{
     type: 'bar',
@@ -1619,29 +1831,28 @@ let sectorChart = null;
       plugins: {{
         legend: {{ display:false }},
         tooltip: {{
-          backgroundColor:'#0d1117', borderColor:'#1a2433', borderWidth:1,
+          backgroundColor:'#0f172a', borderColor:'rgba(255,255,255,0.08)', borderWidth:1,
           callbacks: {{ label: c => ' ' + (c.parsed.y>=0?'+':'') + c.parsed.y.toFixed(2)+'%' }}
         }}
       }},
       scales: {{
-        y: {{ grid:{{color:'#1a2433'}}, ticks:{{callback:v=>v.toFixed(1)+'%'}} }},
+        y: {{ grid:{{color:'rgba(255,255,255,0.03)'}}, ticks:{{callback:v=>v.toFixed(1)+'%'}} }},
         x: {{ grid:{{display:false}}, ticks:{{maxRotation:30}} }}
       }}
     }}
   }});
   allCharts.sector = sectorChart;
-}})();
+}}())
 
 // ── Signal sort ───────────────────────────────────────────────────────────
 let sortState = {{ col: 'pred', dir: -1 }};
 function sortTable(col) {{
   const tbody = document.getElementById('sigBody');
   const rows  = Array.from(tbody.querySelectorAll('tr'));
-  // Toggle direction
   if (sortState.col === col) sortState.dir *= -1;
   else {{ sortState.col = col; sortState.dir = -1; }}
-  // Update arrows
-  ['sym','sig','pred','sent','price'].forEach(c => {{
+  
+  ['sym','sig','pred','sent','kellyf','kellyalloc','kellyval','price'].forEach(c => {{
     const el = document.getElementById('sa-'+c);
     if (el) {{ el.textContent = '↕'; el.classList.remove('active'); }}
   }});
@@ -1706,7 +1917,7 @@ function filterSignals() {{
     with open(DASHBOARD_FILE, 'w', encoding='utf-8') as f:
         f.write(html)
 
-    print(f"\n  ✅ AlphaEdge V5 Dashboard generated: {DASHBOARD_FILE}")
+    print(f"\n  [OK] AlphaEdge V6 Dashboard generated: {DASHBOARD_FILE}")
     print(f"  Portfolio : ${total_value:,.2f}  ({pnl_sgn}{total_pct:.2f}%)")
     print(f"  Sharpe    : {sharpe:.2f}  |  Max DD : {max_dd*100:.2f}%  |  Win Rate : {win_rate:.1f}%")
     print(f"  Signals   : {len(buy_sigs)} BUY  |  {len(avoid_sigs)} AVOID  |  {len(hold_sigs)} HOLD")
@@ -1716,5 +1927,5 @@ function filterSignals() {{
 
 
 if __name__ == '__main__':
-    print("\nAlphaEdge V5 — Generating Institutional Dashboard...")
+    print("\nAlphaEdge V6 - Generating Institutional Dashboard...")
     generate_dashboard()
