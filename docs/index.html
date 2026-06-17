@@ -461,7 +461,9 @@
       </div>
     </div>
     <span class="ts" style="color:var(--border2)">|</span>
-    <span class="ts">Updated 2026-06-16 22:24</span>
+    <span class="ts">🕐 <span id="etClock">...</span></span>
+    <span class="ts" style="color:var(--border2)">|</span>
+    <span class="ts">Updated 2026-06-16 21:25 ET</span>
     <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">☀ Light</button>
   </div>
 </header>
@@ -470,14 +472,14 @@
 <div class="kpi-strip">
   <div class="kpi">
     <div class="kpi-label">Portfolio Value</div>
-    <div class="kpi-value" style="color:var(--text)">$10,074.10</div>
-    <div class="kpi-sub">Started $10,000</div>
+    <div class="kpi-value" style="color:var(--text)">$28,020,074.10</div>
+    <div class="kpi-sub">Started $28,020,000</div>
     <div class="kpi-bar" style="background:var(--accent2)"></div>
   </div>
   <div class="kpi">
     <div class="kpi-label">Total P&amp;L</div>
     <div class="kpi-value" style="color:#10b981">+$74.10</div>
-    <div class="kpi-sub" style="color:#10b981">+0.74%</div>
+    <div class="kpi-sub" style="color:#10b981">+0.00%</div>
     <div class="kpi-bar" style="background:#10b981"></div>
   </div>
   <div class="kpi">
@@ -494,9 +496,9 @@
   </div>
   <div class="kpi">
     <div class="kpi-label">Sharpe Ratio</div>
-    <div class="kpi-value" style="color:#10b981">12.19</div>
-    <div class="kpi-sub">Annualised · RF=0</div>
-    <div class="kpi-bar" style="background:#10b981"></div>
+    <div class="kpi-value" style="color:#f43f5e">N/A</div>
+    <div class="kpi-sub">Need &ge;20 closed trades</div>
+    <div class="kpi-bar" style="background:#f43f5e"></div>
   </div>
   <div class="kpi">
     <div class="kpi-label">Max Drawdown</div>
@@ -506,14 +508,14 @@
   </div>
   <div class="kpi">
     <div class="kpi-label">Profit Factor</div>
-    <div class="kpi-value" style="color:#f43f5e">0.00x</div>
+    <div class="kpi-value" style="color:#10b981">∞</div>
     <div class="kpi-sub">Expectancy $+9.15</div>
-    <div class="kpi-bar" style="background:#f43f5e"></div>
+    <div class="kpi-bar" style="background:#10b981"></div>
   </div>
   <div class="kpi">
     <div class="kpi-label">Positions</div>
     <div class="kpi-value" style="color:var(--accent2)">2/5</div>
-    <div class="kpi-sub">Cash $8,689</div>
+    <div class="kpi-sub">Cash $28,018,689</div>
     <div class="kpi-bar" style="background:var(--accent2)"></div>
   </div>
 </div>
@@ -571,7 +573,7 @@
       <div class="panel">
         <div class="panel-header">
           <span class="panel-title">Equity Curve</span>
-          <span class="ts">3 closed trades</span>
+          <span class="ts">4 closed trades</span>
         </div>
         <div class="panel-body" style="padding:16px 16px 8px">
           <canvas id="equityChart" height="80"></canvas>
@@ -614,7 +616,7 @@
       <div class="panel">
         <div class="panel-header">
           <span class="panel-title">Daily Returns Distribution</span>
-          <span class="ts">2 trading days</span>
+          <span class="ts">1 trading days</span>
         </div>
         <div class="panel-body" style="padding:16px 16px 8px">
           <canvas id="histChart" height="80"></canvas>
@@ -698,7 +700,7 @@
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title">Open Positions — 2/5 slots</span>
-        <span class="ts">Invested $1,384.62 · Cash $8,689.48</span>
+        <span class="ts">Invested $1,384.62 · Cash $28,018,689.48</span>
       </div>
       <div style="overflow-x:auto">
         <table class="tbl">
@@ -839,7 +841,7 @@
             <tbody id="sigBody">
         <tr class="trow " data-pred="0.8501484029089706" data-sent="0.0076701055846310085"
             data-price="115.75" data-sig="HOLD" data-sym="WMT"
-            data-kellyf="0.7902077640725589" data-kellyalloc="0.15" data-kellyval="1511.1155509346006">
+            data-kellyf="0.7902077640725589" data-kellyalloc="0.15" data-kellyval="4203011.115550934">
           <td class="px-5 py-4">
             <div class="sym">WMT</div>
             <div class="sub">Staples</div>
@@ -857,16 +859,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">+0.01</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">79.0%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,511.12</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,203,011.12</td>
           <td class="px-5 py-4 tc mono fw">$115.75</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">4/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.8368432318789786" data-sent="0.080161096709263"
             data-price="299.30999755859375" data-sig="HOLD" data-sym="JPM"
-            data-kellyf="0.77158052463057" data-kellyalloc="0.15" data-kellyval="1511.1155509346006">
+            data-kellyf="0.77158052463057" data-kellyalloc="0.15" data-kellyval="4203011.115550934">
           <td class="px-5 py-4">
             <div class="sym">JPM</div>
             <div class="sub">Financials</div>
@@ -884,16 +886,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">+0.08</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">77.2%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,511.12</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,203,011.12</td>
           <td class="px-5 py-4 tc mono fw">$299.31</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">4/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow row-avoid" data-pred="0.7294852135631613" data-sent="0.3514178514926006"
             data-price="26.18000030517578" data-sig="AVOID" data-sym="PFE"
-            data-kellyf="0.6212792989884258" data-kellyalloc="0.15" data-kellyval="1511.1155509346006">
+            data-kellyf="0.6212792989884258" data-kellyalloc="0.15" data-kellyval="4203011.115550934">
           <td class="px-5 py-4">
             <div class="sym">PFE</div>
             <div class="sub">Healthcare</div>
@@ -911,16 +913,16 @@
           <td class="px-5 py-4 tc mono" style="color:#10b981">+0.35</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">62.1%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,511.12</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,203,011.12</td>
           <td class="px-5 py-4 tc mono fw">$26.18</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">4/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.700294053651039" data-sent="0.2820076406494064"
             data-price="51.599998474121094" data-sig="MTF_HOLD" data-sym="BAC"
-            data-kellyf="0.5804116751114548" data-kellyalloc="0.15" data-kellyval="1511.1155509346006">
+            data-kellyf="0.5804116751114548" data-kellyalloc="0.15" data-kellyval="4203011.115550934">
           <td class="px-5 py-4">
             <div class="sym">BAC</div>
             <div class="sub">Financials</div>
@@ -938,16 +940,16 @@
           <td class="px-5 py-4 tc mono" style="color:#10b981">+0.28</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">58.0%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,511.12</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,203,011.12</td>
           <td class="px-5 py-4 tc mono fw">$51.60</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">4/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow row-avoid" data-pred="0.6740813147323997" data-sent="0.02860544333816506"
             data-price="317.1400146484375" data-sig="AVOID" data-sym="HD"
-            data-kellyf="0.5437138406253597" data-kellyalloc="0.15" data-kellyval="1511.1155509346006">
+            data-kellyf="0.5437138406253597" data-kellyalloc="0.15" data-kellyval="4203011.115550934">
           <td class="px-5 py-4">
             <div class="sym">HD</div>
             <div class="sub">Consumer</div>
@@ -965,16 +967,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">+0.03</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">54.4%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,511.12</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,203,011.12</td>
           <td class="px-5 py-4 tc mono fw">$317.14</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">3/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow row-avoid" data-pred="0.6502739483816584" data-sent="0.017176572528735893"
             data-price="279.20001220703125" data-sig="AVOID" data-sym="MCD"
-            data-kellyf="0.5103835277343218" data-kellyalloc="0.15" data-kellyval="1511.1155509346006">
+            data-kellyf="0.5103835277343218" data-kellyalloc="0.15" data-kellyval="4203011.115550934">
           <td class="px-5 py-4">
             <div class="sym">MCD</div>
             <div class="sub">Consumer</div>
@@ -992,16 +994,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">+0.02</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">51.0%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,511.12</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,203,011.12</td>
           <td class="px-5 py-4 tc mono fw">$279.20</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">3/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow row-avoid" data-pred="0.6018903330914029" data-sent="0.2847990004467915"
             data-price="225.3300018310547" data-sig="AVOID" data-sym="JNJ"
-            data-kellyf="0.4426464663279642" data-kellyalloc="0.15" data-kellyval="1511.1155509346006">
+            data-kellyf="0.4426464663279642" data-kellyalloc="0.15" data-kellyval="4203011.115550934">
           <td class="px-5 py-4">
             <div class="sym">JNJ</div>
             <div class="sub">Healthcare</div>
@@ -1019,16 +1021,16 @@
           <td class="px-5 py-4 tc mono" style="color:#10b981">+0.28</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">44.3%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,511.12</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,203,011.12</td>
           <td class="px-5 py-4 tc mono fw">$225.33</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">3/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow row-avoid" data-pred="0.5632823494480766" data-sent="0.0"
             data-price="182.4600067138672" data-sig="AVOID" data-sym="CVX"
-            data-kellyf="0.3885952892273073" data-kellyalloc="0.15" data-kellyval="1511.1155509346006">
+            data-kellyf="0.3885952892273073" data-kellyalloc="0.15" data-kellyval="4203011.115550934">
           <td class="px-5 py-4">
             <div class="sym">CVX</div>
             <div class="sub">Energy</div>
@@ -1046,16 +1048,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">38.9%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,511.12</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,203,011.12</td>
           <td class="px-5 py-4 tc mono fw">$182.46</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.5617597475892634" data-sent="0.0"
             data-price="380.30999755859375" data-sig="VETOED" data-sym="UNH"
-            data-kellyf="0.3864636466249688" data-kellyalloc="0.15" data-kellyval="1511.1155509346006">
+            data-kellyf="0.3864636466249688" data-kellyalloc="0.15" data-kellyval="4203011.115550934">
           <td class="px-5 py-4">
             <div class="sym">UNH</div>
             <div class="sub">Healthcare</div>
@@ -1073,16 +1075,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">38.6%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,511.12</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,203,011.12</td>
           <td class="px-5 py-4 tc mono fw">$380.31</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">3/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow row-buy" data-pred="0.5529857937994641" data-sent="0.0"
             data-price="208.0" data-sig="BUY" data-sym="MS"
-            data-kellyf="0.3741801113192498" data-kellyalloc="0.15" data-kellyval="1511.1155509346006">
+            data-kellyf="0.3741801113192498" data-kellyalloc="0.15" data-kellyval="4203011.115550934">
           <td class="px-5 py-4">
             <div class="sym">MS</div>
             <div class="sub">Financials</div>
@@ -1100,16 +1102,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">37.4%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,511.12</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,203,011.12</td>
           <td class="px-5 py-4 tc mono fw">$208.00</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.5513218726086238" data-sent="0.0"
             data-price="956.3200073242188" data-sig="HOLD" data-sym="COST"
-            data-kellyf="0.3718506216520733" data-kellyalloc="0.15" data-kellyval="1511.1155509346006">
+            data-kellyf="0.3718506216520733" data-kellyalloc="0.15" data-kellyval="4203011.115550934">
           <td class="px-5 py-4">
             <div class="sym">COST</div>
             <div class="sub">Consumer</div>
@@ -1127,16 +1129,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">37.2%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,511.12</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,203,011.12</td>
           <td class="px-5 py-4 tc mono fw">$956.32</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">3/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.5499785421077641" data-sent="0.0"
             data-price="94.30000305175781" data-sig="HOLD" data-sym="HOOD"
-            data-kellyf="0.3699699589508697" data-kellyalloc="0.15" data-kellyval="1511.1155509346006">
+            data-kellyf="0.3699699589508697" data-kellyalloc="0.15" data-kellyval="4203011.115550934">
           <td class="px-5 py-4">
             <div class="sym">HOOD</div>
             <div class="sub">Financials</div>
@@ -1154,16 +1156,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">37.0%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,511.12</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,203,011.12</td>
           <td class="px-5 py-4 tc mono fw">$94.30</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.5328376321744371" data-sent="0.0"
             data-price="217.72000122070312" data-sig="HOLD" data-sym="ABBV"
-            data-kellyf="0.345972685044212" data-kellyalloc="0.15" data-kellyval="1511.1155509346006">
+            data-kellyf="0.345972685044212" data-kellyalloc="0.15" data-kellyval="4203011.115550934">
           <td class="px-5 py-4">
             <div class="sym">ABBV</div>
             <div class="sub">Healthcare</div>
@@ -1181,16 +1183,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">34.6%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,511.12</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,203,011.12</td>
           <td class="px-5 py-4 tc mono fw">$217.72</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.5267699444639264" data-sent="0.0"
             data-price="632.510009765625" data-sig="HOLD" data-sym="META"
-            data-kellyf="0.337477922249497" data-kellyalloc="0.15" data-kellyval="1511.1155509346006">
+            data-kellyf="0.337477922249497" data-kellyalloc="0.15" data-kellyval="4203011.115550934">
           <td class="px-5 py-4">
             <div class="sym">META</div>
             <div class="sub">Communications</div>
@@ -1208,16 +1210,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">33.7%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,511.12</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,203,011.12</td>
           <td class="px-5 py-4 tc mono fw">$632.51</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.5261918620713559" data-sent="0.0"
             data-price="731.0" data-sig="HOLD" data-sym="CRWD"
-            data-kellyf="0.3366686068998983" data-kellyalloc="0.15" data-kellyval="1511.1155509346006">
+            data-kellyf="0.3366686068998983" data-kellyalloc="0.15" data-kellyval="4203011.115550934">
           <td class="px-5 py-4">
             <div class="sym">CRWD</div>
             <div class="sub">Technology</div>
@@ -1235,16 +1237,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">33.7%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,511.12</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,203,011.12</td>
           <td class="px-5 py-4 tc mono fw">$731.00</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">3/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow row-avoid" data-pred="0.5256148638216821" data-sent="0.0"
             data-price="56.630001068115234" data-sig="AVOID" data-sym="OXY"
-            data-kellyf="0.3358608093503549" data-kellyalloc="0.15" data-kellyval="1511.1155509346006">
+            data-kellyf="0.3358608093503549" data-kellyalloc="0.15" data-kellyval="4203011.115550934">
           <td class="px-5 py-4">
             <div class="sym">OXY</div>
             <div class="sub">Energy</div>
@@ -1262,16 +1264,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">33.6%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,511.12</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,203,011.12</td>
           <td class="px-5 py-4 tc mono fw">$56.63</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.4988799411984505" data-sent="0.0"
             data-price="118.72000122070312" data-sig="HOLD" data-sym="MRK"
-            data-kellyf="0.2984319176778308" data-kellyalloc="0.1492159588389154" data-kellyval="1503.2170389940154">
+            data-kellyf="0.2984319176778308" data-kellyalloc="0.1492159588389154" data-kellyval="4181042.2241170146">
           <td class="px-5 py-4">
             <div class="sym">MRK</div>
             <div class="sub">Healthcare</div>
@@ -1289,16 +1291,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">29.8%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">14.9%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,503.22</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,181,042.22</td>
           <td class="px-5 py-4 tc mono fw">$118.72</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.49074339192385474" data-sent="0.0"
             data-price="756.47998046875" data-sig="HOLD" data-sym="SPY"
-            data-kellyf="0.28704074869339663" data-kellyalloc="0.14352037434669832" data-kellyval="1445.8391303416743">
+            data-kellyf="0.28704074869339663" data-kellyalloc="0.14352037434669832" data-kellyval="4021451.5245813616">
           <td class="px-5 py-4">
             <div class="sym">SPY</div>
             <div class="sub">Market</div>
@@ -1316,16 +1318,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">28.7%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">14.4%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,445.84</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$4,021,451.52</td>
           <td class="px-5 py-4 tc mono fw">$756.48</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.48122888436466393" data-sent="0.0"
             data-price="16.299999237060547" data-sig="HOLD" data-sym="RIVN"
-            data-kellyf="0.2737204381105295" data-kellyalloc="0.13686021905526474" data-kellyval="1378.7440354581768">
+            data-kellyf="0.2737204381105295" data-kellyalloc="0.13686021905526474" data-kellyval="3834833.479773424">
           <td class="px-5 py-4">
             <div class="sym">RIVN</div>
             <div class="sub">Consumer</div>
@@ -1343,16 +1345,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">27.4%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">13.7%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,378.74</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$3,834,833.48</td>
           <td class="px-5 py-4 tc mono fw">$16.30</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.4690971590902064" data-sent="0.0"
             data-price="435.7900085449219" data-sig="HOLD" data-sym="TSLA"
-            data-kellyf="0.2567360227262889" data-kellyalloc="0.12836801136314446" data-kellyval="1293.1926547559808">
+            data-kellyf="0.2567360227262889" data-kellyalloc="0.12836801136314446" data-kellyval="3596881.1909364327">
           <td class="px-5 py-4">
             <div class="sym">TSLA</div>
             <div class="sub">Consumer</div>
@@ -1370,16 +1372,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">25.7%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">12.8%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,293.19</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$3,596,881.19</td>
           <td class="px-5 py-4 tc mono fw">$435.79</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.4599996660205965" data-sent="0.0"
             data-price="1105.0" data-sig="HOLD" data-sym="LLY"
-            data-kellyf="0.24399953242883504" data-kellyalloc="0.12199976621441752" data-kellyval="1229.03829291328">
+            data-kellyf="0.24399953242883504" data-kellyalloc="0.12199976621441752" data-kellyval="3418442.489958748">
           <td class="px-5 py-4">
             <div class="sym">LLY</div>
             <div class="sub">Healthcare</div>
@@ -1397,16 +1399,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">24.4%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">12.2%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,229.04</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$3,418,442.49</td>
           <td class="px-5 py-4 tc mono fw">$1105.00</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.45255520144276495" data-sent="0.0"
             data-price="380.3399963378906" data-sig="HOLD" data-sym="GOOGL"
-            data-kellyf="0.23357728201987094" data-kellyalloc="0.11678864100993547" data-kellyval="1176.5408773508796">
+            data-kellyf="0.23357728201987094" data-kellyalloc="0.11678864100993547" data-kellyval="3272426.3755656434">
           <td class="px-5 py-4">
             <div class="sym">GOOGL</div>
             <div class="sub">Technology</div>
@@ -1424,16 +1426,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">23.4%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">11.7%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,176.54</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$3,272,426.38</td>
           <td class="px-5 py-4 tc mono fw">$380.34</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.4507655465264592" data-sent="0.0"
             data-price="14.380000114440918" data-sig="HOLD" data-sym="MARA"
-            data-kellyf="0.23107176513704292" data-kellyalloc="0.11553588256852146" data-kellyval="1163.9204589349774">
+            data-kellyf="0.23107176513704292" data-kellyalloc="0.11553588256852146" data-kellyval="3237323.991203221">
           <td class="px-5 py-4">
             <div class="sym">MARA</div>
             <div class="sub">Technology</div>
@@ -1451,16 +1453,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">23.1%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">11.6%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,163.92</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$3,237,323.99</td>
           <td class="px-5 py-4 tc mono fw">$14.38</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.44564624979898726" data-sent="0.0"
             data-price="516.0999755859375" data-sig="HOLD" data-sym="AMD"
-            data-kellyf="0.22390474971858215" data-kellyalloc="0.11195237485929108" data-kellyval="1127.8198307595637">
+            data-kellyf="0.22390474971858215" data-kellyalloc="0.11195237485929108" data-kellyval="3136913.839639503">
           <td class="px-5 py-4">
             <div class="sym">AMD</div>
             <div class="sub">Technology</div>
@@ -1478,16 +1480,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">22.4%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">11.2%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,127.82</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$3,136,913.84</td>
           <td class="px-5 py-4 tc mono fw">$516.10</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.43905862300167586" data-sent="0.0"
             data-price="738.3099975585938" data-sig="HOLD" data-sym="QQQ"
-            data-kellyf="0.21468207220234622" data-kellyalloc="0.10734103610117311" data-kellyval="1081.3647260394337">
+            data-kellyf="0.21468207220234622" data-kellyalloc="0.10734103610117311" data-kellyval="3007703.7859198987">
           <td class="px-5 py-4">
             <div class="sym">QQQ</div>
             <div class="sub">Technology</div>
@@ -1505,16 +1507,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">21.5%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">10.7%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,081.36</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$3,007,703.79</td>
           <td class="px-5 py-4 tc mono fw">$738.31</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow row-avoid" data-pred="0.4346296873801741" data-sent="0.0"
             data-price="86.0199966430664" data-sig="AVOID" data-sym="NFLX"
-            data-kellyf="0.20848156233224371" data-kellyalloc="0.10424078116612186" data-kellyval="1050.132436411316">
+            data-kellyf="0.20848156233224371" data-kellyalloc="0.10424078116612186" data-kellyval="2920834.412899485">
           <td class="px-5 py-4">
             <div class="sym">NFLX</div>
             <div class="sub">Communications</div>
@@ -1532,16 +1534,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">20.8%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">10.4%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,050.13</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$2,920,834.41</td>
           <td class="px-5 py-4 tc mono fw">$86.02</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow row-avoid" data-pred="0.4283797458968843" data-sent="0.0"
             data-price="145.25999450683594" data-sig="AVOID" data-sym="XOM"
-            data-kellyf="0.19973164425563805" data-kellyalloc="0.09986582212781903" data-kellyval="1006.0586454947738">
+            data-kellyf="0.19973164425563805" data-kellyalloc="0.09986582212781903" data-kellyval="2798247.736445706">
           <td class="px-5 py-4">
             <div class="sym">XOM</div>
             <div class="sub">Energy</div>
@@ -1559,16 +1561,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">20.0%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">10.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,006.06</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$2,798,247.74</td>
           <td class="px-5 py-4 tc mono fw">$145.26</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">1/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.4210582648452153" data-sent="0.0"
             data-price="290.42999267578125" data-sig="HOLD" data-sym="IWM"
-            data-kellyf="0.18948157078330138" data-kellyalloc="0.09474078539165069" data-kellyval="954.4284940872067">
+            data-kellyf="0.18948157078330138" data-kellyalloc="0.09474078539165069" data-kellyval="2654643.827314223">
           <td class="px-5 py-4">
             <div class="sym">IWM</div>
             <div class="sub">Market</div>
@@ -1586,16 +1588,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">18.9%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">9.5%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$954.43</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$2,654,643.83</td>
           <td class="px-5 py-4 tc mono fw">$290.43</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.41534534023637226" data-sent="0.0"
             data-price="211.13999938964844" data-sig="HOLD" data-sym="NVDA"
-            data-kellyf="0.18148347633092116" data-kellyalloc="0.09074173816546058" data-kellyval="914.1416777377549">
+            data-kellyf="0.18148347633092116" data-kellyalloc="0.09074173816546058" data-kellyval="2542590.227692289">
           <td class="px-5 py-4">
             <div class="sym">NVDA</div>
             <div class="sub">Technology</div>
@@ -1613,16 +1615,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">18.1%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">9.1%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$914.14</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$2,542,590.23</td>
           <td class="px-5 py-4 tc mono fw">$211.14</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.4142449935613618" data-sent="0.0"
             data-price="241.82000732421875" data-sig="HOLD" data-sym="NET"
-            data-kellyf="0.17994299098590655" data-kellyalloc="0.08997149549295327" data-kellyval="906.3821732016269">
+            data-kellyf="0.17994299098590655" data-kellyalloc="0.08997149549295327" data-kellyval="2521007.970930823">
           <td class="px-5 py-4">
             <div class="sym">NET</div>
             <div class="sub">Technology</div>
@@ -1640,16 +1642,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">18.0%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">9.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$906.38</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$2,521,007.97</td>
           <td class="px-5 py-4 tc mono fw">$241.82</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.391895850222928" data-sent="0.0"
             data-price="191.10000610351562" data-sig="HOLD" data-sym="CRM"
-            data-kellyf="0.1486541903120992" data-kellyalloc="0.0743270951560496" data-kellyval="748.7788623073492">
+            data-kellyf="0.1486541903120992" data-kellyalloc="0.0743270951560496" data-kellyval="2082650.7141832567">
           <td class="px-5 py-4">
             <div class="sym">CRM</div>
             <div class="sub">Technology</div>
@@ -1667,16 +1669,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">14.9%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">7.4%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$748.78</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$2,082,650.71</td>
           <td class="px-5 py-4 tc mono fw">$191.10</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.37484435527504645" data-sent="0.0"
             data-price="18.219999313354492" data-sig="HOLD" data-sym="SOFI"
-            data-kellyf="0.12478209738506507" data-kellyalloc="0.062391048692532536" data-kellyval="628.5338927893587">
+            data-kellyf="0.12478209738506507" data-kellyalloc="0.062391048692532536" data-kellyval="1748201.807770626">
           <td class="px-5 py-4">
             <div class="sym">SOFI</div>
             <div class="sub">Financials</div>
@@ -1694,16 +1696,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">12.5%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">6.2%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$628.53</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,748,201.81</td>
           <td class="px-5 py-4 tc mono fw">$18.22</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.3547559825610853" data-sent="0.0"
             data-price="156.5399932861328" data-sig="HOLD" data-sym="PLTR"
-            data-kellyf="0.09665837558551944" data-kellyalloc="0.04832918779275972" data-kellyval="486.8732482511859">
+            data-kellyf="0.09665837558551944" data-kellyalloc="0.04832918779275972" data-kellyval="1354187.423323451">
           <td class="px-5 py-4">
             <div class="sym">PLTR</div>
             <div class="sub">Technology</div>
@@ -1721,16 +1723,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">9.7%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">4.8%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$486.87</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,354,187.42</td>
           <td class="px-5 py-4 tc mono fw">$156.54</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.3353865427905657" data-sent="0.0"
             data-price="312.05999755859375" data-sig="HOLD" data-sym="AAPL"
-            data-kellyf="0.06954115990679197" data-kellyalloc="0.03477057995339598" data-kellyval="350.282427217277">
+            data-kellyf="0.06954115990679197" data-kellyalloc="0.03477057995339598" data-kellyval="974274.2269218388">
           <td class="px-5 py-4">
             <div class="sym">AAPL</div>
             <div class="sub">Technology</div>
@@ -1748,16 +1750,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">7.0%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">3.5%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$350.28</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$974,274.23</td>
           <td class="px-5 py-4 tc mono fw">$312.06</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.3168151617460357" data-sent="0.0"
             data-price="1025.56005859375" data-sig="HOLD" data-sym="GS"
-            data-kellyf="0.04354122644444995" data-kellyalloc="0.021770613222224976" data-kellyval="219.31941462324397">
+            data-kellyf="0.04354122644444995" data-kellyalloc="0.021770613222224976" data-kellyval="610014.1957691448">
           <td class="px-5 py-4">
             <div class="sym">GS</div>
             <div class="sub">Financials</div>
@@ -1775,16 +1777,16 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">4.4%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">2.2%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$219.32</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$610,014.20</td>
           <td class="px-5 py-4 tc mono fw">$1025.56</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">1/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.28611817316794425" data-sent="0.0"
             data-price="450.239990234375" data-sig="HOLD" data-sym="MSFT"
-            data-kellyf="0.0005654424351219766" data-kellyalloc="0.0002827212175609883" data-kellyval="2.8481628562371597">
+            data-kellyf="0.0005654424351219766" data-kellyalloc="0.0002827212175609883" data-kellyval="7921.86946673952">
           <td class="px-5 py-4">
             <div class="sym">MSFT</div>
             <div class="sub">Technology</div>
@@ -1802,11 +1804,11 @@
           <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
           <td class="px-5 py-4 tc mono fw" style="color:#10b981">0.1%</td>
           <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">0.0%</td>
-          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$2.85</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$7,921.87</td>
           <td class="px-5 py-4 tc mono fw">$450.24</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.2746435575507237" data-sent="0.0"
@@ -1832,8 +1834,8 @@
           <td class="px-5 py-4 tc mono fw" style="color:var(--sub)">$0.00</td>
           <td class="px-5 py-4 tc mono fw">$326.36</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">1/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.27202414286242205" data-sent="0.0"
@@ -1859,8 +1861,8 @@
           <td class="px-5 py-4 tc mono fw" style="color:var(--sub)">$0.00</td>
           <td class="px-5 py-4 tc mono fw">$255.55</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.23953586643003982" data-sent="0.0"
@@ -1886,8 +1888,8 @@
           <td class="px-5 py-4 tc mono fw" style="color:var(--sub)">$0.00</td>
           <td class="px-5 py-4 tc mono fw">$270.64</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">1/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.23414048933481388" data-sent="0.0"
@@ -1913,8 +1915,8 @@
           <td class="px-5 py-4 tc mono fw" style="color:var(--sub)">$0.00</td>
           <td class="px-5 py-4 tc mono fw">$510.78</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">1/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.2262421548939354" data-sent="0.0"
@@ -1940,8 +1942,8 @@
           <td class="px-5 py-4 tc mono fw" style="color:var(--sub)">$0.00</td>
           <td class="px-5 py-4 tc mono fw">$247.35</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">1/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr>
         <tr class="trow " data-pred="0.22226937984371245" data-sent="0.0"
@@ -1967,8 +1969,8 @@
           <td class="px-5 py-4 tc mono fw" style="color:var(--sub)">$0.00</td>
           <td class="px-5 py-4 tc mono fw">$81.59</td>
           <td class="px-5 py-4">
-            <div class="squares"><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#10b981"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
-            <div class="sub mt-1">2/9 passed</div>
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
           </td>
         </tr></tbody>
           </table>
@@ -2175,8 +2177,8 @@
           <span class="badge badge-avoid mr-3">SELL</span>
           <div class="flex-1">
             <span class="sym">NET</span>
-            <span class="mono sub ml-2">$236.17</span>
-            <div class="sub">2026-05-29 · take_profit</div>
+            <span class="mono sub ml-2">$0.00</span>
+            <div class="sub"> · take_profit</div>
           </div>
           <span class="mono fw" style="color:#10b981">+$17.77</span>
         </div>
@@ -2184,8 +2186,8 @@
           <span class="badge badge-avoid mr-3">PARTIAL_SELL</span>
           <div class="flex-1">
             <span class="sym">MS</span>
-            <span class="mono sub ml-2">$204.10</span>
-            <div class="sub">2026-05-28 · partial_exit_5pct</div>
+            <span class="mono sub ml-2">$0.00</span>
+            <div class="sub"> · partial_exit_5pct</div>
           </div>
           <span class="mono fw" style="color:#10b981">—</span>
         </div>
@@ -2193,8 +2195,8 @@
           <span class="badge badge-buy mr-3">BUY</span>
           <div class="flex-1">
             <span class="sym">UNH</span>
-            <span class="mono sub ml-2">$388.47</span>
-            <div class="sub">2026-05-25 · uptrend</div>
+            <span class="mono sub ml-2">$0.00</span>
+            <div class="sub"> · uptrend</div>
           </div>
           <span class="mono fw" style="color:#10b981">—</span>
         </div>
@@ -2202,8 +2204,8 @@
           <span class="badge badge-avoid mr-3">SELL</span>
           <div class="flex-1">
             <span class="sym">UNH</span>
-            <span class="mono sub ml-2">$388.47</span>
-            <div class="sub">2026-05-25 · time_stop</div>
+            <span class="mono sub ml-2">$0.00</span>
+            <div class="sub"> · time_stop</div>
           </div>
           <span class="mono fw" style="color:#10b981">+$2.97</span>
         </div>
@@ -2211,8 +2213,8 @@
           <span class="badge badge-buy mr-3">BUY</span>
           <div class="flex-1">
             <span class="sym">NET</span>
-            <span class="mono sub ml-2">$216.17</span>
-            <div class="sub">2026-05-25 · uptrend</div>
+            <span class="mono sub ml-2">$0.00</span>
+            <div class="sub"> · uptrend</div>
           </div>
           <span class="mono fw" style="color:#10b981">—</span>
         </div>
@@ -2220,8 +2222,8 @@
           <span class="badge badge-avoid mr-3">SELL</span>
           <div class="flex-1">
             <span class="sym">SPY</span>
-            <span class="mono sub ml-2">$745.64</span>
-            <div class="sub">2026-05-25 · time_stop</div>
+            <span class="mono sub ml-2">$0.00</span>
+            <div class="sub"> · time_stop</div>
           </div>
           <span class="mono fw" style="color:#10b981">+$6.70</span>
         </div>
@@ -2229,8 +2231,8 @@
           <span class="badge badge-buy mr-3">BUY</span>
           <div class="flex-1">
             <span class="sym">UNH</span>
-            <span class="mono sub ml-2">$385.60</span>
-            <div class="sub">2026-05-20 · uptrend</div>
+            <span class="mono sub ml-2">$0.00</span>
+            <div class="sub"> · uptrend</div>
           </div>
           <span class="mono fw" style="color:#10b981">—</span>
         </div>
@@ -2238,8 +2240,8 @@
           <span class="badge badge-buy mr-3">BUY</span>
           <div class="flex-1">
             <span class="sym">SPY</span>
-            <span class="mono sub ml-2">$736.20</span>
-            <div class="sub">2026-05-19 · uptrend</div>
+            <span class="mono sub ml-2">$0.00</span>
+            <div class="sub"> · uptrend</div>
           </div>
           <span class="mono fw" style="color:#10b981">—</span>
         </div>
@@ -2247,8 +2249,8 @@
           <span class="badge badge-buy mr-3">BUY</span>
           <div class="flex-1">
             <span class="sym">MS</span>
-            <span class="mono sub ml-2">$193.03</span>
-            <div class="sub">2026-05-15 · uptrend</div>
+            <span class="mono sub ml-2">$0.00</span>
+            <div class="sub"> · uptrend</div>
           </div>
           <span class="mono fw" style="color:#10b981">—</span>
         </div></div>
@@ -2434,6 +2436,20 @@ setInterval(() => {
   progressBar.style.width = `${(timeLeft / 300) * 100}%`;
 }, 1000);
 
+// ── Live Atlanta / Eastern Time clock ─────────────────────────────────────
+const etClockEl = document.getElementById('etClock');
+const etFmt = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/New_York',
+  weekday: 'short', month: 'short', day: 'numeric',
+  hour: '2-digit', minute: '2-digit', second: '2-digit',
+  hour12: true
+});
+function tickET() {
+  if (etClockEl) etClockEl.textContent = etFmt.format(new Date()) + ' ET';
+}
+tickET();
+setInterval(tickET, 1000);
+
 // ── Dark / Light mode ─────────────────────────────────────────────────────
 function toggleTheme() {
   const html = document.documentElement;
@@ -2454,8 +2470,8 @@ Chart.defaults.font.size   = 10;
 // ── Equity curve ──────────────────────────────────────────────────────────
 (function() {
   const ctx    = document.getElementById('equityChart').getContext('2d');
-  const vals   = [10000.0, 10006.7, 10009.67, 10027.44, 10074.1];
-  const labels = ["Start", "2026-05-25", "2026-05-25", "2026-05-29", "Now"];
+  const vals   = [28020000.0, 28020006.7, 28020009.67, 28020031.42, 28020049.19, 28020074.1];
+  const labels = ["Start", "", "", "", "", "Now"];
   const lineC  = '#10b981';
   const grad   = ctx.createLinearGradient(0, 0, 0, 260);
   grad.addColorStop(0, lineC + '30');
@@ -2472,7 +2488,7 @@ Chart.defaults.font.size   = 10;
           pointBackgroundColor: lineC,
         },
         {
-          data: labels.map(() => 10000.0),
+          data: labels.map(() => 28020000.0),
           borderColor: '#334155', borderDash: [5,4],
           borderWidth: 1, pointRadius: 0, fill: false,
         }
@@ -2500,7 +2516,7 @@ Chart.defaults.font.size   = 10;
 ;(function() {
   const ctx    = document.getElementById('allocChart').getContext('2d');
   const labels = ["Cash", "MS", "UNH"];
-  const vals   = [8689.48, 624.0, 760.62];
+  const vals   = [28018689.48, 624.0, 760.62];
   const COLORS = ['#0ea5e9','#10b981','#f59e0b','#f43f5e','#a855f7','#06b6d4','#84cc16'];
   allCharts.alloc = new Chart(ctx, {
     type: 'doughnut',
@@ -2527,7 +2543,7 @@ Chart.defaults.font.size   = 10;
 ;(function() {
   const ctx    = document.getElementById('ddChart').getContext('2d');
   const vals   = [0.0, 0.0, 0.0, 0.0];
-  const labels = ["Start", "2026-05-25", "2026-05-25", "2026-05-29"];
+  const labels = ["Start", "", "", ""];
   const grad   = ctx.createLinearGradient(0, 0, 0, 200);
   grad.addColorStop(0, '#f43f5e30');
   grad.addColorStop(1, '#f43f5e00');
@@ -2606,8 +2622,8 @@ Chart.defaults.font.size   = 10;
 // ── Daily returns histogram ───────────────────────────────────────────────
 ;(function() {
   const ctx    = document.getElementById('histChart').getContext('2d');
-  const vals   = [0.0182, 0.0914];
-  const labels = ["2026-05-25", "2026-05-29"];
+  const vals   = [0.1097];
+  const labels = [""];
   const colors = vals.map(v => v >= 0 ? 'rgba(16, 185, 129, 0.5)' : 'rgba(244, 63, 94, 0.5)');
   const border = vals.map(v => v >= 0 ? '#10b981' : '#f43f5e');
   allCharts.hist = new Chart(ctx, {
