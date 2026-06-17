@@ -14,7 +14,7 @@
       "stop_loss_pct": 0.04827360361198013,
       "atr": 9.37642342703683,
       "partial_exit_done": false,
-      "current_price": 407.6499938964844
+      "current_price": 407.4442138671875
     }
   },
   "trade_history": [
@@ -163,5 +163,5 @@
   "daily_loss_limit": 500.0,
   "last_reset_date": "2026-06-17",
   "_halt_trading": false,
-  "saved_at": "2026-06-17T01:53:38.193617"
+  "saved_at": "2026-06-17T16:53:21.521223"
 }
