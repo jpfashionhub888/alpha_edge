@@ -39,3 +39,4 @@ python
 
 # CatBoost training artifacts
 catboost_info/
+alpha_edge/
