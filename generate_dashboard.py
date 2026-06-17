@@ -7,7 +7,12 @@
 import os
 import json
 import math
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+try:
+    from zoneinfo import ZoneInfo
+    _ET = ZoneInfo('America/New_York')  # Atlanta / Eastern Time (auto DST)
+except ImportError:
+    _ET = timezone(timedelta(hours=-4))  # EDT fallback (UTC-4)
 
 TRADES_FILE   = 'logs/paper_trades_stocks_only.json'  # P3-3 fix: match paper_trader.py log_file
 SIGNALS_FILE  = 'logs/latest_signals.json'
@@ -219,7 +224,8 @@ def generate_dashboard():
     daily_ret_vals, daily_ret_labels = calculate_daily_returns(history)
     sym_pnl  = calculate_symbol_pnl(history)
 
-    now_str  = datetime.now().strftime('%Y-%m-%d %H:%M')
+    now_et   = datetime.now(tz=_ET)
+    now_str  = now_et.strftime('%Y-%m-%d %H:%M') + ' ET'
 
     # Detect current regime from signals
     regime_counts = {}
@@ -1093,6 +1099,8 @@ def generate_dashboard():
       </div>
     </div>
     <span class="ts" style="color:var(--border2)">|</span>
+    <span class="ts">🕐 <span id="etClock">...</span></span>
+    <span class="ts" style="color:var(--border2)">|</span>
     <span class="ts">Updated {now_str}</span>
     <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">☀ Light</button>
   </div>
@@ -1622,6 +1630,20 @@ setInterval(() => {{
   timerEl.textContent = `Refresh in ${{min}}m ${{sec.toString().padStart(2, '0')}}s`;
   progressBar.style.width = `${{(timeLeft / 300) * 100}}%`;
 }}, 1000);
+
+// ── Live Atlanta / Eastern Time clock ─────────────────────────────────────
+const etClockEl = document.getElementById('etClock');
+const etFmt = new Intl.DateTimeFormat('en-US', {{
+  timeZone: 'America/New_York',
+  weekday: 'short', month: 'short', day: 'numeric',
+  hour: '2-digit', minute: '2-digit', second: '2-digit',
+  hour12: true
+}});
+function tickET() {{
+  if (etClockEl) etClockEl.textContent = etFmt.format(new Date()) + ' ET';
+}}
+tickET();
+setInterval(tickET, 1000);
 
 // ── Dark / Light mode ─────────────────────────────────────────────────────
 function toggleTheme() {{
