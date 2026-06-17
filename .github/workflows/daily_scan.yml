@@ -67,7 +67,7 @@ jobs:
           mkdir -p logs
           mkdir -p docs
           python generate_dashboard.py || true
-          git add -f logs/paper_trades.json || true
+          git add -f logs/paper_trades_stocks_only.json || true
           git add -f logs/latest_signals.json || true
           git add -f logs/sectors.json || true
           git add -f logs/earnings.json || true
