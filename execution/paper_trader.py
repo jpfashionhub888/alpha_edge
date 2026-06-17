@@ -68,6 +68,8 @@ class PaperTrader:
         self.daily_realized_pnl   = 0.0
         self.last_reset_date      = datetime.now().date()
         self._halt_trading        = False
+        # P2-4: time stop threshold from settings (configurable without code change)
+        self.time_stop_days       = getattr(settings, 'TIME_STOP_DAYS', 5)
 
     # ------------------------------------------------------------------ #
     #  INTERNAL HELPERS                                                    #
@@ -292,13 +294,15 @@ class PaperTrader:
         }
         self.trade_history.append(trade)
 
+        # P1-2 fix: ATR conditional moved out of f-string
+        atr_str = f" | ATR {atr:.2f}" if atr else " | ATR n/a"
         print(
             f"   BUY  {shares:>5} {symbol:<6}"
             f" @ ${price:>8.2f}"
             f" fill ${fill_price:>8.2f}"
             f" cost ${cost:>9.2f}"
             f" | Stop {stop_loss_pct:.1%}"
-            f" | ATR {atr:.2f}" if atr else ""
+            f"{atr_str}"
         )
 
         # Auto-save after every trade (Risk 3)
@@ -487,7 +491,8 @@ class PaperTrader:
                 pos.get('entry_date', '')
             )
             days_held = (datetime.now() - entry_date).days
-            if days_held >= 5 and abs(pnl_pct) < 0.02:
+            # P2-4 fix: threshold from settings, not hardcoded 5
+            if days_held >= self.time_stop_days and abs(pnl_pct) < 0.02:
                 print(
                     f"   ⏱️  TIME STOP:    {symbol}"
                     f" flat after {days_held} days"

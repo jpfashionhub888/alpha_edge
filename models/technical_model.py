@@ -2,8 +2,8 @@
 
 """
 Multi-model ensemble predictor.
-XGBoost + LightGBM + Random Forest + LSTM
-Four models vote together for maximum accuracy.
+XGBoost + LightGBM + Random Forest + CatBoost + LSTM
+Five models vote together for maximum accuracy.
 """
 
 import numpy as np
@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 
 class TechnicalPredictor:
     """
-    4-model ensemble predictor.
-    XGBoost + LightGBM + Random Forest + LSTM
+    5-model ensemble predictor.
+    XGBoost + LightGBM + Random Forest + CatBoost + LSTM
     All parallel processing disabled for Python 3.14
     compatibility.
     """

@@ -884,3 +884,44 @@ Use this prompt to rebuild from scratch
 
 or brief a new AI assistant.
 
+
+
+CRYPTO SCOPE CLARIFICATION (Audit Note)
+
+AlphaEdge runs its own internal crypto scanner (Phase 2 in main.py):
+
+├── Symbols: BTC/USD, ETH/USD, SOL/USD
+
+├── Capital pool: AlphaEdge's own $10,000 paper account
+
+└── Signals written to logs/latest_signals.json (same file as stocks)
+
+
+CryptoEdge is a SEPARATE system with its own capital:
+
+├── Repository: github.com/jpfashionhub888/crypto_edge
+
+├── Capital pool: CryptoEdge's own $10,000 USDT (distinct account)
+
+└── Scans 10 pairs every 4 hours via Coinbase
+
+
+IMPORTANT: These are NOT double-counting the same capital.
+
+Each system runs on its own independent paper-trading book.
+
+A trade taken by AlphaEdge on SOL/USD does NOT consume capital
+
+from CryptoEdge's book, and vice versa.
+
+The PerformanceAnalytics extra_systems config is for REPORTING ONLY
+
+(consolidated weekly summary) — it reads other systems' trade logs
+
+but does not share capital or positions between systems.
+
+If you are presenting AlphaEdge's portfolio value as a standalone
+
+result, it correctly reflects only its own $10,000 starting capital.
+
+There is no double-counting.

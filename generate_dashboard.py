@@ -9,7 +9,7 @@ import json
 import math
 from datetime import datetime
 
-TRADES_FILE   = 'logs/paper_trades.json'
+TRADES_FILE   = 'logs/paper_trades_stocks_only.json'  # P3-3 fix: match paper_trader.py log_file
 SIGNALS_FILE  = 'logs/latest_signals.json'
 SECTORS_FILE  = 'logs/sectors.json'
 EARNINGS_FILE = 'logs/earnings.json'
@@ -74,12 +74,17 @@ def load_json(filepath, default):
 def calculate_sharpe(trade_history):
     sells   = [t for t in trade_history if t.get('action') == 'SELL']
     returns = [t.get('pnl_pct', 0) for t in sells if 'pnl_pct' in t]
-    if len(returns) < 2:
-        return 0.0
+    # FIX: minimum 20 trades required; fewer produces statistically
+    # meaningless annualised numbers (e.g. 12.19 from just 2 trades).
+    SHARPE_MIN_TRADES = 20
+    if len(returns) < SHARPE_MIN_TRADES:
+        return None   # Insufficient data sentinel
     n   = len(returns)
     avg = sum(returns) / n
     std = math.sqrt(sum((r - avg) ** 2 for r in returns) / (n - 1))
-    return round((avg / std) * math.sqrt(252), 2) if std > 0 else 0.0
+    if std == 0:
+        return None   # All returns identical -- annualising is meaningless
+    return round((avg / std) * math.sqrt(252), 2)
 
 def calculate_drawdown_series(trade_history, starting_capital):
     sells  = [t for t in trade_history if t.get('action') == 'SELL']
@@ -105,7 +110,21 @@ def calculate_profit_factor(trade_history):
     sells        = [t for t in trade_history if t.get('action') == 'SELL']
     gross_wins   = sum(t.get('pnl', 0) for t in sells if t.get('pnl', 0) > 0)
     gross_losses = abs(sum(t.get('pnl', 0) for t in sells if t.get('pnl', 0) < 0))
-    return round(gross_wins / gross_losses, 2) if gross_losses > 0 else 0.0
+    # FIX: zero losses + wins = perfect record = infinity, NOT 0.0
+    if gross_losses > 0:
+        return round(gross_wins / gross_losses, 2)
+    elif gross_wins > 0:
+        return float('inf')   # Perfect record: all wins, no losses
+    else:
+        return None           # No closed trades yet
+
+def _fmt_pf(pf):
+    """P0-5: Safe profit-factor formatter — handles None and infinity."""
+    if pf is None:
+        return 'N/A'
+    if pf == float('inf'):
+        return '∞'
+    return f'{pf:.2f}x'
 
 def calculate_daily_returns(trade_history):
     sells = [t for t in trade_history if t.get('action') == 'SELL']
@@ -214,12 +233,13 @@ def generate_dashboard():
     regime_color = {'uptrend': '#10b981', 'downtrend': '#f43f5e',
                     'sideways': '#f59e0b', 'volatile': '#a855f7'}.get(dominant_regime, '#6b7280')
 
-    # Equity curve
+    # Equity curve (P0-6 fix: include PARTIAL_SELL in curve so it reflects actual exits)
+    REALIZED_ACTIONS = {'SELL', 'PARTIAL_SELL'}
     chart_vals   = [starting]
     chart_labels = ['Start']
     running = starting
     for t in history:
-        if t.get('action') == 'SELL':
+        if t.get('action') in REALIZED_ACTIONS:
             running += t.get('pnl', 0)
             chart_vals.append(round(running, 2))
             chart_labels.append(t.get('date', '')[:10])
@@ -255,7 +275,8 @@ def generate_dashboard():
             ret       = w.get('total_return', 0) * 100
             trades    = w.get('total_trades', 0)
             dd        = w.get('max_drawdown', 0) * 100
-            pf2       = w.get('profit_factor', 0)
+            pf2     = w.get('profit_factor', None)
+            pf2_str = _fmt_pf(pf2)  # P0-5 fix: safe formatter handles None and inf
             is_best   = rank == 1
             row_cls   = 'wt-best' if is_best else ''
             rank_html = '🏆' if is_best else f'#{rank}'
@@ -289,7 +310,7 @@ def generate_dashboard():
               <td class="px-5 py-4 tc mono" style="color:{ret_c}">{ret:+.2f}%</td>
               <td class="px-5 py-4 tc mono">{trades}</td>
               <td class="px-5 py-4 tc mono" style="color:#f43f5e">{dd:.2f}%</td>
-              <td class="px-5 py-4 tc mono">{pf2:.2f}x</td>
+              <td class="px-5 py-4 tc mono">{pf2_str}</td>
             </tr>'''
     else:
         weight_rows_html = '''<tr><td colspan="8" class="empty-state">
@@ -342,11 +363,18 @@ def generate_dashboard():
     pnl_c   = '#10b981' if total_pnl >= 0 else '#f43f5e'
     pnl_sgn = '+' if total_pnl >= 0 else ''
     wr_c    = kpi_color(win_rate,   True,  (45, 60))
-    sh_c    = kpi_color(sharpe,     True,  (0.5, 1.5))
+    # FIX: None-safe KPI colors for sharpe/profit_factor
+    sh_c    = kpi_color(sharpe if sharpe is not None else -999, True, (0.5, 1.5))
     dd_c    = kpi_color(max_dd * 100, False, (10, 20))
-    pf_c    = kpi_color(pf,         True,  (1.0, 1.5))
+    pf_c    = ('#10b981' if pf == float('inf') else
+               kpi_color(pf if pf is not None else -999, True, (1.0, 1.5)))
     unr_c   = '#10b981' if unrealized >= 0 else '#f43f5e'
     unr_sgn = '+' if unrealized >= 0 else ''
+
+    # Display-safe strings for None / infinity metrics
+    pf_display  = ('∞' if pf == float('inf') else
+                   'N/A' if pf is None else f'{pf:.2f}x')
+    sh_display  = 'N/A' if sharpe is None else f'{sharpe:.2f}'
 
     # Positions table
     pos_rows = ''
@@ -446,7 +474,8 @@ def generate_dashboard():
         sent_sgn = '+' if sent > 0 else ''
         reg_icon = {'uptrend': '↑', 'downtrend': '↓', 'sideways': '→',
                     'volatile': '⚡'}.get(regime, '—')
-        layers  = min(9, max(0, int(comb * 9)))
+        # P1-6 fix: use real filters_passed count from signal data, not fake int(comb*9)
+        layers  = min(9, max(0, d.get('filters_passed', 0)))
         squares = ''.join(
             f'<span class="sq" style="background:{"#10b981" if i < layers else "#1e293b"}"></span>'
             for i in range(9)
@@ -1097,8 +1126,8 @@ def generate_dashboard():
   </div>
   <div class="kpi">
     <div class="kpi-label">Sharpe Ratio</div>
-    <div class="kpi-value" style="color:{sh_c}">{sharpe:.2f}</div>
-    <div class="kpi-sub">Annualised · RF=0</div>
+    <div class="kpi-value" style="color:{sh_c}">{sh_display}</div>
+    <div class="kpi-sub">{"Annualised &middot; RF=0" if sharpe is not None else "Need &ge;20 closed trades"}</div>
     <div class="kpi-bar" style="background:{sh_c}"></div>
   </div>
   <div class="kpi">
@@ -1109,7 +1138,7 @@ def generate_dashboard():
   </div>
   <div class="kpi">
     <div class="kpi-label">Profit Factor</div>
-    <div class="kpi-value" style="color:{pf_c}">{pf:.2f}x</div>
+    <div class="kpi-value" style="color:{pf_c}">{pf_display}</div>
     <div class="kpi-sub">Expectancy ${expectancy:+.2f}</div>
     <div class="kpi-bar" style="background:{pf_c}"></div>
   </div>

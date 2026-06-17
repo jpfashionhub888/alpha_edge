@@ -16,6 +16,19 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _flatten_yf_columns(df):
+    """
+    P2-1 fix: yfinance ≥ 0.2.x returns a MultiIndex column tuple like
+    ('Close', 'XLK') instead of 'Close'.  Flatten to plain lowercase names.
+    Also handles the already-flat case (older yfinance).
+    """
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = [c[0].lower().replace(' ', '_') for c in df.columns]
+    else:
+        df.columns = [c.lower().replace(' ', '_') for c in df.columns]
+    return df
+
+
 class SectorRotation:
     """
     Detects which sectors money is flowing into/out of.
@@ -106,6 +119,17 @@ class SectorRotation:
 
         print("\n🔄 Analyzing sector rotation...")
 
+        # P0-3 fix: fetch SPY once before the loop (was fetched per sector = 11 extra API calls)
+        spy_mom = 0.0
+        try:
+            spy_raw = yf.Ticker('SPY').history(period='6mo')
+            spy_raw = _flatten_yf_columns(spy_raw)  # P2-1
+            if not spy_raw.empty and 'close' in spy_raw.columns:
+                spy_close = spy_raw['close']
+                spy_mom = float(spy_close.iloc[-1] / spy_close.iloc[-21] - 1)
+        except Exception as e:
+            logger.warning(f"SPY fetch failed: {e}")
+
         for sector, etf in self.sector_etfs.items():
             try:
                 ticker = yf.Ticker(etf)
@@ -114,10 +138,12 @@ class SectorRotation:
                 if df.empty or len(df) < 20:
                     continue
 
-                df.columns = [
-                    c.lower().replace(' ', '_')
-                    for c in df.columns
-                ]
+                # P2-1 fix: flatten MultiIndex columns from yfinance ≥ 0.2.x
+                df = _flatten_yf_columns(df)
+
+                if 'close' not in df.columns or 'volume' not in df.columns:
+                    logger.warning(f"Missing columns for {etf}: {list(df.columns)}")
+                    continue
 
                 close = df['close']
                 volume = df['volume']
@@ -147,17 +173,8 @@ class SectorRotation:
                     vol_recent / (vol_older + 1e-8)
                 )
 
-                # Relative strength vs SPY
-                spy = yf.Ticker('SPY').history(period='6mo')
-                if not spy.empty:
-                    spy_close = spy['Close']
-                    spy_mom = (
-                        spy_close.iloc[-1]
-                        / spy_close.iloc[-21] - 1
-                    )
-                    relative_strength = mom_21 - spy_mom
-                else:
-                    relative_strength = 0.0
+                # P0-3 fix: use pre-fetched SPY momentum
+                relative_strength = mom_21 - spy_mom
 
                 # Combined sector score
                 # Positive = money flowing in

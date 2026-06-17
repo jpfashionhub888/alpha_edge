@@ -100,6 +100,7 @@ MAX_DRAWDOWN = yaml_config.get('risk_management', {}).get('max_drawdown', 0.10)
 MAX_OPEN_POSITIONS = yaml_config.get('risk_management', {}).get('max_open_positions', 5)
 MAX_PER_SECTOR = yaml_config.get('risk_management', {}).get('max_per_sector', 2)
 COOLOFF_DAYS = yaml_config.get('risk_management', {}).get('cooloff_days', 5)
+TIME_STOP_DAYS = yaml_config.get('risk_management', {}).get('time_stop_days', 5)  # P2-4
 
 # Dynamic stops parameters
 ATR_STOP_MULT = yaml_config.get('risk_management', {}).get('atr_stop_mult', 1.0)

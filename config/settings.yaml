@@ -78,6 +78,7 @@ risk_management:
   max_open_positions: 5
   max_per_sector: 2
   cooloff_days: 5
+  time_stop_days: 5      # P2-4: days flat before time-stop fires (configurable)
   
   # Stops and Target Parameters
   atr_stop_mult: 1.0

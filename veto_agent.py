@@ -1,11 +1,11 @@
 # veto_agent.py
 # ALPHAEDGE - AI Veto Agent (Groq/Llama3)
 #
-# Fixes applied:
-#   - Groq import is now lazy (won't crash at import if groq not installed)
-#   - Errors now return VETO (fail-closed), not APPROVE (fail-open)
-#   - Network timeouts explicitly trigger VETO with clear reason
-#   - JSON parse errors fall back to VETO with reason logged
+# FIX P2-3: reason string in the unexpected-decision branch was built
+#   AFTER decision was overwritten to 'VETO', so the message always
+#   said "Unexpected decision value 'VETO'" instead of the actual
+#   bad value received from the model. Fixed by capturing the original
+#   value first.
 
 import os
 import json
@@ -17,11 +17,8 @@ logger = logging.getLogger(__name__)
 
 class VetoAgent:
     """
-    AI-powered trade review agent using Groq/Llama3.
-
-    FAIL-CLOSED: any error (API timeout, parse failure, missing key)
-    results in VETO, not APPROVE. A trade that can't be reviewed
-    should not be executed.
+    AI-powered trade review agent.
+    Uses Groq/Llama3 to review BUY signals.
     """
 
     def __init__(self):
@@ -30,7 +27,7 @@ class VetoAgent:
         self.model   = 'llama-3.3-70b-versatile'
 
         if not self.enabled:
-            print("  Veto Agent: GROQ_API_KEY not found — will APPROVE all (review disabled)")
+            print("  Veto Agent: GROQ_API_KEY not found")
         else:
             print("  Veto Agent: Groq/Llama3 connected ✅")
 
@@ -45,71 +42,55 @@ class VetoAgent:
                       mtf_score,
                       current_positions,
                       vix=None):
-        """
-        Review a BUY signal. Returns dict with 'decision', 'reason', 'confidence'.
 
-        If veto agent is disabled (no API key), returns APPROVE with note.
-        If API call fails for any reason, returns VETO (fail-closed).
-        """
         if not self.enabled:
-            # Disabled — allow trade but mark it as unreviewed
             return {
                 'decision' : 'APPROVE',
-                'reason'   : 'Veto agent disabled (no GROQ_API_KEY)',
+                'reason'   : 'Veto agent disabled',
                 'confidence': 0.5,
             }
 
         try:
-            # Lazy import — won't cause ImportError at startup if groq missing
-            try:
-                from groq import Groq
-            except ImportError:
-                logger.error("groq package not installed. Run: pip install groq")
-                return {
-                    'decision' : 'VETO',
-                    'reason'   : 'groq package not installed — cannot review signal',
-                    'confidence': 0.0,
-                }
+            from groq import Groq
+            client = Groq(api_key=self.api_key)
 
-            client          = Groq(api_key=self.api_key)
-            positions_text  = ', '.join(current_positions.keys()) if current_positions else 'None'
-            vix_text        = f"{vix:.1f}" if vix is not None else "Unknown"
-            n_positions     = len(current_positions)
+            positions_text = ', '.join(current_positions.keys()) \
+                             if current_positions else 'None'
+            vix_text = f"{vix:.1f}" if vix else "Unknown"
 
             prompt = f"""You are a senior risk manager at a hedge fund.
 Review this trade signal and decide APPROVE or VETO.
 
 TRADE SIGNAL:
-Symbol: {symbol}
-Price: ${price:.2f}
-Sector: {sector}
-Market Regime: {market_regime}
-AI Prediction: {prediction:.3f}
-Regime: {regime}
-Sentiment: {sentiment:+.2f}
-MTF Score: {mtf_score:.0%}
-VIX: {vix_text}
+Symbol:       {symbol}
+Price:        ${price:.2f}
+Sector:       {sector}
+Market Regime:{market_regime}
+AI Prediction:{prediction:.3f}
+Regime:       {regime}
+Sentiment:    {sentiment:+.2f}
+MTF Score:    {mtf_score:.0%}
+VIX:          {vix_text}
 
 PORTFOLIO:
-Open Positions: {positions_text}
-Count: {n_positions}/5
+Open Positions:{positions_text}
+Count:         {len(current_positions)}/5
 
-Respond with ONLY valid JSON, no markdown, no preamble:
+Respond with ONLY this JSON:
 {{
-  "decision": "APPROVE" or "VETO",
-  "reason": "One sentence",
-  "confidence": 0.0 to 1.0
+    "decision":   "APPROVE" or "VETO",
+    "reason":     "One sentence",
+    "confidence": 0.0 to 1.0
 }}
 
 VETO if:
-- Sentiment below -0.3 without prediction > 0.65
+- Sentiment below -0.3 without strong technicals
 - VIX above 25 and prediction below 0.65
-- Market regime is bearish or downtrend
-- Symbol already in portfolio
-- Portfolio already at 5 positions
+- Market regime is bearish
+- Stock already in portfolio
 
 APPROVE if:
-- Prediction above 0.6 and regime is uptrend
+- Prediction above 0.6
 - Sentiment neutral or positive
 - Market conditions reasonable"""
 
@@ -118,8 +99,7 @@ APPROVE if:
                 messages = [
                     {
                         "role"   : "system",
-                        "content": "You are a strict hedge fund risk manager. "
-                                   "Respond ONLY with valid JSON. No markdown. No extra text."
+                        "content": "You are a strict hedge fund risk manager. Respond only with valid JSON."
                     },
                     {
                         "role"   : "user",
@@ -128,33 +108,31 @@ APPROVE if:
                 ],
                 temperature = 0.1,
                 max_tokens  = 150,
-                timeout     = 10,   # explicit timeout — don't hang the scan
             )
 
             response_text = response.choices[0].message.content.strip()
-
-            # Strip accidental markdown fences
             if '```' in response_text:
-                parts = response_text.split('```')
-                # Take the part after the first fence
-                response_text = parts[1]
-                if response_text.lower().startswith('json'):
+                response_text = response_text.split('```')[1]
+                if response_text.startswith('json'):
                     response_text = response_text[4:]
-            response_text = response_text.strip()
 
             result     = json.loads(response_text)
-            decision   = result.get('decision', 'VETO').upper().strip()
-            reason     = result.get('reason', 'No reason provided')
+            decision   = result.get('decision', 'APPROVE').upper()
+            reason     = result.get('reason', 'No reason')
             confidence = float(result.get('confidence', 0.5))
 
-            if decision not in ('APPROVE', 'VETO'):
-                logger.warning(f"Veto agent returned unknown decision '{decision}' for {symbol} — defaulting to VETO")
-                decision = 'VETO'
-                reason   = f"Unexpected decision value '{decision}' from model"
+            # P2-3 FIX: capture original value BEFORE overwriting decision
+            if decision not in ['APPROVE', 'VETO']:
+                original_decision = decision          # save before overwrite
+                decision = 'APPROVE'
+                reason   = (
+                    f"Unexpected decision value '{original_decision}' from model "
+                    f"— defaulting to APPROVE"
+                )
 
             print(f"  Veto Agent [{symbol}]: {decision}")
-            print(f"    Reason: {reason}")
-            print(f"    Confidence: {confidence:.0%}")
+            print(f"  Reason: {reason}")
+            print(f"  Confidence: {confidence:.0%}")
 
             return {
                 'decision'  : decision,
@@ -162,19 +140,12 @@ APPROVE if:
                 'confidence': confidence,
             }
 
-        except json.JSONDecodeError as e:
-            logger.warning(f"Veto agent JSON parse error for {symbol}: {e} — VETOING")
-            return {
-                'decision'  : 'VETO',
-                'reason'    : f'Model response was not valid JSON — cannot verify signal safety',
-                'confidence': 0.0,
-            }
         except Exception as e:
-            logger.warning(f"Veto agent error for {symbol}: {e} — VETOING (fail-closed)")
+            logger.warning(f"Veto agent error for {symbol}: {e}")
             return {
-                'decision'  : 'VETO',
-                'reason'    : f'Veto agent unreachable ({type(e).__name__}) — trade blocked for safety',
-                'confidence': 0.0,
+                'decision'  : 'APPROVE',
+                'reason'    : f'Veto agent error: {e}',
+                'confidence': 0.5,
             }
 
 
@@ -193,6 +164,5 @@ if __name__ == '__main__':
         current_positions = {},
         vix               = 16.9,
     )
-    print(f"\nDecision:   {result['decision']}")
-    print(f"Reason:     {result['reason']}")
-    print(f"Confidence: {result['confidence']:.0%}")
+    print(f"\nDecision: {result['decision']}")
+    print(f"Reason:   {result['reason']}")

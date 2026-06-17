@@ -43,7 +43,16 @@ def analyze():
     # Profit factor
     total_wins   = sum(t.get('pnl', 0) for t in wins)
     total_losses = sum(abs(t.get('pnl', 0)) for t in losses)
-    profit_factor= total_wins / total_losses if total_losses > 0 else 0
+    # FIX: zero losses with wins = perfect record (∞), not worst score (0)
+    if total_losses > 0:
+        profit_factor_val = total_wins / total_losses
+        profit_factor_str = f"{profit_factor_val:.2f}"
+    elif total_wins > 0:
+        profit_factor_val = float('inf')
+        profit_factor_str = '\u221e'  # ∞
+    else:
+        profit_factor_val = None
+        profit_factor_str = 'N/A'
 
     # Kelly Criterion calculation
     # Kelly % = W - (1-W)/R
@@ -70,7 +79,7 @@ def analyze():
     print(f"  Avg Win %           : {avg_win_pct:.2f}%")
     print(f"  Avg Loss %          : {avg_loss_pct:.2f}%")
     print(f"\n  Win/Loss Ratio      : {avg_win/avg_loss:.2f}x" if avg_loss > 0 else "  Win/Loss Ratio: N/A")
-    print(f"  Profit Factor       : {profit_factor:.2f}")
+    print(f"  Profit Factor       : {profit_factor_str}")
     print(f"\n  KELLY CRITERION:")
     print(f"  Full Kelly          : {kelly_pct:.1%}")
     print(f"  Half Kelly (Safe)   : {half_kelly:.1%}")

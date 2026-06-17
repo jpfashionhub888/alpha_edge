@@ -170,7 +170,7 @@ def compute_signal(
     combined = (
         pred               * 0.50
         + (sent_score + 0.5) * 0.15
-        + (sect_mult - 0.5)  * 0.15
+        + (sect_mult - 1.0)  * 0.15   # P1-4 fix: offset from 1.0 so outflow sectors reduce score
         + mtf_norm           * MTF_WEIGHT_IN_SIGNAL
         + 0.05               # small neutral floor — prevents hair-trigger signals
     )
@@ -492,13 +492,7 @@ def run_daily_scan():
             symbol, earnings_symbols,
             mtf_composite=mtf_comp,
         )
-
-        # Insider boost
-        insider_score = insider_scores.get(symbol, 0.0)
-        if insider_score > 0:
-            combined = min(combined + insider_score, 1.0)
-            if insider_score >= 0.10:
-                print(f"    {symbol}: +{insider_score:.2f} insider boost!")
+        # P0-4: insider boost removed — Form 4 count can't distinguish buy vs sell direction
 
         # Emoji labels
         emoji      = {"BUY": "🟢", "AVOID": "🔴", "EARNINGS_HOLD": "📅", "CAUTION": "⚠️"}.get(signal, "⚪")
@@ -516,29 +510,67 @@ def run_daily_scan():
             f" | ${price:.2f}"
         )
 
+        # P1-6: track real filter gate counts
+        filters_passed  = 0
+        filter_detail   = {}
+        insider_filings = insider_scores.get(symbol, 0.0)  # always 0.0 per P0-4; kept for display
+        scan_time       = datetime.now().isoformat()
+
+        # Write dashboard entry BEFORE BUY gate checks so vetoed/blocked symbols get a full entry
+        dashboard_signals[symbol] = {
+            'prediction'     : float(pred),
+            'regime'         : regime,
+            'price'          : float(price),
+            'sentiment'      : float(sent_score),
+            'sector'         : sector,
+            'signal'         : signal,
+            'mtf'            : float(mtf_comp),
+            'combined'       : float(combined),
+            'filters_passed' : filters_passed,    # P1-6: updated below as gates pass
+            'filter_detail'  : filter_detail,
+            'insider_filings': insider_filings,
+            'scan_time'      : scan_time,
+        }
+
         if signal == 'BUY' and market_regime['can_trade']:
 
             # FIX: Correct MTF block threshold (-1 to +1 scale, not 0 to 1)
             if mtf_comp < MTF_BLOCK_THRESHOLD:
                 print(f"    {symbol}: BUY blocked by MTF (composite={mtf_comp:+.2f} < {MTF_BLOCK_THRESHOLD})")
                 signal = 'MTF_HOLD'
-                dashboard_signals[symbol] = {**data, 'signal': signal, 'sentiment': float(sent_score)}
+                dashboard_signals[symbol]['signal'] = signal
                 continue
+
+            # Gate 1 passed: MTF
+            filters_passed += 1
+            filter_detail['mtf'] = True
 
             # FIX (new): Volume confirmation
             vol_ok, vol_ratio = check_volume_confirmation(stock_data, symbol)
             if not vol_ok:
                 print(f"    {symbol}: BUY blocked — volume {vol_ratio:.1f}x avg (need {VOLUME_SPIKE_MIN}x)")
                 signal = 'VOL_HOLD'
-                dashboard_signals[symbol] = {**data, 'signal': signal, 'sentiment': float(sent_score)}
+                dashboard_signals[symbol]['signal'] = signal
+                dashboard_signals[symbol]['filters_passed'] = filters_passed
+                dashboard_signals[symbol]['filter_detail']  = filter_detail
                 continue
+
+            # Gate 2 passed: Volume
+            filters_passed += 1
+            filter_detail['volume'] = True
 
             # Correlation/Sector filter
             if not corr_filter.can_add_position(symbol, trader.positions):
                 print(f"    {symbol}: BUY blocked by correlation filter")
                 signal = 'CORR_HOLD'
-                dashboard_signals[symbol] = {**data, 'signal': signal, 'sentiment': float(sent_score)}
+                dashboard_signals[symbol]['signal'] = signal
+                dashboard_signals[symbol]['filters_passed'] = filters_passed
+                dashboard_signals[symbol]['filter_detail']  = filter_detail
                 continue
+
+            # Gate 3 passed: Correlation
+            filters_passed += 1
+            filter_detail['correlation'] = True
 
             # Veto agent
             veto_result = veto_agent.review_signal(
@@ -556,8 +588,14 @@ def run_daily_scan():
             if veto_result['decision'] == 'VETO':
                 print(f"    {symbol}: VETOED by AI — {veto_result['reason']}")
                 signal = 'VETOED'
-                dashboard_signals[symbol] = {**data, 'signal': signal, 'sentiment': float(sent_score)}
+                dashboard_signals[symbol]['signal'] = signal
+                dashboard_signals[symbol]['filters_passed'] = filters_passed
+                dashboard_signals[symbol]['filter_detail']  = filter_detail
                 continue
+
+            # Gate 4 passed: Veto Agent
+            filters_passed += 1
+            filter_detail['veto_agent'] = True
 
             atr = calc_atr(stock_data, symbol)
 
@@ -566,24 +604,29 @@ def run_daily_scan():
             if not rr_ok:
                 print(f"    {symbol}: BUY blocked — R:R {rr_ratio:.1f} < {MIN_RISK_REWARD} minimum")
                 signal = 'RR_HOLD'
-                dashboard_signals[symbol] = {**data, 'signal': signal, 'sentiment': float(sent_score)}
+                dashboard_signals[symbol]['signal'] = signal
+                dashboard_signals[symbol]['filters_passed'] = filters_passed
+                dashboard_signals[symbol]['filter_detail']  = filter_detail
                 continue
 
-            print(f"    ✅ {symbol}: ALL filters passed | vol={vol_ratio:.1f}x | R:R={rr_ratio:.1f} | mtf={mtf_comp:+.2f}")
+            # Gate 5 passed: R:R
+            filters_passed += 1
+            filter_detail['risk_reward'] = True
+
+            # Update dashboard entry with final signal and gate counts
+            dashboard_signals[symbol]['signal']         = signal
+            dashboard_signals[symbol]['filters_passed'] = filters_passed
+            dashboard_signals[symbol]['filter_detail']  = filter_detail
+
+            print(f"    ✅ {symbol}: ALL filters passed ({filters_passed}/5) | vol={vol_ratio:.1f}x | R:R={rr_ratio:.1f} | mtf={mtf_comp:+.2f}")
             opened = trader.open_position(symbol, price, combined, reason=regime, atr=atr)
 
             if opened:
                 telegram.alert_buy_signal(symbol, price, pred, regime, sent_score)
 
-        dashboard_signals[symbol] = {
-            'prediction': float(pred),
-            'regime'    : regime,
-            'price'     : float(price),
-            'sentiment' : float(sent_score),
-            'sector'    : sector,
-            'signal'    : signal,
-            'mtf'       : float(mtf_comp),
-        }
+        # Final update of filters_passed in dashboard entry (for non-BUY signals)
+        dashboard_signals[symbol]['filters_passed'] = filters_passed
+        dashboard_signals[symbol]['filter_detail']  = filter_detail
 
     # ==========================================
     # PHASE 4b: CRYPTO SIGNALS
@@ -633,13 +676,18 @@ def run_daily_scan():
                     telegram.alert_buy_signal(symbol, price, pred, regime, 0.0)
 
             dashboard_signals[symbol] = {
-                'prediction': float(pred),
-                'regime'    : regime,
-                'price'     : float(price),
-                'sentiment' : 0.0,
-                'sector'    : 'Crypto',
-                'signal'    : signal,
-                'mtf'       : 0.0,
+                'prediction'     : float(pred),
+                'regime'         : regime,
+                'price'          : float(price),
+                'sentiment'      : 0.0,
+                'sector'         : 'Crypto',
+                'signal'         : signal,
+                'mtf'            : 0.0,
+                'combined'       : float(pred),   # P0-2 fix: expose combined for dashboard filter dots
+                'filters_passed' : 0,
+                'filter_detail'  : {},
+                'insider_filings': 0,
+                'scan_time'      : datetime.now().isoformat(),
             }
     else:
         print("  No crypto signals generated")
