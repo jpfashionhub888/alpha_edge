@@ -5,8 +5,9 @@ import os
 import yaml
 from dotenv import load_dotenv
 
-# Load env keys from secrets.env
-load_dotenv('config/secrets.env')
+# Load env keys — try .env first (server), then config/secrets.env (local dev)
+load_dotenv('.env')                          # server: /root/alpha_edge/.env
+load_dotenv('config/secrets.env')           # local dev
 if os.path.exists('alpha_edge/config/secrets.env'):
     load_dotenv('alpha_edge/config/secrets.env')
 
