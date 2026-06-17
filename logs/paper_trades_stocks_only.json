@@ -1,34 +1,20 @@
 {
-  "capital": 8689.48367778015,
+  "capital": 9350.642438270568,
   "starting_capital": 10000.0,
   "positions": {
-    "MS": {
-      "shares": 3,
-      "entry_price": 193.1265137786865,
-      "market_price": 193.02999877929688,
-      "entry_date": "2026-05-15T19:14:00.098359",
-      "highest_price": 208.0,
-      "signal": 0.3939676457437838,
-      "cost": 414.2711009543282,
-      "reason": "uptrend",
-      "stop_loss_pct": 0.045441083565269186,
-      "atr": 4.385746152566919,
-      "partial_exit_done": true,
-      "current_price": 208.0
-    },
     "UNH": {
       "shares": 2,
       "entry_price": 388.66423622131344,
       "market_price": 388.4700012207031,
       "entry_date": "2026-05-25T21:41:33.230747",
-      "highest_price": 388.66423622131344,
+      "highest_price": 407.6499938964844,
       "signal": 0.41751270030658444,
       "cost": 778.3284724426269,
       "reason": "uptrend",
       "stop_loss_pct": 0.04827360361198013,
       "atr": 9.37642342703683,
       "partial_exit_done": false,
-      "current_price": 380.30999755859375
+      "current_price": 407.6499938964844
     }
   },
   "trade_history": [
@@ -157,11 +143,25 @@
       "pnl_pct": 0.09142780309583416,
       "date": "2026-05-29T17:08:37.096020",
       "reason": "take_profit"
+    },
+    {
+      "action": "SELL",
+      "symbol": "MS",
+      "shares": 3,
+      "price": 220.8300018310547,
+      "fill_price": 220.71958683013918,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "revenue": 661.1587604904175,
+      "pnl": 246.88765953608936,
+      "pnl_pct": 0.14287563375722187,
+      "date": "2026-06-17T01:53:37.551863",
+      "reason": "take_profit"
     }
   ],
-  "daily_realized_pnl": 17.773830001831072,
+  "daily_realized_pnl": 246.88765953608936,
   "daily_loss_limit": 500.0,
-  "last_reset_date": "2026-05-29",
+  "last_reset_date": "2026-06-17",
   "_halt_trading": false,
-  "saved_at": "2026-05-29T22:12:18.628044"
+  "saved_at": "2026-06-17T01:53:38.193617"
 }
