@@ -66,7 +66,12 @@ def get_earnings_calendar(watchlist):
     import yfinance as yf
     print("\n📅 Checking earnings calendar...")
     earnings_soon = []
+    # ETFs have no fundamentals data — yfinance returns 404 for calendar fetch
+    ETFS = {'SPY', 'QQQ', 'IWM', 'DIA', 'GLD', 'TLT', 'XLK', 'XLF',
+            'XLE', 'XLV', 'XLI', 'XLY', 'XLP', 'XLU', 'XLRE', 'XLC'}
     for symbol in watchlist:
+        if symbol in ETFS:
+            continue
         try:
             ticker = yf.Ticker(symbol)
             cal = ticker.calendar
@@ -250,7 +255,28 @@ def run_daily_scan():
     print("MARKET REGIME FILTER")
     print("="*60)
     regime_filter = MarketRegimeFilter()
-    market_regime = regime_filter.analyze()
+    # .analyze() was renamed to .detect(price_df) in market_regime.py refactor.
+    # Fetch SPY as market proxy, then map return keys to what downstream expects.
+    try:
+        import yfinance as yf
+        _spy = yf.download('SPY', period='2y', interval='1d', progress=False, auto_adjust=True)
+        if hasattr(_spy.columns, 'levels'):  # flatten MultiIndex
+            _spy.columns = [c[0] if isinstance(c, tuple) else c for c in _spy.columns]
+        _spy.columns = [c.lower() for c in _spy.columns]
+        _spy = _spy.rename(columns={'close': 'Close', 'open': 'Open',
+                                     'high': 'High', 'low': 'Low', 'volume': 'Volume'})
+        _regime_raw = regime_filter.detect(_spy)
+    except Exception as _re:
+        logger.warning(f"Regime detect failed ({_re}), defaulting to tradeable")
+        _regime_raw = {'regime': 'unknown', 'tradeable': True, 'confidence': 0.5, 'signals': {}}
+    # Map to the dict shape the rest of main.py expects
+    market_regime = {
+        'can_trade' : _regime_raw.get('tradeable', True),
+        'regime'    : _regime_raw.get('regime', 'unknown'),
+        'reason'    : f"Regime={_regime_raw.get('regime','?')} confidence={_regime_raw.get('confidence',0):.2f}",
+        'vix'       : _regime_raw.get('signals', {}).get('vix_level', 20),
+    }
+    print(f"  Regime: {market_regime['regime']} | can_trade={market_regime['can_trade']} | {market_regime['reason']}")
 
     # ==========================================
     # RISK CIRCUIT BREAKER CHECK
