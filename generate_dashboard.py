@@ -1948,7 +1948,7 @@ function filterSignals() {{
 
     print(f"\n  [OK] AlphaEdge V6 Dashboard generated: {DASHBOARD_FILE}")
     print(f"  Portfolio : ${total_value:,.2f}  ({pnl_sgn}{total_pct:.2f}%)")
-    print(f"  Sharpe    : {sharpe:.2f}  |  Max DD : {max_dd*100:.2f}%  |  Win Rate : {win_rate:.1f}%")
+    print(f"  Sharpe    : {sh_display}  |  Max DD : {max_dd*100:.2f}%  |  Win Rate : {win_rate:.1f}%")
     print(f"  Signals   : {len(buy_sigs)} BUY  |  {len(avoid_sigs)} AVOID  |  {len(hold_sigs)} HOLD")
     print(f"  Weights   : {len(weight_data) if weight_data else 0} combinations in results")
     print(f"\n  Open: docs/index.html\n")
