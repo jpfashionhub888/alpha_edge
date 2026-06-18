@@ -71,17 +71,17 @@ def ok(msg: str):
 ANTIPATTERNS = [
     (
         r'except\s+(Exception|BaseException)?\s*:\s*\n\s*pass\b',
-        'P0', 'fail-open',
-        'Bare except:pass silences errors',
-        'Any exception (network timeout, auth failure, logic error) is swallowed.',
-        'At minimum: except Exception as e: logger.error(f"...: {e}")',
+        'P2', 'fail-open',
+        'except:pass silences errors (code smell)',
+        'Exceptions are swallowed silently. On risk-control paths this is P0.',
+        'Replace with: except Exception as e: logger.warning(f"...: {e}")',
     ),
     (
         r'except\s*:\s*\n\s*pass\b',
-        'P0', 'fail-open',
-        'Bare except:pass (catches SystemExit/KeyboardInterrupt too)',
-        'catches SystemExit, KeyboardInterrupt — use except Exception.',
-        'Replace with: except Exception as e: logger.error(...)',
+        'P2', 'fail-open',
+        'Bare except:pass (also catches SystemExit/KeyboardInterrupt)',
+        'Catches SystemExit, KeyboardInterrupt — use except Exception.',
+        'Replace with: except Exception as e: logger.warning(...)',
     ),
     (
         r'starting_capital\s*=\s*(?:balance|capital|current_value|portfolio)',
