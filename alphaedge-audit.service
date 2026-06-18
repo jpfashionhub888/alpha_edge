@@ -1,0 +1,20 @@
+[Unit]
+Description=AlphaEdge Daily Deep Audit Agent
+Documentation=https://github.com/jpfashionhub888/alpha_edge
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/root/alpha_edge
+ExecStart=/root/alpha_edge/venv/bin/python /root/alpha_edge/deep_audit.py
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=alphaedge-audit
+
+# Environment — inherits from /etc/environment and service drop-ins
+EnvironmentFile=-/root/alpha_edge/config/secrets.env
+
+# Don't mark the timer as failed if audit finds issues (exit code 1)
+SuccessExitStatus=0 1

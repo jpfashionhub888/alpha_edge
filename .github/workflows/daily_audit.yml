@@ -1,0 +1,91 @@
+name: AlphaEdge Daily Deep Audit
+
+on:
+  schedule:
+    - cron: '0 6 * * *'    # 06:00 UTC every day (2am ET)
+  workflow_dispatch:          # manual trigger from GitHub UI
+    inputs:
+      stdout_only:
+        description: 'Print report only, do not post GitHub issue'
+        required: false
+        default: 'false'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deep-audit:
+    name: Deep Audit — source, runtime, data, logs
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+      issues: write      # needed to post the audit issue
+
+    steps:
+      # ── 1. Checkout ───────────────────────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── 2. Python setup ───────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      # ── 3. Install minimal deps needed for audit imports ──────────
+      - name: Install audit dependencies
+        run: |
+          pip install --quiet \
+            pandas numpy scikit-learn \
+            xgboost lightgbm \
+            requests python-dotenv \
+            ta yfinance
+          # groq is optional — audit handles ImportError gracefully
+          pip install --quiet groq || true
+
+      # ── 4. Stub secrets as env vars ───────────────────────────────
+      - name: Set environment
+        run: |
+          echo "ALPACA_API_KEY=${{ secrets.ALPACA_API_KEY }}"           >> $GITHUB_ENV
+          echo "ALPACA_SECRET_KEY=${{ secrets.ALPACA_SECRET_KEY }}"     >> $GITHUB_ENV
+          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}"   >> $GITHUB_ENV
+          echo "TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}"       >> $GITHUB_ENV
+          echo "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}"               >> $GITHUB_ENV
+          echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}"               >> $GITHUB_ENV
+          echo "GITHUB_REPOSITORY=${{ github.repository }}"             >> $GITHUB_ENV
+
+      # ── 5. Run the audit agent ────────────────────────────────────
+      - name: Run Deep Audit Agent
+        id: audit
+        run: |
+          if [ "${{ github.event.inputs.stdout_only }}" = "true" ]; then
+            python deep_audit.py --stdout 2>&1 | tee audit_output.txt
+          else
+            python deep_audit.py 2>&1 | tee audit_output.txt
+          fi
+          # Capture exit code (0=clean, 1=P0 issues found)
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+          echo "score=$(grep 'Score:' audit_output.txt | grep -oE '[0-9]+\.[0-9]+' | head -1)" >> $GITHUB_OUTPUT
+        continue-on-error: true   # don't fail the workflow on findings
+
+      # ── 6. Upload audit log as artifact ──────────────────────────
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audit-report-${{ github.run_number }}
+          path: |
+            audit_output.txt
+            logs/audits/
+          retention-days: 90
+          if-no-files-found: ignore
+
+      # ── 7. Fail the workflow if P0 issues found ───────────────────
+      - name: Check for P0 issues
+        if: steps.audit.outputs.exit_code == '1'
+        run: |
+          echo "::warning::Audit found P0 (critical) issues — see GitHub Issue for details"
+          # Don't hard-fail so the issue is always posted; just warn

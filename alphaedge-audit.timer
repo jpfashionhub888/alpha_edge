@@ -1,0 +1,13 @@
+[Unit]
+Description=AlphaEdge Daily Deep Audit — runs every day at 06:00 UTC
+Requires=alphaedge-audit.service
+
+[Timer]
+# Run at 06:00 UTC every day (2am ET / 11:30am IST)
+OnCalendar=*-*-* 06:00:00
+Unit=alphaedge-audit.service
+Persistent=true    # run immediately on boot if last run was missed
+RandomizedDelaySec=120   # spread load — run within 2-min window
+
+[Install]
+WantedBy=timers.target
