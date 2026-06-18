@@ -73,8 +73,11 @@ class PerformanceAnalytics:
             return self._empty_metrics(current_value, starting_capital, days_back)
 
         # Filter to realized exit events within window  [P1-3]
-        cutoff  = datetime.now() - timedelta(days=days_back)
-        exits   = []
+        # FIX: count and log trades skipped due to unparseable dates
+        # so the report never silently under-counts without a visible signal.
+        cutoff   = datetime.now() - timedelta(days=days_back)
+        exits    = []
+        skipped  = 0
         for t in trades:
             if t.get('action') not in REALIZED_ACTIONS:   # P1-3: was == 'SELL'
                 continue
@@ -83,7 +86,14 @@ class PerformanceAnalytics:
                 if trade_date >= cutoff:
                     exits.append(t)
             except Exception:
+                skipped += 1
                 continue
+
+        if skipped:
+            logger.warning(
+                f'calculate_metrics: {skipped} realized trade(s) skipped due to '
+                f'unparseable date strings \u2014 weekly report may under-count'
+            )
 
         if not exits:
             return self._empty_metrics(current_value, starting_capital, days_back)

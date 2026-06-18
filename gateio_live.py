@@ -184,19 +184,37 @@ class GateioLiveTrader:
         price = float(latest_candle['close'])
 
         # 1. Circuit breaker
+        # FIX: fail-closed — any exception blocks the trade.
+        # FIX: live branch persists starting_capital on first run so
+        #      total_loss can never be mathematically 0.0.
         try:
-            capital = self.paper.capital if PAPER_TRADE else (
-                self.client.get_usdt_balance() if self.client.connected else 10000.0
-            )
+            if PAPER_TRADE:
+                capital          = self.paper.capital
+                starting_capital = PAPER_CAPITAL   # already correct
+            else:
+                capital = self.client.get_usdt_balance() if self.client.connected else 10000.0
+                # Persist real starting capital once
+                if not self.circuit_breaker.state.get('starting_capital'):
+                    self.circuit_breaker.state['starting_capital'] = capital
+                    self.circuit_breaker._save_state()
+                starting_capital = self.circuit_breaker.state['starting_capital']
             if self.circuit_breaker.check(
                 current_value    = capital,
-                starting_capital = PAPER_CAPITAL if PAPER_TRADE else capital,
+                starting_capital = starting_capital,
                 telegram         = self.telegram,
             ):
                 logger.info(f'{symbol}: SKIP — circuit breaker')
                 return
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f'{symbol}: circuit breaker check FAILED — blocking trade as precaution: {e}')
+            if self.telegram:
+                try:
+                    self.telegram.send_message(
+                        f'⚠️ Circuit breaker check errored for {symbol} — trade blocked, investigate: {e}'
+                    )
+                except Exception:
+                    pass
+            return
 
         # 2. Indicators
         ind = self._calculate_indicators(df)

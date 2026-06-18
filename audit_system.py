@@ -6,7 +6,9 @@ Checks all modules, data files, config, and key functionality.
 import os, sys, json, traceback
 from datetime import datetime
 
-ROOT = '/root/alpha_edge'
+# FIX: ROOT was hardcoded to '/root/alpha_edge' — broke on any other machine.
+# Derive from this file's location so the audit works anywhere.
+ROOT = os.path.dirname(os.path.abspath(__file__))
 os.chdir(ROOT)
 sys.path.insert(0, ROOT)
 
@@ -269,7 +271,37 @@ def check_insider_score():
 
 check("InsiderTracker returns 0.0", check_insider_score)
 
-# ── 8. ALPACA LIVE SCRIPT CHECK ───────────────────────────────
+# ── 9. NUMERIC KPI CONSISTENCY CHECK ──────────────────────────────
+print("\n── 9. KPI NUMERIC CONSISTENCY ──────────────────────────────")
+
+def check_kpi_consistency():
+    """Raise if any PARTIAL_SELL trades exist that would be excluded
+    from KPI calculations (the == 'SELL' filter bug).
+    A green audit should never coexist with this gap."""
+    trade_files = [
+        'logs/paper_trades.json',
+        'logs/paper_trades_stocks_only.json',
+    ]
+    issues = []
+    for fpath in trade_files:
+        if not os.path.exists(fpath):
+            continue
+        hist = json.load(open(fpath)).get('trade_history', [])
+        sell_count     = sum(1 for t in hist if t.get('action') == 'SELL')
+        realized_count = sum(1 for t in hist if t.get('action') in {'SELL', 'PARTIAL_SELL'})
+        excluded = realized_count - sell_count
+        if excluded > 0:
+            issues.append(
+                f"{os.path.basename(fpath)}: {excluded} PARTIAL_SELL trade(s) "
+                f"would be excluded from KPI calc (== 'SELL' filter bug)"
+            )
+    if issues:
+        raise ValueError(' | '.join(issues))
+    return f"All realized exits included in KPI calc across {len(trade_files)} checked files"
+
+check("Dashboard KPI includes all realized exits", check_kpi_consistency)
+
+# ── 8. ALPACA LIVE SCRIPT CHECK ─────────────────────────────────
 print("\n── 8. LIVE SCRIPT SYNTAX ──────────────────────────────────")
 
 for script in ['alpaca_live.py', 'gateio_live.py', 'cloud_scan.py', 'main.py']:

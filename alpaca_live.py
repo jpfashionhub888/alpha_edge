@@ -27,6 +27,8 @@ import threading
 from datetime import datetime, time as dtime
 import pytz
 
+from risk_circuit_breaker import RiskCircuitBreaker
+
 warnings.filterwarnings('ignore')
 os.environ['PYTHONWARNINGS'] = 'ignore'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -67,9 +69,10 @@ class AlpacaLiveTrader:
         from execution.alpaca_broker import AlpacaBroker
         from monitoring.telegram_bot  import TelegramBot
 
-        self.broker   = AlpacaBroker()
-        self.telegram = TelegramBot()
-        self.mode     = get_mode()
+        self.broker          = AlpacaBroker()
+        self.telegram        = TelegramBot()
+        self.mode            = get_mode()
+        self.circuit_breaker = RiskCircuitBreaker()  # FIX: wired in — was missing entirely
 
         # Track our own stop/target levels since Alpaca paper
         # doesn't support bracket orders on all account types
@@ -163,7 +166,36 @@ class AlpacaLiveTrader:
             logger.error(f'Import error: {e}')
             return
 
-        # ── Market regime ─────────────────────────────────────────
+        # ── Circuit breaker ────────────────────────────────────────────
+        # FIX: Alpaca had zero circuit breaker wiring. Fail-closed:
+        # any exception in check() blocks the scan, not allows it.
+        try:
+            account      = self.broker.get_account()
+            portfolio_v  = float(account.get('portfolio_value', 10000)) if account else 10000.0
+            # Persist real starting capital once (never derive from current value)
+            if not self.circuit_breaker.state.get('starting_capital'):
+                self.circuit_breaker.state['starting_capital'] = portfolio_v
+                self.circuit_breaker._save_state()
+            starting_capital = self.circuit_breaker.state['starting_capital']
+            if self.circuit_breaker.check(
+                current_value    = portfolio_v,
+                starting_capital = starting_capital,
+                telegram         = self.telegram,
+            ):
+                print('  🚫 Circuit breaker active — scan aborted, no new entries')
+                return
+        except Exception as e:
+            logger.error(f'Circuit breaker check FAILED — aborting scan as precaution: {e}')
+            if self.telegram:
+                try:
+                    self.telegram.send_message(
+                        f'⚠️ Alpaca circuit breaker check errored — scan blocked, investigate: {e}'
+                    )
+                except Exception:
+                    pass
+            return
+
+        # ── Market regime ─────────────────────────────────────────────
         try:
             regime_detector = MarketRegimeDetector()
             market_regime   = regime_detector.analyze() if hasattr(regime_detector, 'analyze') else {'can_trade': True, 'regime': 'unknown', 'reason': ''}

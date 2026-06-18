@@ -205,17 +205,33 @@ class BybitLiveTrader:
             logger.warning(f'Regime filter error: {e}')
 
         # ── 2. Circuit breaker ────────────────────────────────────────
+        # FIX: fail-closed — any exception in the check blocks the trade.
+        # FIX: starting_capital persisted on first run; passing balance as
+        #      both args made total_loss = 0.0 always (dead guardrail).
         try:
             balance = self.client.get_usdt_balance() if self.client.connected else 10000.0
+            # Persist real starting capital once, never derive it from current balance
+            if not self.circuit_breaker.state.get('starting_capital'):
+                self.circuit_breaker.state['starting_capital'] = balance
+                self.circuit_breaker._save_state()
+            starting_capital = self.circuit_breaker.state['starting_capital']
             if self.circuit_breaker.check(
                 current_value    = balance,
-                starting_capital = balance,
+                starting_capital = starting_capital,
                 telegram         = self.telegram,
             ):
                 logger.info(f'{symbol}: SKIP — circuit breaker')
                 return
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f'{symbol}: circuit breaker check FAILED — blocking trade as precaution: {e}')
+            if self.telegram:
+                try:
+                    self.telegram.send_message(
+                        f'⚠️ Circuit breaker check errored for {symbol} — trade blocked, investigate: {e}'
+                    )
+                except Exception:
+                    pass
+            return
 
         # ── 3. Technical indicators ───────────────────────────────────
         indicators = self._calculate_indicators(df)

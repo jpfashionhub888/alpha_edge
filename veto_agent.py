@@ -51,7 +51,16 @@ class VetoAgent:
             }
 
         try:
-            from groq import Groq
+            # Lazy import — won't crash startup if groq not installed
+            try:
+                from groq import Groq
+            except ImportError:
+                logger.error('groq package not installed — run: pip install groq')
+                return {
+                    'decision'  : 'VETO',
+                    'reason'    : 'groq package not installed — cannot review signal',
+                    'confidence': 0.0,
+                }
             client = Groq(api_key=self.api_key)
 
             positions_text = ', '.join(current_positions.keys()) \
@@ -108,6 +117,7 @@ APPROVE if:
                 ],
                 temperature = 0.1,
                 max_tokens  = 150,
+                timeout     = 10,  # FIX: explicit timeout — don't hang the scan
             )
 
             response_text = response.choices[0].message.content.strip()
@@ -121,13 +131,13 @@ APPROVE if:
             reason     = result.get('reason', 'No reason')
             confidence = float(result.get('confidence', 0.5))
 
-            # P2-3 FIX: capture original value BEFORE overwriting decision
-            if decision not in ['APPROVE', 'VETO']:
-                original_decision = decision          # save before overwrite
-                decision = 'APPROVE'
+            # FIX: capture original value BEFORE overwriting, default to VETO not APPROVE
+            if decision not in ('APPROVE', 'VETO'):
+                original_decision = decision
+                decision = 'VETO'
                 reason   = (
                     f"Unexpected decision value '{original_decision}' from model "
-                    f"— defaulting to APPROVE"
+                    f"— defaulting to VETO for safety"
                 )
 
             print(f"  Veto Agent [{symbol}]: {decision}")
@@ -140,12 +150,22 @@ APPROVE if:
                 'confidence': confidence,
             }
 
-        except Exception as e:
-            logger.warning(f"Veto agent error for {symbol}: {e}")
+        except json.JSONDecodeError as e:
+            logger.warning(f'Veto agent JSON parse error for {symbol}: {e} — VETOING')
             return {
-                'decision'  : 'APPROVE',
-                'reason'    : f'Veto agent error: {e}',
-                'confidence': 0.5,
+                'decision'  : 'VETO',
+                'reason'    : 'Model response was not valid JSON — cannot verify signal safety',
+                'confidence': 0.0,
+            }
+        except Exception as e:
+            # FIX: fail-closed — any error (network, rate-limit, timeout) returns VETO.
+            # The original code returned APPROVE here, making a broken veto agent
+            # indistinguishable from a functioning one that approved the trade.
+            logger.warning(f'Veto agent error for {symbol}: {e} — VETOING (fail-closed)')
+            return {
+                'decision'  : 'VETO',
+                'reason'    : f'Veto agent unavailable ({type(e).__name__}) — trade blocked for safety',
+                'confidence': 0.0,
             }
 
 

@@ -74,10 +74,16 @@ def load_json(filepath, default):
     except Exception:
         return default
 
+# FIX: single source of truth for realized exit actions.
+# The equity chart was already using this set; 5 metric functions
+# and the KPI block were still filtering on == 'SELL' literally,
+# causing KPIs to disagree with the chart (P0 from audit).
+REALIZED_ACTIONS = {'SELL', 'PARTIAL_SELL'}
+
 # ── Metric calculators ────────────────────────────────────────────────────────
 
 def calculate_sharpe(trade_history):
-    sells   = [t for t in trade_history if t.get('action') == 'SELL']
+    sells   = [t for t in trade_history if t.get('action') in REALIZED_ACTIONS]
     returns = [t.get('pnl_pct', 0) for t in sells if 'pnl_pct' in t]
     # FIX: minimum 20 trades required; fewer produces statistically
     # meaningless annualised numbers (e.g. 12.19 from just 2 trades).
@@ -92,7 +98,7 @@ def calculate_sharpe(trade_history):
     return round((avg / std) * math.sqrt(252), 2)
 
 def calculate_drawdown_series(trade_history, starting_capital):
-    sells  = [t for t in trade_history if t.get('action') == 'SELL']
+    sells  = [t for t in trade_history if t.get('action') in REALIZED_ACTIONS]
     if not sells:
         return [0.0], ['Start']
     peak   = starting_capital
@@ -112,7 +118,7 @@ def calculate_max_drawdown(dd_series):
     return round(max(dd_series) / 100, 4) if dd_series else 0.0
 
 def calculate_profit_factor(trade_history):
-    sells        = [t for t in trade_history if t.get('action') == 'SELL']
+    sells        = [t for t in trade_history if t.get('action') in REALIZED_ACTIONS]
     gross_wins   = sum(t.get('pnl', 0) for t in sells if t.get('pnl', 0) > 0)
     gross_losses = abs(sum(t.get('pnl', 0) for t in sells if t.get('pnl', 0) < 0))
     # FIX: zero losses + wins = perfect record = infinity, NOT 0.0
@@ -132,7 +138,7 @@ def _fmt_pf(pf):
     return f'{pf:.2f}x'
 
 def calculate_daily_returns(trade_history):
-    sells = [t for t in trade_history if t.get('action') == 'SELL']
+    sells = [t for t in trade_history if t.get('action') in REALIZED_ACTIONS]
     by_date = {}
     for t in sells:
         d = t.get('date', '')[:10]
@@ -147,7 +153,7 @@ def calculate_daily_returns(trade_history):
 def calculate_symbol_pnl(trade_history):
     by_sym = {}
     for t in trade_history:
-        if t.get('action') == 'SELL':
+        if t.get('action') in REALIZED_ACTIONS:
             s = t.get('symbol', 'UNK')
             by_sym[s] = by_sym.get(s, 0) + t.get('pnl', 0)
     return dict(sorted(by_sym.items(), key=lambda x: x[1], reverse=True))
@@ -207,7 +213,7 @@ def generate_dashboard():
         for p in positions.values()
     )
 
-    sells     = [t for t in history if t.get('action') == 'SELL']
+    sells     = [t for t in history if t.get('action') in REALIZED_ACTIONS]
     wins      = [t for t in sells if t.get('pnl', 0) > 0]
     losses    = [t for t in sells if t.get('pnl', 0) <= 0]
     win_rate  = len(wins) / len(sells) * 100 if sells else 0
@@ -543,12 +549,21 @@ def generate_dashboard():
     if not sector_cards:
         sector_cards = '<div class="empty-state" style="grid-column:1/-1">No sector data available</div>'
 
-    # Earnings
+    # Earnings — FIX: recompute days at render time from stored date string.
+    # days_until in earnings.json is frozen at scan time; if the scanner
+    # doesn't run, the countdown goes stale. Past entries (days < 0) are dropped.
+    from datetime import date as _date_cls
+    _today = _date_cls.today()
     earn_rows = ''
     for e in earnings:
-        days = e.get('days_until', 0)
-        sym  = e.get('symbol', '')
-        dt   = e.get('date', '')
+        sym = e.get('symbol', '')
+        dt  = e.get('date', '')
+        try:
+            days = (_date_cls.fromisoformat(dt[:10]) - _today).days
+        except Exception:
+            days = e.get('days_until', 0)  # fallback for malformed date
+        if days < 0:
+            continue  # earnings already happened — don't show stale entry
         if days == 0:
             lbl, lc, bc2 = 'TODAY',    '#f43f5e', 'earn-today'
         elif days <= 2:
