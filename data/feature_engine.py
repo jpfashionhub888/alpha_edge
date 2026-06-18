@@ -364,8 +364,8 @@ class FeatureEngine:
                     / (aligned.rolling(21).mean() + 1e-8)
                 )
 
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f'Context ticker {ticker} fetch failed: {e}')  # non-blocking
 
         return df
 

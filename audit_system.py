@@ -91,7 +91,8 @@ def load_trades():
     f = 'logs/paper_trades_stocks_only.json'
     if not os.path.exists(f):
         raise FileNotFoundError(f)
-    d = json.load(open(f))
+    with open(f) as fh:
+        d = json.load(fh)
     cap = d.get('capital', 0)
     pos = d.get('positions', {})
     hist = d.get('trade_history', [])
@@ -106,7 +107,8 @@ def load_signals():
     f = 'logs/latest_signals.json'
     if not os.path.exists(f):
         return "NOT FOUND (will be created on next scan)"
-    d = json.load(open(f))
+    with open(f) as fh:
+        d = json.load(fh)
     if not d:
         return "EXISTS but empty (no scan run yet today)"
     # Check required keys in each signal
@@ -125,7 +127,8 @@ def load_sectors():
     f = 'logs/sectors.json'
     if not os.path.exists(f):
         return "NOT FOUND (generated on scan)"
-    d = json.load(open(f))
+    with open(f) as fh:
+        d = json.load(fh)
     return f"{len(d)} sectors | {list(d.keys())[:3]}"
 
 check("sectors.json", load_sectors)
@@ -286,7 +289,8 @@ def check_kpi_consistency():
     for fpath in trade_files:
         if not os.path.exists(fpath):
             continue
-        hist = json.load(open(fpath)).get('trade_history', [])
+        with open(fpath) as fh:
+            hist = json.load(fh).get('trade_history', [])
         sell_count     = sum(1 for t in hist if t.get('action') == 'SELL')
         realized_count = sum(1 for t in hist if t.get('action') in {'SELL', 'PARTIAL_SELL'})
         excluded = realized_count - sell_count

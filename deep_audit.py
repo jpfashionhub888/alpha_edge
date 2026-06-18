@@ -126,14 +126,8 @@ ANTIPATTERNS = [
         'File handle not guaranteed to close on exception.',
         'Use: with open(...) as f: json.load(f)',
     ),
-    (
-        # Only flag requests calls that do NOT already have timeout= on the same line
-        r'requests\.(?:get|post|put|delete|patch)\([^)\n]*\)(?!.*timeout)',
-        'P2', 'reliability',
-        'requests call without explicit timeout',
-        'Hangs forever if the remote server doesn\'t respond.',
-        'Add timeout=10 to all requests calls.',
-    ),
+    # requests timeout check is handled by _check_requests_timeout() below
+    # (multi-line calls need a window-based approach, not a single-line regex)
     (
         r'time\.sleep\(\s*(?:3600|7200|86400)\s*\)',
         'P2', 'reliability',
@@ -156,7 +150,8 @@ ANTIPATTERNS = [
         "Use: action in {'SELL', 'PARTIAL_SELL'}",
     ),
     (
-        r'from\s+groq\s+import',
+        # Only flag if at column 0 (module top-level, no indentation)
+        r'^from\s+groq\s+import',
         'P2', 'reliability',
         'Top-level groq import — crashes startup if package missing',
         'ImportError at module load crashes the whole bot.',
@@ -182,6 +177,31 @@ def _collect_py_files() -> list[Path]:
             continue
         files.append(p)
     return sorted(files)
+
+# Files where missing timeouts are acceptable (diagnostic / test scripts)
+_TIMEOUT_SKIP = {'test_telegram.py', 'audit_system.py'}
+
+_REQ_CALL = re.compile(r'requests\.(get|post|put|delete|patch)\(')
+
+def _check_requests_timeout(lines: list[str], rel: str) -> None:
+    """Flag requests.X() calls that have no timeout= in the call or its continuation lines."""
+    filename = rel.split('\\')[-1].split('/')[-1]
+    if filename in _TIMEOUT_SKIP:
+        return
+    for i, line in enumerate(lines):
+        if line.strip().startswith('#'):
+            continue
+        if not _REQ_CALL.search(line):
+            continue
+        # Look at this line + next 8 lines for timeout=
+        window = '\n'.join(lines[i: i + 9])
+        if 'timeout' in window:
+            continue
+        finding('P2', 'reliability', rel, i + 1,
+                'requests call without explicit timeout',
+                "Hangs forever if the remote server doesn't respond.",
+                'Add timeout=10 to all requests calls.')
+
 
 def run_static_analysis():
     """Scan all Python files for antipatterns."""
@@ -210,6 +230,9 @@ def run_static_analysis():
                     continue
                 finding(priority, category, str(rel), lineno, title, detail, fix)
                 hit_count += 1
+
+        # Window-based requests timeout check (handles multi-line calls)
+        _check_requests_timeout(lines, str(rel))
 
     # AST-level checks
     _run_ast_checks(py_files)

@@ -420,8 +420,8 @@ class AlpacaLiveTrader:
                         symbol, price, combined,
                         f'{self.mode} stocks | R:R={rr_ratio:.1f}', sent_score
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f'Telegram buy alert failed for {symbol}: {e}')
 
         print(f'\n  Scan complete. New entries: {buy_count}')
         self._print_account()

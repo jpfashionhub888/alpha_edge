@@ -229,8 +229,8 @@ class BybitLiveTrader:
                     self.telegram.send_message(
                         f'⚠️ Circuit breaker check errored for {symbol} — trade blocked, investigate: {e}'
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f'Telegram circuit-breaker alert failed: {e}')
             return
 
         # ── 3. Technical indicators ───────────────────────────────────
@@ -347,8 +347,8 @@ class BybitLiveTrader:
                 display, price, score,
                 f'crypto | R:R={rr_ratio:.1f} | vol={vol_ratio:.1f}x', 0.0
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f'Telegram buy alert failed for {display}: {e}')
 
         print(
             f'\n🟢 BUY {display} @ ${price:.2f}'
@@ -393,8 +393,8 @@ class BybitLiveTrader:
                     self.telegram.alert_stop_loss(display, price, pnl_usd)
                 else:
                     self.telegram.alert_take_profit(display, price, pnl_usd)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f'Telegram exit alert failed for {display}: {e}')
 
             del self.positions[symbol]
             self.last_signal_time[symbol] = time.time()
