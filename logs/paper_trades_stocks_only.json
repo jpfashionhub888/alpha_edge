@@ -14,7 +14,7 @@
       "stop_loss_pct": 0.04827360361198013,
       "atr": 9.37642342703683,
       "partial_exit_done": false,
-      "current_price": 402.5299987792969
+      "current_price": 403.3299865722656
     },
     "SPY": {
       "shares": 1,
@@ -28,7 +28,7 @@
       "stop_loss_pct": 0.02904728841778184,
       "atr": 10.761439732142858,
       "partial_exit_done": false,
-      "current_price": 746.9799194335938
+      "current_price": 746.0700073242188
     }
   },
   "trade_history": [
@@ -191,5 +191,5 @@
   "daily_loss_limit": 500.0,
   "last_reset_date": "2026-06-17",
   "_halt_trading": false,
-  "saved_at": "2026-06-18T16:52:51.077203"
+  "saved_at": "2026-06-18T19:08:41.457868"
 }
