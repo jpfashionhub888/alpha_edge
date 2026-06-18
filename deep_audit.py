@@ -422,10 +422,16 @@ def run_service_checks():
                     # full traceback for every bad HTTP request from internet scanners.
                     # These are probing noise, not real crashes — downgrade to P2.
                     effective_priority = priority
-                    if (svc == 'dashboard.service'
-                            and label == 'Exception/Traceback in logs'
-                            and re.search(r'\b(?:400|404|BadRequest|BrokenPipe)\b', ctx)):
-                        effective_priority = 'P2'
+                    if svc == 'dashboard.service' and label == 'Exception/Traceback in logs':
+                        # Matches: bad HTTP from bots, socketserver connection resets,
+                        # BrokenPipe, HTTP 400/404 — all expected internet noise
+                        if re.search(
+                            r'\b(?:400|404|BadRequest|BrokenPipe|'
+                            r'process_request_thr|ConnectionReset|'
+                            r'socketserver|http\.server)\b',
+                            ctx
+                        ):
+                            effective_priority = 'P2'
                     if effective_priority != 'INFO':
                         finding(effective_priority, 'log-crash', svc, 0,
                                 f'{label} in {svc} logs (×{len(matches)} in last 500 lines)',
