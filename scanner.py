@@ -671,8 +671,9 @@ class StockScanner:
                 logger.warning("Cache save failed for %s: %s", symbol, e)
 
         # ── Predict on latest row ─────────────────────────────────
-        latest      = df.iloc[-1:]
-        pred        = model.predict(latest[selected])[0]
+        latest = df.iloc[-1:]
+        _preds = model.predict(latest[selected])
+        pred   = _preds[0] if len(_preds) > 0 else 0.5  # guard: empty array → neutral
         regime      = latest['regime'].iloc[0]
         price       = latest['close'].iloc[0]
         sector_mult = self.sector_analyzer.get_sector_signal(symbol)

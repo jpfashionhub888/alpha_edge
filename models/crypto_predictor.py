@@ -132,11 +132,10 @@ class CryptoPredictor:
 
                 if auc is not None:
                     selected = self.features[symbol]
-                    latest = df.iloc[-1:]
-                    pred = self.models[symbol].predict(
-                        latest[selected]
-                    )[0]
-                    regime = latest['regime'].iloc[0]
+                    latest   = df.iloc[-1:]
+                    _preds   = self.models[symbol].predict(latest[selected])
+                    pred     = _preds[0] if len(_preds) > 0 else 0.5  # guard: empty array → neutral
+                    regime   = latest['regime'].iloc[0]
 
                     results[symbol] = {
                         'auc': auc,

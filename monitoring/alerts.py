@@ -24,14 +24,15 @@ class AlertSystem:
     """
 
     def __init__(self, email=None, password=None):
-        self.email = mayatra.girish@gmail.com
-        self.password = Abundance$888
-        self.enabled = email is not None
+        # FIX: read from env vars — never hardcode credentials in source
+        self.email    = email    or os.getenv('ALERT_EMAIL', '')
+        self.password = password or os.getenv('ALERT_EMAIL_PASSWORD', '')
+        self.enabled  = bool(self.email and self.password)
 
         if not self.enabled:
             print(
                 "   ⚠️ Email alerts disabled."
-                " Set email in config to enable."
+                " Set ALERT_EMAIL and ALERT_EMAIL_PASSWORD env vars to enable."
             )
 
     def send_email(self, subject, body):

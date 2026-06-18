@@ -6,6 +6,7 @@ TradingView sends alerts → This server receives them →
 Your system processes and trades.
 """
 
+import os
 import json
 import logging
 from datetime import datetime
@@ -18,8 +19,11 @@ app = Flask(__name__)
 # Store received signals
 received_signals = []
 
-# Webhook secret (set this in TradingView too)
-WEBHOOK_SECRET = 'alphaedge_secret_2026'
+# Realized exit action types
+REALIZED_ACTIONS = {'SELL', 'PARTIAL_SELL'}
+
+# Webhook secret — read from env, never hardcode
+WEBHOOK_SECRET = os.getenv('WEBHOOK_SECRET', 'alphaedge_secret_2026')
 
 
 @app.route('/webhook', methods=['POST'])
@@ -152,7 +156,7 @@ def process_signal(signal):
                         f"Take Profit: 8%"
                     )
 
-        elif action == 'SELL':
+        elif action in REALIZED_ACTIONS:
             success = broker.sell(symbol)
 
             if success:

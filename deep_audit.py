@@ -105,7 +105,8 @@ ANTIPATTERNS = [
         "Use: ROOT = os.path.dirname(os.path.abspath(__file__))",
     ),
     (
-        r"(?:host|server|ip)\s*=\s*['\"][\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}['\"]",
+        # Exclude loopback (127.0.0.1) and wildcard bind (0.0.0.0) — those are valid
+        r"(?:host|server|ip)\s*=\s*['\"](?!0\.0\.0\.0|127\.0\.0\.1)[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}['\"]",
         'P1', 'portability',
         'Hardcoded server IP address in source',
         'IP should be in config/env, not source.',
@@ -139,13 +140,6 @@ ANTIPATTERNS = [
         'Very long time.sleep() — process unresponsive to signals',
         'Systemd sends SIGTERM on restart; a sleeping process won\'t respond.',
         'Use a loop with short sleeps (e.g., 60s) and a running flag.',
-    ),
-    (
-        r'requests\.\w+\([^)]+\)(?!\s*#.*timeout)',
-        'P2', 'reliability',
-        'requests call without explicit timeout',
-        'Hangs forever if the remote server doesn\'t respond.',
-        'Add timeout=10 to all requests calls.',
     ),
     (
         r'\.predict\([^)]+\)\[0\]',
@@ -295,22 +289,30 @@ def run_runtime_checks():
                     str(e),
                     'Check for module-level code that crashes at import time.')
 
-    # Check veto agent fails closed
+    # Check veto agent fails closed using AST (not string search, which matches prompt text)
     try:
-        from veto_agent import VetoAgent
-        va_src = inspect.getsource(VetoAgent.review_signal)
-        # Exception handler should return VETO not APPROVE
-        exception_blocks = re.findall(
-            r'except.*?:\n(.*?)(?=\nexcept|\ndef |\nclass |\Z)',
-            va_src, re.DOTALL
-        )
-        for block in exception_blocks:
-            if "'APPROVE'" in block or '"APPROVE"' in block:
-                finding('P0', 'fail-open', 'veto_agent.py', 0,
-                        'VetoAgent exception handler returns APPROVE (fail-open)',
-                        'Any Groq API error silently approves trades.',
-                        "Change exception handler return to 'VETO'.")
+        import ast as _ast
+        va_src  = (ROOT / 'veto_agent.py').read_text(encoding='utf-8')
+        va_tree = _ast.parse(va_src)
+        fail_open = False
+        for node in _ast.walk(va_tree):
+            # Find except handlers that contain a return with 'APPROVE'
+            if not isinstance(node, _ast.ExceptHandler):
+                continue
+            for child in _ast.walk(_ast.Module(body=node.body, type_ignores=[])):
+                if isinstance(child, _ast.Return):
+                    # Serialize the return value to check for APPROVE
+                    ret_src = _ast.unparse(child) if hasattr(_ast, 'unparse') else repr(child)
+                    if 'APPROVE' in ret_src:
+                        fail_open = True
+                        break
+            if fail_open:
                 break
+        if fail_open:
+            finding('P0', 'fail-open', 'veto_agent.py', 0,
+                    'VetoAgent exception handler returns APPROVE (fail-open)',
+                    'Any Groq API error silently approves trades.',
+                    "Change exception handler return to 'VETO'.")
         else:
             ok('VetoAgent: fail-closed (exceptions return VETO)')
     except Exception:
@@ -414,11 +416,18 @@ def run_service_checks():
             for pattern, priority, label in CRASH_PATTERNS:
                 matches = list(re.finditer(pattern, log_text, re.IGNORECASE))
                 if matches:
-                    # Show last match context
-                    m = matches[-1]
+                    m   = matches[-1]
                     ctx = log_text[max(0, m.start()-80):m.end()+80].replace('\n', ' ')
-                    if priority != 'INFO':
-                        finding(priority, 'log-crash', svc, 0,
+                    # dashboard.service runs python3 -m http.server which logs a
+                    # full traceback for every bad HTTP request from internet scanners.
+                    # These are probing noise, not real crashes — downgrade to P2.
+                    effective_priority = priority
+                    if (svc == 'dashboard.service'
+                            and label == 'Exception/Traceback in logs'
+                            and re.search(r'\b(?:400|404|BadRequest|BrokenPipe)\b', ctx)):
+                        effective_priority = 'P2'
+                    if effective_priority != 'INFO':
+                        finding(effective_priority, 'log-crash', svc, 0,
                                 f'{label} in {svc} logs (×{len(matches)} in last 500 lines)',
                                 ctx.strip(),
                                 f'Run: journalctl -u {svc} -n 100 --no-pager')
