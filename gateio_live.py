@@ -212,8 +212,8 @@ class GateioLiveTrader:
                     self.telegram.send_message(
                         f'⚠️ Circuit breaker check errored for {symbol} — trade blocked, investigate: {e}'
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f'Telegram circuit-breaker alert failed: {e}')
             return
 
         # 2. Indicators
@@ -357,8 +357,8 @@ class GateioLiveTrader:
                 f'{"PAPER" if PAPER_TRADE else "LIVE"} | R:R={rr_ratio:.1f} | vol={vol_ratio:.1f}x',
                 0.0,
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f'Telegram buy alert failed for {display}: {e}')
 
     # ── Position monitor ──────────────────────────────────────────────
 

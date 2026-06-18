@@ -499,8 +499,8 @@ class PaperTrader:
                 )
                 self.close_position(symbol, current_price, 'time_stop')
                 return
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f'Time-stop date parse failed for {symbol}: {e}')
 
     # ------------------------------------------------------------------ #
     #  PORTFOLIO VALUATION                                                 #
@@ -689,7 +689,8 @@ class PaperTrader:
                 self.last_reset_date = datetime.strptime(
                     raw_date, '%Y-%m-%d'
                 ).date()
-            except Exception:
+            except Exception as e:
+                logger.debug(f'Could not parse last_reset_date "{raw_date}": {e}')
                 self.last_reset_date = datetime.now().date()
 
             print(

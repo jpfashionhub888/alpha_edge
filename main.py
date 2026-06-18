@@ -94,8 +94,8 @@ def get_earnings_calendar(watchlist):
                                     'date': str(ed),
                                     'days_until': diff,
                                 })
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f'Earnings calendar fetch failed for {symbol}: {e}')
 
     if earnings_soon:
         n = len(earnings_soon)

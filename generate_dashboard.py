@@ -410,7 +410,7 @@ def generate_dashboard():
         try:
             days = (datetime.now() - datetime.fromisoformat(pos.get('entry_date', ''))).days
         except Exception:
-            pass
+            days = 0  # date parse failed — show 0 days held (non-critical)
         bar_c = '#10b981' if ml_pct >= 65 else '#f59e0b' if ml_pct >= 55 else '#f43f5e'
         pos_rows += f'''
         <tr class="trow">

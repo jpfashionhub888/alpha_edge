@@ -73,8 +73,8 @@ def merge_trades():
     # Sort by timestamp
     try:
         all_trades.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f'Trade sort by timestamp failed: {e}')  # non-critical: trades still merged
 
     # Combine positions
     stock_positions  = stock_data.get('positions', {})

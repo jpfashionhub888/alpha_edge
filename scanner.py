@@ -312,8 +312,8 @@ class StockScanner:
                         'date'      : str(ed),
                         'days_until': diff,
                     }
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f'Earnings fetch failed for {symbol}: {e}')
             return None
 
         with ThreadPoolExecutor(

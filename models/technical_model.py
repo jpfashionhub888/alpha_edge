@@ -275,8 +275,8 @@ class TechnicalPredictor:
                 if len(proba) > 0:
                     all_predictions.append(proba)
 
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f'Model {name} agreement prediction failed: {e}')
 
         if len(all_predictions) == 0:
             return np.full(len(X), 0.5), 0
@@ -332,8 +332,8 @@ class TechnicalPredictor:
                         model.feature_importances_
                     )
 
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f'Feature importance failed for {name}: {e}')
 
         if len(all_importances) == 0:
             return []

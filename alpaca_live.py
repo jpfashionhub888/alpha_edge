@@ -191,8 +191,8 @@ class AlpacaLiveTrader:
                     self.telegram.send_message(
                         f'⚠️ Alpaca circuit breaker check errored — scan blocked, investigate: {e}'
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f'Telegram circuit-breaker alert failed: {e}')
             return
 
         # ── Market regime ─────────────────────────────────────────────
@@ -281,8 +281,8 @@ class AlpacaLiveTrader:
                             'catboost'         : model.models.get('catboost'),
                             'selected_features': selected,
                         })
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.warning(f'Model cache save failed for {symbol}: {e}')
 
                 latest = df.iloc[-1:]
                 _preds = model.predict(latest[selected])
@@ -338,7 +338,8 @@ class AlpacaLiveTrader:
             # MTF
             try:
                 mtf_comp = mtf_analyzer.get_mtf_score(symbol)
-            except Exception:
+            except Exception as e:
+                logger.warning(f'{symbol}: MTF error, using neutral: {e}')
                 mtf_comp = 0.0
 
             signal, combined = compute_signal(
@@ -378,8 +379,10 @@ class AlpacaLiveTrader:
                 if veto.get('decision') == 'VETO':
                     print(f'  {symbol}: VETOED — {veto.get("reason")}')
                     continue
-            except Exception:
-                pass
+            except Exception as e:
+                # Fail-closed: veto error = skip trade
+                logger.warning(f'{symbol}: veto agent error (fail-closed): {e}')
+                continue
 
             # ATR + R:R check
             atr = calc_atr(stock_data, symbol)
@@ -472,8 +475,8 @@ class AlpacaLiveTrader:
                     self.telegram.alert_stop_loss(symbol, current_price, pnl_usd)
                 else:
                     self.telegram.alert_take_profit(symbol, current_price, pnl_usd)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f'Telegram alert failed for {symbol}: {e}')
 
             del self.managed_positions[symbol]
 

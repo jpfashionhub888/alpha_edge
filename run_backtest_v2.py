@@ -133,7 +133,8 @@ def check_volume_spike(df: pd.DataFrame, idx: int, min_ratio: float = 1.3) -> tu
             return False, 0.0
         ratio = vol_current / vol_avg
         return ratio >= min_ratio, round(ratio, 2)
-    except Exception:
+    except Exception as e:
+        logger.debug(f'Volume spike check failed at idx={idx}: {e}')
         return False, 0.0
 
 
@@ -177,8 +178,8 @@ def apply_v4_filters(
             details['rr_ratio'] = round(rr_ratio, 2)
             if rr_ratio < config.get('min_rr_ratio', 2.0):
                 return False, {**details, 'blocked_by': 'rr_ratio'}
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f'ATR/R:R filter failed at idx={idx}: {e}')  # non-blocking: use no filter
 
     return True, details
 
