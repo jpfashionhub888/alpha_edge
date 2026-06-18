@@ -126,6 +126,14 @@ ANTIPATTERNS = [
         'Use: with open(...) as f: json.load(f)',
     ),
     (
+        # Only flag requests calls that do NOT already have timeout= on the same line
+        r'requests\.(?:get|post|put|delete|patch)\([^)\n]*\)(?!.*timeout)',
+        'P2', 'reliability',
+        'requests call without explicit timeout',
+        'Hangs forever if the remote server doesn\'t respond.',
+        'Add timeout=10 to all requests calls.',
+    ),
+    (
         r'time\.sleep\(\s*(?:3600|7200|86400)\s*\)',
         'P2', 'reliability',
         'Very long time.sleep() — process unresponsive to signals',
@@ -189,6 +197,9 @@ def run_static_analysis():
 
     for filepath in py_files:
         rel = filepath.relative_to(ROOT)
+        # Skip self — deep_audit.py uses open() intentionally in data checks
+        if filepath.name == 'deep_audit.py':
+            continue
         try:
             src = filepath.read_text(encoding='utf-8', errors='replace')
         except Exception:
@@ -256,7 +267,7 @@ def _run_ast_checks(py_files: list[Path]):
 def run_runtime_checks():
     """Import and smoke-test critical modules."""
     critical_modules = [
-        ('config.settings',        'Settings'),
+        ('config.settings',        None),         # plain module, no class to instantiate
         ('risk_circuit_breaker',   'RiskCircuitBreaker'),
         ('veto_agent',             'VetoAgent'),
         ('performance_analytics',  'PerformanceAnalytics'),

@@ -590,7 +590,7 @@ def generate_dashboard():
         pnl_c2 = '#10b981' if pnl >= 0 else '#f43f5e'
         sgn    = '+' if pnl >= 0 else ''
         act_c  = 'badge-buy' if action == 'BUY' else 'badge-avoid'
-        pnl_txt = f'{sgn}${pnl:.2f}' if action == 'SELL' else '—'
+        pnl_txt = f'{sgn}${pnl:.2f}' if action in REALIZED_ACTIONS else '—'
         hist_rows += f'''
         <div class="hist-row">
           <span class="badge {act_c} mr-3">{action}</span>
