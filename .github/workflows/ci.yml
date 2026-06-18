@@ -1,0 +1,125 @@
+# .github/workflows/ci.yml
+# AlphaEdge CI — runs on every push to main and all PRs
+# Checks: pytest coverage, static analysis, security scan
+
+name: AlphaEdge CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test Suite (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pytest pytest-cov pytest-mock freezegun
+          # Install core deps needed for imports (lightweight subset)
+          pip install pandas numpy scikit-learn flask python-dotenv
+
+      - name: Run tests with coverage
+        env:
+          # Fake credentials so modules import without error
+          ALPACA_API_KEY: test-key
+          ALPACA_SECRET_KEY: test-secret
+          GATEIO_API_KEY: test-key
+          GATEIO_SECRET: test-secret
+          TELEGRAM_BOT_TOKEN: "1234567890:test"
+          TELEGRAM_CHAT_ID: "123456789"
+          GROQ_API_KEY: test-key
+          WEBHOOK_SECRET: test-webhook-secret
+        run: |
+          pytest tests/ \
+            --cov=. \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-fail-under=60 \
+            -v \
+            --tb=short \
+            2>&1
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          file: coverage.xml
+          fail_ci_if_error: false
+
+  lint:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install linters
+        run: pip install bandit pyflakes
+
+      - name: Security scan (bandit)
+        run: |
+          bandit -r . \
+            --exclude venv,tests,deep_audit.py \
+            -ll \
+            --format txt \
+            2>&1 || true   # warn, don't fail CI yet
+
+      - name: Unused imports (pyflakes)
+        run: |
+          pyflakes execution/ models/ monitoring/ data/ \
+            2>&1 | head -30 || true
+
+  audit:
+    name: AlphaEdge Deep Audit
+    runs-on: ubuntu-latest
+    needs: test   # Only run if tests pass
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install audit deps
+        run: pip install pandas numpy
+
+      - name: Run deep_audit.py
+        env:
+          ALPACA_API_KEY: test-key
+          TELEGRAM_BOT_TOKEN: "1234:test"
+          WEBHOOK_SECRET: test-secret
+        run: |
+          python deep_audit.py --stdout 2>&1 | tee audit_output.txt
+          # Fail CI if P0 findings exist
+          if grep -q '\[P0\]' audit_output.txt; then
+            echo "❌ CRITICAL: P0 findings detected — blocking merge"
+            exit 1
+          fi
+          echo "✅ No P0 findings"
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audit-report
+          path: audit_output.txt
