@@ -88,9 +88,8 @@ RestartSec=30
 EnvironmentFile=${SECRETS_DEST}
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectSystem=strict
-ReadWritePaths=${INSTALL_DIR}/logs ${INSTALL_DIR}/docs ${INSTALL_DIR}/model_cache
-ProtectHome=true
+ProtectSystem=full
+ProtectHome=false
 CapabilityBoundingSet=
 AmbientCapabilities=
 
