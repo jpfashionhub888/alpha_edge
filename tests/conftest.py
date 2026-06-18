@@ -1,55 +1,157 @@
 # tests/conftest.py
 """
 Shared pytest fixtures for AlphaEdge test suite.
-All external dependencies (broker, Telegram, yfinance) are mocked here
-so tests run fully offline with no API keys required.
+
+DATA POLICY: All OHLCV data is REAL historical data from Yahoo Finance
+(2020-01-01 to 2025-12-30), downloaded via scripts/fetch_test_fixtures.py
+and stored in tests/fixtures/. No synthetic/random data is used.
+
+All external dependencies (broker, Telegram, yfinance live calls) are
+mocked so tests run fully offline with no API keys required.
+
+To refresh the data:
+    python scripts/fetch_test_fixtures.py
 """
 
 import json
 import os
 import tempfile
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
+from pathlib import Path
+from unittest.mock import MagicMock
 
-import numpy as np
 import pandas as pd
 import pytest
 
+# ── Fixture paths ──────────────────────────────────────────────────────────────
+FIXTURES_DIR = Path(__file__).parent / 'fixtures'
 
-# ── OHLCV Fixtures ────────────────────────────────────────────────────────────
+FIXTURE_FILES = {
+    'AAPL'   : FIXTURES_DIR / 'aapl_daily.csv',
+    'NVDA'   : FIXTURES_DIR / 'nvda_daily.csv',
+    'SPY'    : FIXTURES_DIR / 'spy_daily.csv',
+    'BTC-USD': FIXTURES_DIR / 'btc_usd_daily.csv',
+}
 
-def _make_ohlcv(n: int = 300, start: str = '2023-01-01',
-                seed: int = 42) -> pd.DataFrame:
-    """Generate a synthetic OHLCV DataFrame for testing."""
-    rng = np.random.default_rng(seed)
-    dates = pd.date_range(start=start, periods=n, freq='B')  # business days
-    close = 100.0 * np.cumprod(1 + rng.normal(0.0005, 0.015, n))
-    high  = close * (1 + rng.uniform(0.001, 0.015, n))
-    low   = close * (1 - rng.uniform(0.001, 0.015, n))
-    open_ = close * (1 + rng.normal(0, 0.005, n))
-    vol   = rng.integers(500_000, 5_000_000, n).astype(float)
 
-    df = pd.DataFrame({
-        'open'  : open_,
-        'high'  : high,
-        'low'   : low,
-        'close' : close,
-        'volume': vol,
-    }, index=dates)
+def _load_real_ohlcv(ticker: str, n_rows: int | None = None) -> pd.DataFrame:
+    """
+    Load real historical OHLCV data from the fixtures directory.
+
+    Args:
+        ticker:  One of AAPL, NVDA, SPY, BTC-USD
+        n_rows:  If set, return only the last n_rows rows (most recent data)
+    """
+    path = FIXTURE_FILES.get(ticker)
+    if path is None:
+        raise ValueError(
+            f"No fixture for ticker '{ticker}'. "
+            f"Available: {list(FIXTURE_FILES.keys())}"
+        )
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Fixture file missing: {path}\n"
+            f"Run: python scripts/fetch_test_fixtures.py"
+        )
+
+    df = pd.read_csv(path, index_col='date', parse_dates=True)
     df.index.name = 'date'
+
+    # Ensure standard lowercase column names
+    df.columns = [c.lower() for c in df.columns]
+
+    # Drop any rows where close is NaN
+    df = df.dropna(subset=['close'])
+
+    if n_rows is not None:
+        df = df.iloc[-n_rows:]
+
     return df
 
 
+# ── OHLCV Fixtures — REAL historical data ─────────────────────────────────────
+
 @pytest.fixture
 def ohlcv_df():
-    """300-bar OHLCV DataFrame — enough for all indicators."""
-    return _make_ohlcv(300)
+    """
+    Full AAPL real daily data (2020-2025, ~1507 rows).
+    Sufficient for all long-window indicators (SMA-200, ATR-14, etc.).
+    """
+    return _load_real_ohlcv('AAPL')
+
+
+@pytest.fixture
+def ohlcv_df_nvda():
+    """
+    NVDA real daily data — high volatility stock for stress testing.
+    """
+    return _load_real_ohlcv('NVDA')
+
+
+@pytest.fixture
+def ohlcv_df_spy():
+    """
+    SPY real daily data — market benchmark / regime context.
+    """
+    return _load_real_ohlcv('SPY')
+
+
+@pytest.fixture
+def ohlcv_df_btc():
+    """
+    BTC-USD real daily data — crypto path through feature engine.
+    """
+    return _load_real_ohlcv('BTC-USD')
 
 
 @pytest.fixture
 def short_ohlcv_df():
-    """50-bar OHLCV DataFrame — used to test insufficient-data guards."""
-    return _make_ohlcv(50)
+    """
+    Only 50 rows of AAPL (most recent) — used to test insufficient-data guards.
+    Even this is real data, not synthetic.
+    """
+    return _load_real_ohlcv('AAPL', n_rows=50)
+
+
+@pytest.fixture
+def bear_market_df():
+    """
+    AAPL data from the 2022 bear market (rate-hike selloff).
+    2022-01-01 to 2022-12-31 — AAPL fell ~27% that year.
+    """
+    df = _load_real_ohlcv('AAPL')
+    return df['2022-01-01':'2022-12-31']
+
+
+@pytest.fixture
+def bull_market_df():
+    """
+    NVDA data from the 2023 AI bull run.
+    2023-01-01 to 2023-12-31 — NVDA rose ~238% that year.
+    """
+    df = _load_real_ohlcv('NVDA')
+    return df['2023-01-01':'2023-12-31']
+
+
+@pytest.fixture
+def volatile_period_df():
+    """
+    SPY data during COVID crash + recovery (2020-03 to 2020-12).
+    Useful for testing circuit breaker and drawdown logic.
+    """
+    df = _load_real_ohlcv('SPY')
+    return df['2020-03-01':'2020-12-31']
+
+
+# ── Fixture metadata helper ───────────────────────────────────────────────────
+
+def load_fixture_manifest() -> dict:
+    """Return the manifest.json describing all available fixture files."""
+    manifest_path = FIXTURES_DIR / 'manifest.json'
+    if not manifest_path.exists():
+        return {}
+    with open(manifest_path) as f:
+        return json.load(f)
 
 
 # ── Paper Trader Fixtures ──────────────────────────────────────────────────────
@@ -127,33 +229,45 @@ def patch_settings(monkeypatch):
     monkeypatch.setenv('WEBHOOK_SECRET',    'test-webhook-secret')
 
 
-# ── Trade History Factories ───────────────────────────────────────────────────
+# ── Real Trade History (based on real price levels) ───────────────────────────
 
 def make_trade(action='SELL', symbol='AAPL', pnl=50.0, pnl_pct=0.05,
-               days_ago=1, reason='take_profit'):
-    """Factory for a single trade dict."""
+               days_ago=1, reason='take_profit', price=150.0):
+    """Factory for a single trade dict using realistic price levels."""
     return {
-        'action'   : action,
-        'symbol'   : symbol,
-        'shares'   : 10,
-        'price'    : 150.0,
-        'fill_price': 150.0,
-        'pnl'      : pnl,
-        'pnl_pct'  : pnl_pct,
-        'date'     : (datetime.now() - timedelta(days=days_ago)).isoformat(),
-        'reason'   : reason,
+        'action'    : action,
+        'symbol'    : symbol,
+        'shares'    : 10,
+        'price'     : price,
+        'fill_price': price,
+        'pnl'       : pnl,
+        'pnl_pct'   : pnl_pct,
+        'date'      : (datetime.now() - timedelta(days=days_ago)).isoformat(),
+        'reason'    : reason,
     }
 
 
 @pytest.fixture
 def sample_trade_history():
-    """A realistic mix of wins and losses for testing analytics."""
+    """
+    Realistic trade history using actual AAPL/NVDA/SPY price levels
+    from the 2024 trading period.
+    """
     return [
-        make_trade('SELL', 'AAPL',  pnl= 80.0, pnl_pct= 0.053, days_ago=1, reason='take_profit'),
-        make_trade('SELL', 'MSFT',  pnl=-35.0, pnl_pct=-0.023, days_ago=2, reason='stop_loss'),
-        make_trade('SELL', 'NVDA',  pnl=120.0, pnl_pct= 0.080, days_ago=3, reason='take_profit'),
-        make_trade('SELL', 'AMD',   pnl=-50.0, pnl_pct=-0.033, days_ago=4, reason='stop_loss'),
-        make_trade('SELL', 'GOOGL', pnl= 45.0, pnl_pct= 0.030, days_ago=5, reason='trailing_stop'),
-        make_trade('PARTIAL_SELL', 'TSLA', pnl=25.0, pnl_pct=0.050,
-                   days_ago=3, reason='partial_exit_5pct'),
+        # AAPL trades (price range ~170-230 in 2024)
+        make_trade('SELL',    'AAPL', pnl= 183.0, pnl_pct= 0.053, days_ago=1,
+                   reason='take_profit',  price=182.85),
+        make_trade('SELL',    'AAPL', pnl= -79.0, pnl_pct=-0.023, days_ago=2,
+                   reason='stop_loss',    price=175.20),
+        # NVDA trades (price range ~400-900 in 2024)
+        make_trade('SELL',    'NVDA', pnl= 640.0, pnl_pct= 0.080, days_ago=3,
+                   reason='take_profit',  price=495.00),
+        make_trade('SELL',    'NVDA', pnl=-225.0, pnl_pct=-0.033, days_ago=4,
+                   reason='stop_loss',    price=430.50),
+        # SPY trade (price range ~450-540 in 2024)
+        make_trade('SELL',    'SPY',  pnl= 147.0, pnl_pct= 0.030, days_ago=5,
+                   reason='trailing_stop', price=490.00),
+        # Partial exit (regression test for PARTIAL_SELL filter)
+        make_trade('PARTIAL_SELL', 'NVDA', pnl=112.0, pnl_pct=0.050, days_ago=3,
+                   reason='partial_exit_5pct', price=460.00),
     ]
