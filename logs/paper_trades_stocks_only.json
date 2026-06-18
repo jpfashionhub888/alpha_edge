@@ -1,5 +1,5 @@
 {
-  "capital": 8608.311936286926,
+  "capital": 7922.109520942688,
   "starting_capital": 10000.0,
   "positions": {
     "UNH": {
@@ -14,7 +14,7 @@
       "stop_loss_pct": 0.04827360361198013,
       "atr": 9.37642342703683,
       "partial_exit_done": false,
-      "current_price": 403.3299865722656
+      "current_price": 400.9599914550781
     },
     "SPY": {
       "shares": 1,
@@ -28,7 +28,21 @@
       "stop_loss_pct": 0.02904728841778184,
       "atr": 10.761439732142858,
       "partial_exit_done": false,
-      "current_price": 746.0700073242188
+      "current_price": 746.739990234375
+    },
+    "CRWD": {
+      "shares": 1,
+      "entry_price": 685.2024153442383,
+      "market_price": 684.8599853515625,
+      "entry_date": "2026-06-18T22:32:20.002804",
+      "highest_price": 685.2024153442383,
+      "signal": 0.6322918118674781,
+      "cost": 686.2024153442383,
+      "reason": "uptrend",
+      "stop_loss_pct": 0.08,
+      "atr": 39.088208879743306,
+      "partial_exit_done": false,
+      "current_price": 684.8599853515625
     }
   },
   "trade_history": [
@@ -185,11 +199,25 @@
       "reason": "uptrend",
       "atr": 10.761439732142858,
       "stop_loss_pct": 0.02904728841778184
+    },
+    {
+      "action": "BUY",
+      "symbol": "CRWD",
+      "shares": 1,
+      "price": 684.8599853515625,
+      "fill_price": 685.2024153442383,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "cost": 686.2024153442383,
+      "date": "2026-06-18T22:32:20.002810",
+      "reason": "uptrend",
+      "atr": 39.088208879743306,
+      "stop_loss_pct": 0.08
     }
   ],
-  "daily_realized_pnl": 246.88765953608936,
+  "daily_realized_pnl": 0.0,
   "daily_loss_limit": 500.0,
-  "last_reset_date": "2026-06-17",
+  "last_reset_date": "2026-06-18",
   "_halt_trading": false,
-  "saved_at": "2026-06-18T19:08:41.457868"
+  "saved_at": "2026-06-18T22:32:20.485016"
 }
