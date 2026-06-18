@@ -9,6 +9,8 @@ Your system processes and trades.
 import os
 import json
 import logging
+import time
+from collections import defaultdict
 from datetime import datetime
 from flask import Flask, request, jsonify
 
@@ -22,78 +24,135 @@ received_signals = []
 # Realized exit action types
 REALIZED_ACTIONS = {'SELL', 'PARTIAL_SELL'}
 
+# All valid action types
+VALID_ACTIONS = {'BUY', 'SELL', 'PARTIAL_SELL', 'CLOSE', 'HOLD'}
+
 # Webhook secret — read from env, never hardcode
 WEBHOOK_SECRET = os.getenv('WEBHOOK_SECRET', 'alphaedge_secret_2026')
+
+# ── Rate limiter: max 10 requests/min per IP ───────────────────────────────────
+_rate_counters: dict = defaultdict(list)  # ip -> [timestamps]
+RATE_LIMIT_MAX    = 10    # requests
+RATE_LIMIT_WINDOW = 60   # seconds
+
+
+def _check_rate_limit(ip: str) -> bool:
+    """Return True if request is allowed, False if rate limited."""
+    now = time.time()
+    window_start = now - RATE_LIMIT_WINDOW
+    # Prune old timestamps
+    _rate_counters[ip] = [t for t in _rate_counters[ip] if t > window_start]
+    if len(_rate_counters[ip]) >= RATE_LIMIT_MAX:
+        return False
+    _rate_counters[ip].append(now)
+    return True
+
+
+def _validate_payload(data: dict) -> tuple[bool, str]:
+    """
+    Validate webhook payload schema.
+    Returns (is_valid, error_message).
+    """
+    if not isinstance(data, dict):
+        return False, 'Payload must be a JSON object'
+    action = data.get('action', '')
+    if not action:
+        return False, 'Missing required field: action'
+    if action.upper() not in VALID_ACTIONS:
+        return False, f'Unknown action: {action}. Valid: {sorted(VALID_ACTIONS)}'
+    symbol = data.get('symbol', '')
+    if not symbol or not isinstance(symbol, str):
+        return False, 'Missing or invalid field: symbol'
+    price = data.get('price', None)
+    if price is not None and not isinstance(price, (int, float)):
+        return False, 'Field price must be a number'
+    return True, ''
 
 
 @app.route('/webhook', methods=['POST'])
 def receive_webhook():
-    """Receive webhook from TradingView."""
+    """Receive and validate webhook signal from TradingView."""
 
+    # ── Rate limit ─────────────────────────────────────────────────────────────
+    client_ip = request.headers.get('X-Real-IP', request.remote_addr)
+    if not _check_rate_limit(client_ip):
+        logger.warning(f'Rate limit exceeded for IP {client_ip}')
+        return jsonify({
+            'status' : 'error',
+            'message': 'Rate limit exceeded — max 10 signals per minute'
+        }), 429
+
+    # ── Parse JSON ─────────────────────────────────────────────────────────────
     try:
-        data = request.get_json()
-
+        data = request.get_json(force=True, silent=True)
         if data is None:
-            data = request.form.to_dict()
-
-        if not data:
-            raw = request.data.decode('utf-8')
+            # Fallback: try raw body
+            raw = request.data.decode('utf-8', errors='replace')
             try:
                 data = json.loads(raw)
-            except json.JSONDecodeError:
-                data = {'message': raw}
+            except (json.JSONDecodeError, ValueError):
+                return jsonify({
+                    'status' : 'error',
+                    'message': 'Invalid JSON body'
+                }), 400
 
-        # Verify secret if provided
+        if not data:
+            return jsonify({'status': 'error', 'message': 'Empty payload'}), 400
+
+        # ── Authenticate ───────────────────────────────────────────────────────
         secret = data.get('secret', '')
-        if secret and secret != WEBHOOK_SECRET:
+        if not secret:
+            logger.warning(f'Webhook from {client_ip}: missing secret field')
             return jsonify({
-                'status': 'error',
-                'message': 'invalid secret'
+                'status' : 'error',
+                'message': 'Missing required field: secret'
+            }), 401
+        if secret != WEBHOOK_SECRET:
+            logger.warning(f'Webhook from {client_ip}: invalid secret')
+            return jsonify({
+                'status' : 'error',
+                'message': 'Invalid secret'
             }), 401
 
-        # Parse signal
+        # ── Validate schema ────────────────────────────────────────────────────
+        ok, err = _validate_payload(data)
+        if not ok:
+            logger.warning(f'Webhook from {client_ip}: invalid payload — {err}')
+            return jsonify({'status': 'error', 'message': err}), 422
+
+        # ── Build signal ───────────────────────────────────────────────────────
         signal = {
-            'time': datetime.now().isoformat(),
-            'symbol': data.get('symbol', 'UNKNOWN'),
-            'action': data.get('action', 'UNKNOWN'),
-            'price': data.get('price', 0),
-            'message': data.get('message', ''),
+            'time'  : datetime.now().isoformat(),
+            'symbol': str(data.get('symbol', 'UNKNOWN')).upper(),
+            'action': str(data.get('action', 'UNKNOWN')).upper(),
+            'price' : float(data.get('price', 0) or 0),
+            'score' : float(data.get('score', 0.0) or 0.0),
             'source': 'tradingview',
-            'raw': data,
+            'ip'    : client_ip,
         }
 
         received_signals.append(signal)
-
-        # Keep last 100 signals
         if len(received_signals) > 100:
             received_signals.pop(0)
 
-        # Save to file
         save_signals()
 
-        action = signal['action'].upper()
-        symbol = signal['symbol']
-        price = signal['price']
-
+        logger.info(
+            f'Webhook: {signal["action"]} {signal["symbol"]} '
+            f'@ ${signal["price"]} from {client_ip}'
+        )
         print(
-            f"\n   📡 WEBHOOK RECEIVED:"
-            f" {action} {symbol} @ ${price}"
+            f'\n   📡 WEBHOOK RECEIVED:'
+            f' {signal["action"]} {signal["symbol"]} @ ${signal["price"]}'
         )
 
-        # Process the signal
         process_signal(signal)
 
-        return jsonify({
-            'status': 'success',
-            'signal': signal
-        }), 200
+        return jsonify({'status': 'success', 'signal': signal}), 200
 
     except Exception as e:
-        logger.error(f"Webhook error: {e}")
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 500
+        logger.error(f'Webhook unhandled error from {client_ip}: {e}')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
 @app.route('/signals', methods=['GET'])

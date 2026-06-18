@@ -68,33 +68,33 @@ class TestAuthentication:
             })
         assert r.status_code != 401
 
-    def test_missing_secret_not_blocked(self, webhook_client):
+    def test_missing_secret_returns_401(self, webhook_client):
         """
-        Per source code: secret check is skipped if the 'secret' field is absent.
-        Missing secret → treated as anonymous → processed (may succeed or fail on broker).
+        After Phase 2 hardening: missing secret field is now rejected with 401.
+        (Old behaviour was to allow missing secret — this was the security gap.)
         """
         with patch('execution.webhook_server.process_signal'):
             r = _post(webhook_client, {
                 'action': 'BUY', 'symbol': 'AAPL', 'price': 150.0
             })
-        # Not 401 — the code only validates secret IF it's provided
-        assert r.status_code != 401
+        assert r.status_code == 401
+
 
 
 class TestInputValidation:
     """Malformed input handling."""
 
-    def test_malformed_json_returns_error(self, webhook_client):
-        """Invalid JSON body triggers the outer except → returns 500 error dict."""
+    def test_malformed_json_returns_400(self, webhook_client):
+        """After hardening: invalid JSON body returns 400 Bad Request (not 500)."""
         r = webhook_client.post(
             '/webhook',
             data='{ NOT VALID JSON !!!',
             content_type='application/json',
         )
-        # Source catches all exceptions and returns 500 with error message
-        assert r.status_code == 500
+        assert r.status_code == 400
         body = r.get_json()
         assert body.get('status') == 'error'
+
 
     def test_empty_body_returns_error_or_processes(self, webhook_client):
         """Empty body → webhook either processes with empty signal or errors."""
