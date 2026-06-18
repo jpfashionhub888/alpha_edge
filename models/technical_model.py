@@ -12,10 +12,15 @@ import lightgbm as lgb
 from catboost import CatBoostClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.metrics import roc_auc_score
 from models.lstm_model import LSTMPredictor
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Overfit thresholds (kept in sync with model_validator.py)
+OVERFIT_WARN_GAP  = 0.10
+OVERFIT_HARD_STOP = 0.20
 
 
 class TechnicalPredictor:
@@ -27,13 +32,18 @@ class TechnicalPredictor:
     """
 
     def __init__(self, use_lstm=True):
-        self.models = {}
-        self.feature_names = []
-        self.trained = False
-        self.use_lstm = use_lstm
+        self.models       = {}
+        self.feature_names= []
+        self.trained      = False
+        self.use_lstm     = use_lstm
+        # Set after train() — AUC on last 20% of training data
+        self.train_auc    : float = 0.5
+        self.val_auc      : float = 0.5
+        self.overfit_gap  : float = 0.0
+        self.overfit_flagged: bool = False
 
     def train(self, X, y):
-        """Train all four models."""
+        """Train all models with built-in overfitting guard."""
 
         logger.info(
             f"Training ensemble on {len(X)} samples"
@@ -41,7 +51,20 @@ class TechnicalPredictor:
 
         self.feature_names = list(X.columns)
 
-        min_class = y.value_counts().min()
+        # ── Temporal validation split (last 20% = val set) ────────────────────
+        # Must be TEMPORAL not random — future-leak otherwise
+        val_size  = max(30, int(len(X) * 0.20))
+        X_val_raw = X.iloc[-val_size:]
+        y_val_raw = y.iloc[-val_size:]
+        X_tr      = X.iloc[:-val_size]
+        y_tr      = y.iloc[:-val_size]
+
+        # Fall back to full data if val split leaves too few train rows
+        if len(X_tr) < 50:
+            X_tr, y_tr = X, y
+            X_val_raw, y_val_raw = X, y
+
+        min_class = y_tr.value_counts().min()
         n_folds = min(5, min_class)
         n_folds = max(2, n_folds)
 
@@ -74,7 +97,7 @@ class TechnicalPredictor:
             else:
                 self.models['xgboost'] = xgb_base
 
-            self.models['xgboost'].fit(X, y)
+            self.models['xgboost'].fit(X_tr, y_tr)
 
         except Exception as e:
             logger.warning(f"XGBoost training failed: {e}")
@@ -107,7 +130,7 @@ class TechnicalPredictor:
             else:
                 self.models['lightgbm'] = lgb_base
 
-            self.models['lightgbm'].fit(X, y)
+            self.models['lightgbm'].fit(X_tr, y_tr)
 
         except Exception as e:
             logger.warning(f"LightGBM training failed: {e}")
@@ -138,7 +161,7 @@ class TechnicalPredictor:
             else:
                 self.models['random_forest'] = rf_base
 
-            self.models['random_forest'].fit(X, y)
+            self.models['random_forest'].fit(X_tr, y_tr)
 
         except Exception as e:
             logger.warning(
@@ -157,7 +180,7 @@ class TechnicalPredictor:
                 verbose       = 0,
                 thread_count  = 1,
             )
-            cat_model.fit(X, y)
+            cat_model.fit(X_tr, y_tr)
             self.models['catboost'] = cat_model
             logger.info("CatBoost model trained successfully")
         except Exception as e:
@@ -203,6 +226,40 @@ class TechnicalPredictor:
         logger.info(
             f"Ensemble training complete ({n_models} models)"
         )
+
+        # ── Overfitting guard ─────────────────────────────────────────────────
+        # Evaluate on BOTH the training tail and the held-out validation set
+        # to catch models that memorise rather than generalise.
+        try:
+            train_preds = self.predict(X_tr)
+            val_preds   = self.predict(X_val_raw)
+
+            if y_tr.nunique() >= 2:
+                self.train_auc = float(roc_auc_score(y_tr, train_preds))
+            if y_val_raw.nunique() >= 2:
+                self.val_auc   = float(roc_auc_score(y_val_raw, val_preds))
+
+            self.overfit_gap = self.train_auc - self.val_auc
+
+            if self.overfit_gap > OVERFIT_HARD_STOP:
+                self.overfit_flagged = True
+                logger.error(
+                    f'OVERFIT HARD STOP: train_AUC={self.train_auc:.3f} '
+                    f'val_AUC={self.val_auc:.3f} gap={self.overfit_gap:.3f} '
+                    f'— this fold will NOT generate live signals'
+                )
+            elif self.overfit_gap > OVERFIT_WARN_GAP:
+                logger.warning(
+                    f'Overfit warning: train_AUC={self.train_auc:.3f} '
+                    f'val_AUC={self.val_auc:.3f} gap={self.overfit_gap:.3f}'
+                )
+            else:
+                logger.info(
+                    f'Overfit check OK: train_AUC={self.train_auc:.3f} '
+                    f'val_AUC={self.val_auc:.3f} gap={self.overfit_gap:.3f}'
+                )
+        except Exception as e:
+            logger.debug(f'Overfit check failed (non-critical): {e}')
 
         return self
 
