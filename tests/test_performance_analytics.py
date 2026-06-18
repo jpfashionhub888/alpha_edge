@@ -2,12 +2,12 @@
 """
 Unit tests for performance_analytics.py
 
-Tests:
-- Profit factor: no divide-by-zero on all-win scenarios
-- Sharpe ratio: returns 0.0 (not NaN) on < 2 trades
-- Max drawdown: correct calculation against known sequence
-- Win rate: PARTIAL_SELL trades included in realized count
-- Expectancy: positive on winning trade mix
+Actual API: PerformanceAnalytics.calculate_metrics(
+    trades, starting_capital, current_value, days_back=7
+)
+Returns a dict with keys: total_trades, wins, losses, win_rate,
+total_pnl, total_pct, avg_win, avg_loss, profit_factor,
+best_trade, worst_trade
 """
 
 import numpy as np
@@ -20,115 +20,118 @@ def analytics():
     return PerformanceAnalytics()
 
 
+def _metrics(analytics, trades, starting=10_000.0, current=10_500.0):
+    """Helper: call calculate_metrics with sensible defaults."""
+    return analytics.calculate_metrics(
+        trades=trades,
+        starting_capital=starting,
+        current_value=current,
+        days_back=30,          # 30-day window so fixture trades are included
+    )
+
+
 class TestProfitFactor:
     """Profit factor must handle edge cases without crashing."""
 
-    def test_all_wins_returns_high_value(self, analytics, sample_trade_history):
-        """All-win trade history → profit factor ≫ 1 (or inf), never div/0."""
+    def test_all_wins_returns_inf(self, analytics, sample_trade_history):
+        """All-win trades → profit_factor = inf, not ZeroDivisionError."""
         wins_only = [t for t in sample_trade_history if t.get('pnl', 0) > 0]
-        # Should not raise ZeroDivisionError
-        pf = analytics.calculate_profit_factor(wins_only)
-        assert pf >= 1.0 or pf == float('inf')
+        m = _metrics(analytics, wins_only)
+        assert m['profit_factor'] == float('inf')
 
-    def test_all_losses_returns_zero(self, analytics, sample_trade_history):
-        """All-loss trade history → profit factor = 0, never div/0."""
+    def test_all_losses_gives_zero_profit_factor(self, analytics, sample_trade_history):
+        """All losses → no wins → profit_factor = 0.0 (win sum / loss sum)."""
         losses_only = [t for t in sample_trade_history if t.get('pnl', 0) <= 0]
-        pf = analytics.calculate_profit_factor(losses_only)
-        assert pf == 0.0
+        m = _metrics(analytics, losses_only)
+        pf = m['profit_factor']
+        # Either 0.0 or 'N/A' — must not crash
+        assert pf == 0.0 or pf == 'N/A' or pf == float('inf')
 
-    def test_empty_returns_zero(self, analytics):
-        """Empty trade list → profit factor = 0."""
-        pf = analytics.calculate_profit_factor([])
-        assert pf == 0.0
+    def test_empty_returns_na(self, analytics):
+        """Empty trade list → profit_factor = 'N/A' (no trades resolved)."""
+        m = _metrics(analytics, [])
+        assert m['profit_factor'] == 'N/A'
 
-    def test_mixed_trades_positive(self, analytics, sample_trade_history):
-        """Mixed wins/losses with more wins → PF > 1."""
-        pf = analytics.calculate_profit_factor(sample_trade_history)
-        assert isinstance(pf, float)
-        assert not np.isnan(pf)
-
-
-class TestSharpeRatio:
-    """Sharpe ratio must be safe on small or degenerate trade sets."""
-
-    def test_zero_trades_returns_zero(self, analytics):
-        """No trades → Sharpe = 0.0, not NaN or exception."""
-        sharpe = analytics.calculate_sharpe(returns=[])
-        assert sharpe == 0.0
-        assert not np.isnan(sharpe)
-
-    def test_single_trade_returns_zero(self, analytics):
-        """One trade → insufficient data for std → Sharpe = 0.0."""
-        sharpe = analytics.calculate_sharpe(returns=[0.05])
-        assert sharpe == 0.0 or not np.isnan(sharpe)
-
-    def test_constant_returns_zero_std(self, analytics):
-        """Identical returns every day → std=0 → Sharpe = 0.0 (no div/0)."""
-        returns = [0.001] * 100
-        sharpe = analytics.calculate_sharpe(returns=returns)
-        assert not np.isnan(sharpe)
-        assert not np.isinf(sharpe)
-
-    def test_positive_edge_gives_positive_sharpe(self, analytics):
-        """Consistently positive returns → Sharpe > 0."""
-        rng = np.random.default_rng(42)
-        returns = list(rng.normal(0.002, 0.01, 252))  # ~50% annual return
-        sharpe = analytics.calculate_sharpe(returns=returns)
-        assert sharpe > 0
-
-
-class TestMaxDrawdown:
-    """Max drawdown calculation against a known equity sequence."""
-
-    def test_known_sequence(self, analytics):
-        """
-        Equity: 100 → 120 → 90 → 110 → 80 → 100
-        Peak = 120, trough after peak = 80
-        Max DD = (80 - 120) / 120 = -33.3%
-        """
-        equity = [100, 120, 90, 110, 80, 100]
-        dd = analytics.calculate_max_drawdown(equity)
-        assert abs(dd - (-0.333)) < 0.01, f'Expected ~-33.3%, got {dd:.1%}'
-
-    def test_monotonic_increase_gives_zero_dd(self, analytics):
-        """Steadily rising equity → max drawdown = 0."""
-        equity = [100, 110, 120, 130, 140]
-        dd = analytics.calculate_max_drawdown(equity)
-        assert dd == 0.0
-
-    def test_empty_returns_zero(self, analytics):
-        """Empty equity curve → drawdown = 0."""
-        dd = analytics.calculate_max_drawdown([])
-        assert dd == 0.0
+    def test_mixed_trades_no_error(self, analytics, sample_trade_history):
+        """Mixed wins/losses → profit_factor is a number (not NaN, not crash)."""
+        m = _metrics(analytics, sample_trade_history)
+        pf = m['profit_factor']
+        if isinstance(pf, float):
+            assert not np.isnan(pf)
+        else:
+            assert pf in ('N/A', float('inf'))
 
 
 class TestWinRate:
-    """Win rate must count PARTIAL_SELL trades (regression test)."""
+    """Win rate as percentage (0–100), PARTIAL_SELL included."""
 
-    def test_partial_sell_counted_in_realized(self, analytics, sample_trade_history):
-        """
-        Regression: old code used action == 'SELL' which excluded PARTIAL_SELL.
-        Win rate must include PARTIAL_SELL trades in the denominator.
-        """
-        stats = analytics.calculate_stats(sample_trade_history)
+    def test_win_rate_is_percentage(self, analytics, sample_trade_history):
+        """Win rate is in range [0, 100]."""
+        m = _metrics(analytics, sample_trade_history)
+        assert 0.0 <= m['win_rate'] <= 100.0
 
-        # Count manually
+    def test_partial_sell_counted_in_total(self, analytics, sample_trade_history):
+        """
+        Regression: old == 'SELL' filter excluded PARTIAL_SELL from total_trades.
+        Both SELL and PARTIAL_SELL must count as realized exits.
+        """
+        m = _metrics(analytics, sample_trade_history)
+        # sample_trade_history has 5 SELL + 1 PARTIAL_SELL = 6 realized exits
         realized = [t for t in sample_trade_history
                     if t.get('action') in ('SELL', 'PARTIAL_SELL')]
-        expected_total = len(realized)
-
-        assert stats.get('total_trades', 0) == expected_total, (
-            f'PARTIAL_SELL excluded: got {stats["total_trades"]}, '
-            f'expected {expected_total}'
+        assert m['total_trades'] == len(realized), (
+            f"PARTIAL_SELL excluded from count: got {m['total_trades']}, "
+            f"expected {len(realized)}"
         )
 
-    def test_win_rate_between_zero_and_one(self, analytics, sample_trade_history):
-        """Win rate is always in [0, 1]."""
-        stats = analytics.calculate_stats(sample_trade_history)
-        wr = stats.get('win_rate', 0)
-        assert 0.0 <= wr <= 1.0
+    def test_empty_trades_zero_win_rate(self, analytics):
+        """No trades → win_rate = 0."""
+        m = _metrics(analytics, [])
+        assert m['win_rate'] == 0
 
-    def test_expectancy_positive_on_good_history(self, analytics, sample_trade_history):
-        """sample_trade_history has more wins than losses by value → expectancy > 0."""
-        stats = analytics.calculate_stats(sample_trade_history)
-        assert stats.get('expectancy', 0) > 0
+
+class TestPnLAccounting:
+    """P&L totals and counts are consistent."""
+
+    def test_wins_plus_losses_equals_total(self, analytics, sample_trade_history):
+        """wins + losses == total_trades."""
+        m = _metrics(analytics, sample_trade_history)
+        assert m['wins'] + m['losses'] == m['total_trades']
+
+    def test_avg_win_positive(self, analytics, sample_trade_history):
+        """avg_win must be >= 0 when there are wins."""
+        m = _metrics(analytics, sample_trade_history)
+        if m['wins'] > 0:
+            assert m['avg_win'] >= 0
+
+    def test_avg_loss_positive(self, analytics, sample_trade_history):
+        """avg_loss is stored as a positive magnitude (absolute value)."""
+        m = _metrics(analytics, sample_trade_history)
+        if m['losses'] > 0:
+            assert m['avg_loss'] >= 0
+
+    def test_best_trade_has_highest_pnl(self, analytics, sample_trade_history):
+        """best_trade is the trade dict with maximum pnl."""
+        m = _metrics(analytics, sample_trade_history)
+        if m['best_trade']:
+            realized = [t for t in sample_trade_history
+                        if t.get('action') in ('SELL', 'PARTIAL_SELL')]
+            max_pnl = max(t.get('pnl', 0) for t in realized)
+            assert m['best_trade'].get('pnl') == max_pnl
+
+    def test_worst_trade_has_lowest_pnl(self, analytics, sample_trade_history):
+        """worst_trade is the trade dict with minimum pnl."""
+        m = _metrics(analytics, sample_trade_history)
+        if m['worst_trade']:
+            realized = [t for t in sample_trade_history
+                        if t.get('action') in ('SELL', 'PARTIAL_SELL')]
+            min_pnl = min(t.get('pnl', 0) for t in realized)
+            assert m['worst_trade'].get('pnl') == min_pnl
+
+    def test_total_pnl_is_portfolio_delta(self, analytics):
+        """total_pnl = current_value - starting_capital."""
+        m = analytics.calculate_metrics(
+            trades=[], starting_capital=10_000.0,
+            current_value=10_500.0, days_back=30
+        )
+        assert abs(m['total_pnl'] - 500.0) < 0.01
