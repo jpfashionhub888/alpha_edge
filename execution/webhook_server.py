@@ -81,8 +81,15 @@ def receive_webhook():
             'status' : 'error',
             'message': 'Rate limit exceeded — max 10 signals per minute'
         }), 429
+    # ── Kill switch ────────────────────────────────────────────────────────────
+    if _kill_switch_active:
+        logger.warning(f'Signal rejected — kill switch active: {_kill_switch_reason}')
+        return jsonify({
+            'status' : 'halted',
+            'message': f'Kill switch active: {_kill_switch_reason}',
+            'resume' : 'POST /kill-switch/reset to resume',
+        }), 503
 
-    # ── Parse JSON ─────────────────────────────────────────────────────────────
     try:
         data = request.get_json(force=True, silent=True)
         if data is None:
@@ -168,12 +175,91 @@ def get_signals():
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint."""
-
     return jsonify({
-        'status': 'running',
-        'time': datetime.now().isoformat(),
+        'status'          : 'halted' if _kill_switch_active else 'running',
+        'kill_switch'     : _kill_switch_active,
+        'time'            : datetime.now().isoformat(),
         'signals_received': len(received_signals),
     })
+
+
+# ── Kill Switch ────────────────────────────────────────────────────────────────
+_kill_switch_active: bool = False
+_kill_switch_reason: str  = ''
+
+
+@app.route('/kill-switch', methods=['POST'])
+def activate_kill_switch():
+    """
+    Emergency halt — immediately blocks all new signal processing.
+    POST body: {"secret": "<WEBHOOK_SECRET>", "reason": "why"}
+    """
+    global _kill_switch_active, _kill_switch_reason
+    try:
+        data   = request.get_json(force=True, silent=True) or {}
+        secret = data.get('secret', '')
+        if not secret or secret != WEBHOOK_SECRET:
+            logger.warning('Kill switch attempt with invalid secret')
+            return jsonify({'status': 'error', 'message': 'Invalid secret'}), 401
+
+        reason = str(data.get('reason', 'Manual halt'))[:200]
+        _kill_switch_active = True
+        _kill_switch_reason = reason
+        logger.critical(f'KILL SWITCH ACTIVATED — reason: {reason}')
+
+        try:
+            from monitoring.telegram_bot import TelegramBot
+            bot = TelegramBot()
+            if bot.enabled:
+                bot.send_message(
+                    f'EMERGENCY HALT\n\nKill switch activated.\n'
+                    f'Reason: {reason}\nTime: {datetime.now().isoformat()}\n\n'
+                    f'All new signals are BLOCKED.\nResume: POST /kill-switch/reset'
+                )
+        except Exception as e:
+            logger.debug(f'Kill switch Telegram failed: {e}')
+
+        return jsonify({'status': 'halted', 'reason': reason}), 200
+
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/kill-switch/reset', methods=['POST'])
+def reset_kill_switch():
+    """Resume trading after emergency halt."""
+    global _kill_switch_active, _kill_switch_reason
+    try:
+        data   = request.get_json(force=True, silent=True) or {}
+        secret = data.get('secret', '')
+        if not secret or secret != WEBHOOK_SECRET:
+            return jsonify({'status': 'error', 'message': 'Invalid secret'}), 401
+
+        _kill_switch_active = False
+        _kill_switch_reason = ''
+        logger.info('Kill switch RESET — trading resumed')
+
+        try:
+            from monitoring.telegram_bot import TelegramBot
+            TelegramBot().send_message(
+                f'Trading Resumed\nKill switch reset.\nTime: {datetime.now().isoformat()}'
+            )
+        except Exception:
+            pass
+
+        return jsonify({'status': 'running', 'message': 'Kill switch reset'}), 200
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/kill-switch', methods=['GET'])
+def kill_switch_status():
+    """Return current kill switch state."""
+    return jsonify({
+        'active': _kill_switch_active,
+        'reason': _kill_switch_reason,
+        'time'  : datetime.now().isoformat(),
+    }), 200
 
 
 def process_signal(signal):

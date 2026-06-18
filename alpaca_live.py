@@ -66,17 +66,22 @@ class AlpacaLiveTrader:
     """
 
     def __init__(self):
-        from execution.alpaca_broker import AlpacaBroker
-        from monitoring.telegram_bot  import TelegramBot
+        from execution.alpaca_broker        import AlpacaBroker
+        from monitoring.telegram_bot        import TelegramBot
+        from monitoring.heartbeat           import HeartbeatMonitor
 
         self.broker          = AlpacaBroker()
         self.telegram        = TelegramBot()
         self.mode            = get_mode()
-        self.circuit_breaker = RiskCircuitBreaker()  # FIX: wired in — was missing entirely
+        self.circuit_breaker = RiskCircuitBreaker()
+
+        # Phase 4: heartbeat monitor — writes logs/heartbeats/alpaca_bot.json
+        self.heartbeat = HeartbeatMonitor(service_name='alpaca_bot')
+        self.heartbeat.start()
 
         # Track our own stop/target levels since Alpaca paper
         # doesn't support bracket orders on all account types
-        # symbol → {entry, stop, target, shares, dollar_value}
+        # symbol -> {entry, stop, target, shares, dollar_value}
         self.managed_positions: dict[str, dict] = {}
 
         # Price monitor thread
@@ -99,6 +104,22 @@ class AlpacaLiveTrader:
         # Show account status
         self._print_account()
 
+        # Phase 4: startup reconciliation
+        try:
+            from monitoring.reconciliation import reconcile_on_startup
+            discrepancies = reconcile_on_startup(
+                broker  = self.broker,
+                log_file= 'logs/paper_trades_stocks_only.json',
+                service = 'alpaca_bot',
+            )
+            if discrepancies:
+                logger.error(
+                    f'Reconciliation found {len(discrepancies)} discrepancies — '
+                    f'review logs/reconciliation.log before trading'
+                )
+        except Exception as e:
+            logger.warning(f'Reconciliation skipped: {e}')
+
         # Load any existing Alpaca positions into managed_positions
         self._sync_positions()
 
@@ -114,6 +135,7 @@ class AlpacaLiveTrader:
             while True:
                 if is_market_hours() or SCAN_OUTSIDE_HOURS:
                     self._run_scan()
+                    self.heartbeat.ping()    # Phase 4: register completed cycle
                 else:
                     now_et = datetime.now(MARKET_TZ).strftime('%H:%M ET')
                     print(f'[{now_et}] Market closed — waiting...')
