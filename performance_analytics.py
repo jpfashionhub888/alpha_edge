@@ -5,9 +5,13 @@
 #   when computing wins, losses, avg_win/loss, profit_factor, and
 #   best/worst trade. Previously partial exits were silently excluded,
 #   understating realized P&L and win count in the weekly report.
+#
+# v2: Adds Sharpe Ratio, Sortino Ratio, Calmar Ratio, Max Drawdown
+#   computed from the equity curve reconstructed from trade history.
 
 import json
 import os
+import math
 import logging
 from datetime import datetime, timedelta
 
@@ -15,6 +19,9 @@ logger = logging.getLogger(__name__)
 
 # Exit action types that represent realized P&L events
 REALIZED_ACTIONS = ('SELL', 'PARTIAL_SELL')   # P1-3
+
+RISK_FREE_RATE = 0.05   # annualised (approx 5% T-bill)
+TRADING_DAYS  = 252     # annualisation factor
 
 
 class PerformanceAnalytics:
@@ -60,6 +67,99 @@ class PerformanceAnalytics:
             'profit_factor': 'N/A',
             'best_trade'   : None,
             'worst_trade'  : None,
+            'sharpe'       : 'N/A',
+            'sortino'      : 'N/A',
+            'calmar'       : 'N/A',
+            'max_drawdown' : 0.0,
+        }
+
+    def _build_equity_curve(self, exits, starting_capital):
+        """
+        Build a daily equity curve from realized exits.
+        Returns a list of daily returns (as fractions) sorted by date.
+        Used for Sharpe, Sortino, and Calmar calculations.
+        """
+        if not exits:
+            return []
+
+        # Sort exits by date
+        dated = []
+        for t in exits:
+            try:
+                dated.append((datetime.fromisoformat(t['date']), t.get('pnl', 0)))
+            except Exception:
+                continue
+        if not dated:
+            return []
+
+        dated.sort(key=lambda x: x[0])
+
+        # Aggregate P&L by date (multiple trades same day collapse)
+        daily_pnl = {}
+        for dt, pnl in dated:
+            day = dt.date()
+            daily_pnl[day] = daily_pnl.get(day, 0) + pnl
+
+        # Build equity curve and compute daily returns
+        equity = starting_capital
+        daily_returns = []
+        for day in sorted(daily_pnl):
+            equity_prev = equity
+            equity += daily_pnl[day]
+            if equity_prev > 0:
+                daily_returns.append((equity - equity_prev) / equity_prev)
+
+        return daily_returns
+
+    def _risk_metrics(self, daily_returns, total_pct, days_back):
+        """
+        Compute Sharpe, Sortino, Calmar, and Max Drawdown.
+
+        Sharpe  = (mean_return - daily_rfr) / std_return  * sqrt(252)
+        Sortino = (mean_return - daily_rfr) / downside_std * sqrt(252)
+        Calmar  = annualised_return / |max_drawdown|
+        """
+        if not daily_returns or len(daily_returns) < 2:
+            return {'sharpe': 'N/A', 'sortino': 'N/A', 'calmar': 'N/A', 'max_drawdown': 0.0}
+
+        # Daily risk-free rate
+        daily_rfr = RISK_FREE_RATE / TRADING_DAYS
+
+        mean_r   = sum(daily_returns) / len(daily_returns)
+        excess   = [r - daily_rfr for r in daily_returns]
+        variance = sum(e ** 2 for e in excess) / (len(excess) - 1)
+        std_r    = math.sqrt(variance) if variance > 0 else 0
+
+        # Sharpe
+        sharpe = (mean_r - daily_rfr) / std_r * math.sqrt(TRADING_DAYS) if std_r > 0 else 'N/A'
+
+        # Sortino — only downside deviations
+        downside = [min(r - daily_rfr, 0) for r in daily_returns]
+        down_var = sum(d ** 2 for d in downside) / max(len(downside) - 1, 1)
+        down_std = math.sqrt(down_var) if down_var > 0 else 0
+        sortino  = (mean_r - daily_rfr) / down_std * math.sqrt(TRADING_DAYS) if down_std > 0 else 'N/A'
+
+        # Max Drawdown from equity curve
+        peak = 1.0
+        max_dd = 0.0
+        equity = 1.0
+        for r in daily_returns:
+            equity *= (1 + r)
+            if equity > peak:
+                peak = equity
+            dd = (peak - equity) / peak
+            if dd > max_dd:
+                max_dd = dd
+
+        # Calmar
+        ann_return = (1 + mean_r) ** TRADING_DAYS - 1
+        calmar = ann_return / max_dd if max_dd > 0 else 'N/A'
+
+        return {
+            'sharpe'      : round(sharpe,  2) if isinstance(sharpe,  float) else sharpe,
+            'sortino'     : round(sortino, 2) if isinstance(sortino, float) else sortino,
+            'calmar'      : round(calmar,  2) if isinstance(calmar,  float) else calmar,
+            'max_drawdown': round(max_dd * 100, 2),   # as percentage
         }
 
     def calculate_metrics(self, trades, starting_capital,
@@ -68,6 +168,7 @@ class PerformanceAnalytics:
         Calculate performance metrics.
 
         P1-3 FIX: Counts both SELL and PARTIAL_SELL as realized trades.
+        v2: Adds Sharpe, Sortino, Calmar, Max Drawdown.
         """
         if not trades:
             return self._empty_metrics(current_value, starting_capital, days_back)
@@ -123,6 +224,10 @@ class PerformanceAnalytics:
         total_pnl = current_value - starting_capital
         total_pct = total_pnl / starting_capital * 100 if starting_capital else 0
 
+        # v2: Risk-adjusted metrics from equity curve
+        daily_returns = self._build_equity_curve(exits, starting_capital)
+        risk = self._risk_metrics(daily_returns, total_pct, days_back)
+
         return {
             'total_trades' : total,
             'wins'         : len(wins),
@@ -135,6 +240,10 @@ class PerformanceAnalytics:
             'profit_factor': profit_factor,
             'best_trade'   : best_trade,
             'worst_trade'  : worst_trade,
+            'sharpe'       : risk['sharpe'],
+            'sortino'      : risk['sortino'],
+            'calmar'       : risk['calmar'],
+            'max_drawdown' : risk['max_drawdown'],
         }
 
     def generate_report(self, days_back=7):
@@ -200,6 +309,14 @@ class PerformanceAnalytics:
                 return 'N/A'
             return f"{pf:.2f}x"
 
+        def fmt_ratio(r):
+            if isinstance(r, (int, float)):
+                return f"{r:.2f}"
+            return str(r)
+
+        def fmt_dd(dd):
+            return f"{dd:.2f}%" if isinstance(dd, (int, float)) else 'N/A'
+
         report = f"""TRADING EMPIRE WEEKLY REPORT
 ==============================
 Period: Last {days_back} days
@@ -210,6 +327,8 @@ ALPHAEDGE (US Stocks):
   P&L:           {fmt_pnl(alpha_metrics['total_pnl'], alpha_metrics['total_pct'])}
   Trades:        {alpha_metrics['total_trades']} | Win Rate: {alpha_metrics['win_rate']:.1f}%
   Profit Factor: {fmt_pf(alpha_metrics['profit_factor'])}
+  Sharpe:        {fmt_ratio(alpha_metrics['sharpe'])} | Sortino: {fmt_ratio(alpha_metrics['sortino'])} | Calmar: {fmt_ratio(alpha_metrics['calmar'])}
+  Max Drawdown:  {fmt_dd(alpha_metrics['max_drawdown'])}
   Best:          {fmt_trade(alpha_metrics['best_trade'])}
   Worst:         {fmt_trade(alpha_metrics['worst_trade'])}
 
@@ -218,6 +337,8 @@ BHARATEDGE (Indian Stocks):
   P&L:           {fmt_pnl(bharat_metrics['total_pnl'], bharat_metrics['total_pct'], 'Rs')}
   Trades:        {bharat_metrics['total_trades']} | Win Rate: {bharat_metrics['win_rate']:.1f}%
   Profit Factor: {fmt_pf(bharat_metrics['profit_factor'])}
+  Sharpe:        {fmt_ratio(bharat_metrics['sharpe'])} | Sortino: {fmt_ratio(bharat_metrics['sortino'])} | Calmar: {fmt_ratio(bharat_metrics['calmar'])}
+  Max Drawdown:  {fmt_dd(bharat_metrics['max_drawdown'])}
   Best:          {fmt_trade(bharat_metrics['best_trade'], 'Rs')}
   Worst:         {fmt_trade(bharat_metrics['worst_trade'], 'Rs')}
 
@@ -226,6 +347,8 @@ CRYPTOEDGE (Crypto 24/7):
   P&L:           {fmt_pnl(crypto_metrics['total_pnl'], crypto_metrics['total_pct'])}
   Trades:        {crypto_metrics['total_trades']} | Win Rate: {crypto_metrics['win_rate']:.1f}%
   Profit Factor: {fmt_pf(crypto_metrics['profit_factor'])}
+  Sharpe:        {fmt_ratio(crypto_metrics['sharpe'])} | Sortino: {fmt_ratio(crypto_metrics['sortino'])} | Calmar: {fmt_ratio(crypto_metrics['calmar'])}
+  Max Drawdown:  {fmt_dd(crypto_metrics['max_drawdown'])}
   Best:          {fmt_trade(crypto_metrics['best_trade'])}
   Worst:         {fmt_trade(crypto_metrics['worst_trade'])}
 

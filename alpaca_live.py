@@ -247,6 +247,14 @@ class AlpacaLiveTrader:
         corr_filter     = CorrelationFilter(max_per_sector=2)
         veto_agent      = VetoAgent()
 
+        # Layer 10: Options Flow Intelligence (free, non-blocking)
+        try:
+            from options_analyzer import OptionsAnalyzer
+            options_analyzer = OptionsAnalyzer(cache_minutes=30)
+        except Exception as e:
+            logger.warning(f'OptionsAnalyzer import failed — Layer 10 disabled: {e}')
+            options_analyzer = None
+
         # ── Fetch + score stocks ──────────────────────────────────
         stock_fetcher = StockDataFetcher(watchlist=watchlist, lookback_days=730)
         stock_data    = stock_fetcher.fetch_all()
@@ -412,6 +420,27 @@ class AlpacaLiveTrader:
             if not rr_ok:
                 print(f'  {symbol}: SKIP — R:R {rr_ratio:.1f}')
                 continue
+
+            # ── Layer 10: Options Flow ─────────────────────────────
+            options_score = 0.0
+            if options_analyzer is not None:
+                try:
+                    options_score = options_analyzer.get_options_score(symbol)
+                    if options_score < -0.20:
+                        print(
+                            f'  {symbol}: SKIP — options bearish '
+                            f'(score={options_score:+.2f})'
+                        )
+                        continue
+                    if options_score != 0.0:
+                        # Adjust combined score (informational, capped at 1.0)
+                        combined = min(1.0, combined + options_score * 0.5)
+                        print(
+                            f'  {symbol}: options score {options_score:+.2f} '
+                            f'→ adjusted combined={combined:.2f}'
+                        )
+                except Exception as e:
+                    logger.warning(f'{symbol}: options layer error (non-blocking): {e}')
 
             # ── ALL PASSED — execute on Alpaca ────────────────────
             account     = self.broker.get_account()

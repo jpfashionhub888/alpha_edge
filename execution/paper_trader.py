@@ -11,6 +11,9 @@ from config import settings
 
 logger = logging.getLogger(__name__)
 
+# ML Score Exit threshold — exit a held position when confidence drops below this
+ML_EXIT_THRESHOLD = getattr(settings, 'ML_EXIT_THRESHOLD', 0.40)
+
 
 class PaperTrader:
     """
@@ -32,6 +35,9 @@ class PaperTrader:
     - Per-trade max loss cap added (Risk 1)
     - Daily loss limit at trader level (Risk 2)
     - Auto-save after every open and close (Risk 3)
+
+    Additions (v3):
+    - ML Score Exit: closes position when live ML confidence < ML_EXIT_THRESHOLD
     """
 
     def __init__(self,
@@ -192,7 +198,7 @@ class PaperTrader:
     # ------------------------------------------------------------------ #
 
     def open_position(self, symbol, price, signal,
-                      reason='signal', atr=None):
+                      reason='signal', atr=None, ml_score=None):
         """
         Open a new long position.
 
@@ -276,6 +282,7 @@ class PaperTrader:
             'stop_loss_pct'      : stop_loss_pct,
             'atr'                : atr or 0,
             'partial_exit_done'  : False,
+            'entry_ml_score'     : ml_score,   # v3: track entry confidence
         }
 
         trade = {
@@ -291,6 +298,7 @@ class PaperTrader:
             'reason'      : reason,
             'atr'         : atr or 0,
             'stop_loss_pct': stop_loss_pct,
+            'entry_ml_score': ml_score,
         }
         self.trade_history.append(trade)
 
@@ -380,22 +388,30 @@ class PaperTrader:
     # ------------------------------------------------------------------ #
 
     def update_position(self, symbol, current_price,
-                        stop_loss    = 0.03,
-                        take_profit  = 0.08,
-                        trailing_stop = 0.035):
+                        stop_loss     = 0.03,
+                        take_profit   = 0.08,
+                        trailing_stop = 0.035,
+                        ml_score      = None):
         """
         Check exit conditions for an open position.
 
-        Check order (Flaw 1 fix):
+        Check order (v3):
             1. Stop loss          — most urgent, always first
             2. Full take profit   — 8% wins before partial 5% is checked
             3. Partial exit       — 50% size reduction at 5% gain
-            4. Trailing stop      — only fires after min profit threshold
-            5. Time stop          — last resort for flat positions
+            4. ML Score Exit      — exits when live ML confidence < 0.40
+            5. Trailing stop      — only fires after min profit threshold
+            6. Time stop          — last resort for flat positions
 
         Trailing stop activation threshold (Bug 6 fix):
             Only fires after the position has reached +2% at its peak.
             Prevents premature exit on day-one slippage dips.
+
+        ML Score Exit (v3):
+            If ml_score is provided and drops below ML_EXIT_THRESHOLD,
+            the position is exited regardless of P&L direction.
+            Skipped if the position is already profitable enough for
+            trailing stop (max_gain >= 5%) to avoid cutting winners.
         """
 
         if symbol not in self.positions:
@@ -471,7 +487,27 @@ class PaperTrader:
                 self.save_state()
             return
 
-        # ── 4. TRAILING STOP ──────────────────────────────────────────
+        # ── 4. ML SCORE EXIT ──────────────────────────────────────────
+        # v3: if the model's current confidence has dropped below threshold
+        # AND the position hasn't already surged (max_gain < 5%),
+        # exit now before the loss deepens.
+        if ml_score is not None and ml_score < ML_EXIT_THRESHOLD:
+            if max_gain < 0.05:   # don't cut a winner that's already at 5%+
+                print(
+                    f"   🤖 ML EXIT:      {symbol}"
+                    f" ML score dropped to {ml_score:.2f}"
+                    f" (threshold {ML_EXIT_THRESHOLD:.2f})"
+                    f" | P&L {pnl_pct:+.1%}"
+                )
+                self.close_position(symbol, current_price, 'ml_score_exit')
+                return
+            else:
+                logger.info(
+                    f"{symbol}: ML score low ({ml_score:.2f}) but position"
+                    f" at +{max_gain:.1%} — letting trailing stop handle it"
+                )
+
+        # ── 5. TRAILING STOP ──────────────────────────────────────────
         # FIX Bug 6: only activates after position has reached +2% peak
         TRAILING_ACTIVATION = 0.02
         drop = (
@@ -485,7 +521,7 @@ class PaperTrader:
             self.close_position(symbol, current_price, 'trailing_stop')
             return
 
-        # ── 5. TIME-BASED STOP ────────────────────────────────────────
+        # ── 6. TIME-BASED STOP ────────────────────────────────────────
         try:
             entry_date = datetime.fromisoformat(
                 pos.get('entry_date', '')

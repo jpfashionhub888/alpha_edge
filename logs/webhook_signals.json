@@ -1,0 +1,11 @@
+[
+  {
+    "time": "2026-06-17T22:13:24.361866",
+    "symbol": "AAPL",
+    "action": "SELL",
+    "price": 160.0,
+    "score": 0.0,
+    "source": "tradingview",
+    "ip": "127.0.0.1"
+  }
+]
