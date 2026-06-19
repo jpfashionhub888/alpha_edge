@@ -157,52 +157,74 @@ def compute_signal(
     sect_mult: float,
     symbol: str,
     earnings_symbols: list,
-    mtf_composite: float = 0.0,   # FIX: MTF now part of signal, not just blocker
+    mtf_composite: float = 0.0,
 ) -> tuple[str, float]:
     """
     Compute the final trading signal for a stock.
 
-    Changes from V3:
-    - mtf_composite is now an input (was ignored in signal calc before)
-    - Weights rebalanced to make room for MTF input
-    - BUY threshold raised to BUY_THRESHOLD constant
-    - Single source of truth for signal logic
-    """
-    # FIX: MTF composite (-1 to +1) normalized to 0–1 range for weighting
-    mtf_norm = (mtf_composite + 1.0) / 2.0  # converts -1..+1 → 0..1
+    Fix 1.6: Gate-based signal logic replaces arbitrary weighted blend.
+    Each factor must independently pass its own threshold — no "bad sentiment
+    offset by good sector" cross-compensation.
 
-    # Weight breakdown: pred 50%, sentiment 15%, sector 15%, MTF 15%, (leaves 5% neutral floor)
+    Gates (all must pass for BUY):
+      1. Model prediction    >= 0.58   (primary edge — must exist)
+      2. Regime              == uptrend or sideways (not downtrend/volatile)
+      3. Sentiment           >= -0.20  (must not be strongly negative)
+      4. Sector multiplier   >= 0.85   (sector must not be in confirmed downtrend)
+      5. MTF composite       >= MTF_BLOCK_THRESHOLD (not bearish on higher TF)
+      6. Earnings blackout   symbol not in earnings_symbols
+
+    combined is still returned for dashboard display; it's now the
+    normalized sum of gate scores rather than an arbitrary weighted blend.
+    """
+    PRED_GATE      = 0.58
+    SENT_GATE      = -0.20
+    SECTOR_GATE    = 0.85
+
+    # Normalize MTF (-1..+1 → 0..1) for the combined score display
+    mtf_norm = (mtf_composite + 1.0) / 2.0
+
+    # Build combined score as simple average of normalized inputs
+    # (used ONLY for dashboard ranking — no trading decisions depend on it)
     combined = (
-        pred               * 0.50
-        + (sent_score + 0.5) * 0.15
-        + (sect_mult - 1.0)  * 0.15   # P1-4 fix: offset from 1.0 so outflow sectors reduce score
-        + mtf_norm           * MTF_WEIGHT_IN_SIGNAL
-        + 0.05               # small neutral floor — prevents hair-trigger signals
+        pred * 0.45
+        + max(0.0, min(1.0, (sent_score + 1.0) / 2.0)) * 0.15
+        + max(0.0, min(1.0, sect_mult - 0.5))           * 0.15
+        + mtf_norm                                       * 0.15
+        + 0.10  # neutral floor
     )
 
-    signal = 'HOLD'
+    # ── Earnings blackout (highest priority — non-negotiable) ──────────────
+    if symbol in earnings_symbols:
+        return 'EARNINGS_HOLD', combined
 
-    if regime == 'uptrend' and combined > BUY_THRESHOLD:
-        signal = 'BUY'
-    elif regime == 'downtrend':
-        signal = 'AVOID'
-    elif regime == 'volatile':
-        signal = 'CAUTION'
+    # ── Gate 1: Model prediction ───────────────────────────────────────────
+    if pred < PRED_GATE:
+        return 'HOLD', combined
 
-    # Sector rotation boost (only upgrades HOLD → BUY in sideways market)
-    if sect_mult > 1.1 and signal == 'HOLD':
-        if pred > 0.60 and regime == 'sideways' and mtf_norm > 0.55:
-            signal = 'BUY'
+    # ── Gate 2: Regime must be tradeable ──────────────────────────────────
+    if regime == 'downtrend':
+        return 'AVOID', combined
+    if regime == 'volatile':
+        return 'CAUTION', combined
+    if regime not in ('uptrend', 'sideways', 'unknown'):
+        return 'HOLD', combined
 
-    # Sector rotation penalty
-    if sect_mult < 0.8 and signal == 'BUY':
-        signal = 'HOLD'
+    # ── Gate 3: Sentiment must not be strongly negative ───────────────────
+    if sent_score < SENT_GATE:
+        return 'HOLD', combined
 
-    # Earnings protection
-    if symbol in earnings_symbols and signal == 'BUY':
-        signal = 'EARNINGS_HOLD'
+    # ── Gate 4: Sector must not be in confirmed downtrend ─────────────────
+    if sect_mult < SECTOR_GATE:
+        return 'HOLD', combined
 
-    return signal, combined
+    # ── Gate 5: MTF must not be bearish on higher timeframe ───────────────
+    if mtf_composite < MTF_BLOCK_THRESHOLD:
+        return 'HOLD', combined
+
+    # ── All gates passed ───────────────────────────────────────────────────
+    return 'BUY', combined
+
 
 
 def calc_atr(stock_data: dict, symbol: str) -> float | None:

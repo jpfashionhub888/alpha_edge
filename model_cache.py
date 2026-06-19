@@ -56,6 +56,7 @@ class ModelCache:
         self,
         symbol: str,
         feature_names: List[str],
+        required_trained_through: str = None,
     ) -> Optional[Any]:
         """
         Load cached model for symbol.
@@ -66,6 +67,7 @@ class ModelCache:
         - Feature set has changed since training
         - Cache version mismatch
         - File is corrupted
+        - Cache was trained after required_trained_through (Fix 1.4: walk-forward date gate)
         """
         with self._lock:
             meta_path, model_path = self._paths(symbol)
@@ -102,7 +104,20 @@ class ModelCache:
                 self._delete(symbol)
                 return None
 
-            # ── Feature hash check ────────────────────────────────────────
+            # ── Fix 1.4: Walk-forward date gate ────────────────────────────
+            # Reject cache if it was trained AFTER the required cutoff date.
+            # This prevents a model trained on 2024 data from being loaded
+            # in a walk-forward window that ends in 2023 (data leakage).
+            if required_trained_through:
+                cache_through = meta.get('trained_through', '1900-01-01')
+                if cache_through > required_trained_through:
+                    logger.warning(
+                        f"[{symbol}] Cache trained through {cache_through} "
+                        f"but window ends {required_trained_through} — REJECTING (Fix 1.4)"
+                    )
+                    return None
+
+            # ── Feature hash check ───────────────────────────────────────
             current_hash = self._hash_features(feature_names)
             if meta.get("feature_hash") != current_hash:
                 logger.warning(
@@ -133,9 +148,14 @@ class ModelCache:
         symbol: str,
         model: Any,
         feature_names: List[str],
+        trained_through: str = None,
     ) -> bool:
         """
         Atomically save model + metadata.
+
+        trained_through: ISO date of last training bar (Fix 1.4).
+          e.g. '2024-06-15' — used by walk-forward backtester to
+          reject caches that were trained on future data.
 
         Uses temp file + rename so a crash during save
         never leaves a half-written corrupted cache.
@@ -147,6 +167,7 @@ class ModelCache:
                 "symbol": symbol,
                 "cache_version": CACHE_VERSION,
                 "trained_at": datetime.utcnow().isoformat(),
+                "trained_through": trained_through or datetime.utcnow().strftime('%Y-%m-%d'),
                 "ttl_days": self.ttl_days,
                 "feature_hash": self._hash_features(feature_names),
                 "feature_count": len(feature_names),
@@ -304,11 +325,13 @@ def load_models(symbol: str) -> Optional[Any]:
         return None
 
 
-def save_models(symbol: str, models: Any) -> bool:
+def save_models(symbol: str, models: Any, trained_through: str = None) -> bool:
     """
     Save models to cache for symbol.
 
     models: can be a dict or a single model object
+    trained_through: ISO date string of last training bar (Fix 1.4).
+      Pass str(train.index[-1].date()) from the walk-forward loop.
     Feature names stored as empty list for backward compatibility.
     Use ModelCache.save() directly for full feature hash tracking.
     """
@@ -316,4 +339,5 @@ def save_models(symbol: str, models: Any) -> bool:
         symbol=symbol,
         model=models,
         feature_names=[],
+        trained_through=trained_through,
     )

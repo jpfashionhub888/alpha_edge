@@ -1,0 +1,26 @@
+name: Secret Scan (TruffleHog)
+# Fix 4.2 — Scans all commits and diffs for leaked secrets/API keys.
+# Runs on every push and pull request against main.
+# TruffleHog only reports verified secrets (reduces noise from false positives).
+on:
+  push:
+    branches: ["main", "dev", "feature/**"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  trufflehog:
+    name: TruffleHog Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0     # full history so TruffleHog can diff across all commits
+
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified

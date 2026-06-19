@@ -14,6 +14,15 @@ logger = logging.getLogger(__name__)
 # ML Score Exit threshold — exit a held position when confidence drops below this
 ML_EXIT_THRESHOLD = getattr(settings, 'ML_EXIT_THRESHOLD', 0.40)
 
+# Fix 2.2 — Regulatory fee constants (applied on sell side only)
+# SEC fee rate: $0.0000278 per dollar of proceeds (current 2025 rate)
+SEC_FEE_RATE         = getattr(settings, 'SEC_FEE_RATE',         0.0000278)
+# FINRA Trading Activity Fee: $0.000166 per share sold (current 2025 rate)
+FINRA_TAF_PER_SHARE  = getattr(settings, 'FINRA_TAF_PER_SHARE',  0.000166)
+
+# Fix 3.4 — Max portfolio exposure (never more than 80% of capital deployed)
+MAX_PORTFOLIO_EXPOSURE_PCT = getattr(settings, 'MAX_PORTFOLIO_EXPOSURE_PCT', 0.80)
+
 
 class PaperTrader:
     """
@@ -129,6 +138,21 @@ class PaperTrader:
             return 0.25
 
     # ------------------------------------------------------------------ #
+    #  PORTFOLIO EXPOSURE                                                  #
+    # ------------------------------------------------------------------ #
+
+    def _get_open_positions_value(self) -> float:
+        """Total market value of all open positions at entry price (conservative)."""
+        return sum(
+            pos.get('shares', 0) * pos.get('entry_price', 0)
+            for pos in self.positions.values()
+        )
+
+    def _get_current_exposure_pct(self) -> float:
+        """Fix 3.4: Fraction of starting capital currently deployed in open positions."""
+        return self._get_open_positions_value() / self.starting_capital if self.starting_capital else 0.0
+
+    # ------------------------------------------------------------------ #
     #  POSITION SIZING                                                     #
     # ------------------------------------------------------------------ #
 
@@ -223,6 +247,14 @@ class PaperTrader:
         # Guard 3: duplicate
         if symbol in self.positions:
             logger.info("Already in %s, skipping", symbol)
+            return False
+
+        # Fix 3.4: portfolio exposure cap — never more than 80% deployed
+        if self._get_current_exposure_pct() >= MAX_PORTFOLIO_EXPOSURE_PCT:
+            logger.info(
+                "Max portfolio exposure reached (%.0f%%), blocking %s",
+                MAX_PORTFOLIO_EXPOSURE_PCT * 100, symbol
+            )
             return False
 
         # FIX Bug 1 & 2: pass atr into get_position_size
@@ -337,7 +369,11 @@ class PaperTrader:
 
         # Slippage on sell side
         fill_price = price * (1 - self.slippage_pct)
-        revenue    = shares * fill_price - self.commission
+
+        # Fix 2.2 — Apply regulatory fees on sell side
+        sec_fee   = shares * fill_price * SEC_FEE_RATE
+        finra_taf = shares * FINRA_TAF_PER_SHARE
+        revenue   = shares * fill_price - self.commission - sec_fee - finra_taf
         pnl        = revenue - pos['cost']
         pnl_pct    = (fill_price - entry) / entry
 

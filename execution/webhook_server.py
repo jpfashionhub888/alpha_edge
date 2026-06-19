@@ -343,10 +343,14 @@ def start_webhook_server(port=5000):
     print('   }')
     print("\nPress Ctrl+C to stop\n")
 
+    # Fix 7.2: Bind to localhost only — closes external attack surface.
+    # If TradingView external access is needed, place nginx in front with
+    # SSL termination and IP allowlisting. Do NOT re-expose 0.0.0.0.
     app.run(
-        host='0.0.0.0',
+        host='127.0.0.1',
         port=port,
-        debug=False
+        debug=False,
+        use_reloader=False,
     )
 
 

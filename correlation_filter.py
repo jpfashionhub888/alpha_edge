@@ -202,6 +202,60 @@ class CorrelationFilter:
             logger.warning(f"Correlation computation failed: {e}")
             return None
 
+    def is_too_correlated(
+        self,
+        new_symbol    : str,
+        open_positions: dict,
+        lookback_days : int = 60,
+        max_corr      : float = 0.75,
+    ) -> bool:
+        """
+        Fix 3.3: Block new position if its 60-day return correlation with
+        any existing open position exceeds 0.75.
+
+        Downloads price data via yfinance (free). Returns False on any
+        data error so the scanner is never blocked by an API failure.
+        """
+        if not open_positions:
+            return False
+        try:
+            import yfinance as yf
+            symbols = list(open_positions.keys()) + [new_symbol]
+            prices  = yf.download(
+                symbols,
+                period    = f'{lookback_days}d',
+                auto_adjust = True,
+                progress  = False,
+            )['Close']
+
+            # Handle single-column edge case (yfinance flattens for 1 symbol)
+            if isinstance(prices, pd.Series):
+                prices = prices.to_frame(name=new_symbol)
+
+            prices.columns = [c if isinstance(c, str) else c[0] for c in prices.columns]
+            returns = prices.pct_change().dropna()
+
+            if new_symbol not in returns.columns:
+                return False
+
+            for existing in open_positions:
+                if existing not in returns.columns:
+                    continue
+                overlap = returns[[new_symbol, existing]].dropna()
+                if len(overlap) < 20:
+                    continue
+                c = float(overlap[new_symbol].corr(overlap[existing]))
+                if c > max_corr:
+                    logger.info(
+                        f'Fix 3.3: Blocking {new_symbol} — correlation '
+                        f'{c:.2f} with open position {existing} '
+                        f'(limit={max_corr})'
+                    )
+                    return True
+        except Exception as e:
+            logger.warning(f'Fix 3.3: Correlation check failed for {new_symbol}: {e}')
+        return False
+
     def can_add_position(
         self,
         symbol                      : str,
@@ -222,6 +276,8 @@ class CorrelationFilter:
           - Now enforces self.max_positions (default 5) not self.max_cluster_size
             (which was 3 — incorrectly blocking the 4th and 5th slots).
           - Dead unreachable code block after the old return removed (P3-4).
+
+        Fix 3.3: Added pairwise return-correlation check via is_too_correlated().
         """
         # Normalise calling convention
         if current_positions is None:
@@ -235,6 +291,10 @@ class CorrelationFilter:
                 f"[{symbol}] Correlation filter: "
                 f"portfolio full ({len(open_positions)}/{self.max_positions} positions)"
             )
+            return False
+
+        # Fix 3.3: pairwise return-correlation check (60-day window, max 0.75)
+        if self.is_too_correlated(symbol, open_positions):
             return False
 
         # Sector concentration: max_per_sector per sector
