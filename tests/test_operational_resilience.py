@@ -8,6 +8,8 @@ Tests:
   3. Reconciliation — phantom/orphan/mismatch detection, clean state
 """
 
+import hashlib
+import hmac
 import json
 import os
 import sys
@@ -17,13 +19,33 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+_TEST_SECRET = 'test-webhook-secret'
+
+
+def _compute_sig(payload_bytes: bytes, secret: str = _TEST_SECRET) -> str:
+    digest = hmac.new(secret.encode('utf-8'), payload_bytes, hashlib.sha256).hexdigest()
+    return f'sha256={digest}'
+
+
+def _signed_post(client, path, payload, secret=_TEST_SECRET):
+    """POST with correct X-AlphaEdge-Signature header."""
+    body = json.dumps(payload).encode('utf-8')
+    sig  = _compute_sig(body, secret)
+    return client.post(
+        path,
+        data=body,
+        content_type='application/json',
+        headers={'X-AlphaEdge-Signature': sig},
+    )
+
 
 # ── Kill Switch Tests ──────────────────────────────────────────────────────────
 
 @pytest.fixture
 def wh_client():
     """Fresh webhook Flask test client with kill switch reset to False."""
-    os.environ['WEBHOOK_SECRET'] = 'test-webhook-secret'
+    os.environ['WEBHOOK_SECRET']            = _TEST_SECRET
+    os.environ['ALPHAEDGE_WEBHOOK_SECRET']  = _TEST_SECRET   # Fix 4.1
 
     import importlib
     for mod in ['execution.webhook_server']:
@@ -77,13 +99,12 @@ class TestKillSwitch:
             json={'secret': secret, 'reason': 'market crash'},
             content_type='application/json',
         )
-        # Now try to send a signal
+        # Now try to send a signed signal
         with patch('execution.webhook_server.process_signal'):
-            r = wh_client.post(
-                '/webhook',
-                json={'secret': secret, 'action': 'BUY',
-                      'symbol': 'AAPL', 'price': 150.0},
-                content_type='application/json',
+            r = _signed_post(
+                wh_client, '/webhook',
+                {'secret': secret, 'action': 'BUY',
+                 'symbol': 'AAPL', 'price': 150.0},
             )
         assert r.status_code == 503
         body = r.get_json()
@@ -102,13 +123,12 @@ class TestKillSwitch:
         assert r.status_code == 200
         assert r.get_json().get('status') == 'running'
 
-        # Signal should now be accepted
+        # Signal should now be accepted (signed)
         with patch('execution.webhook_server.process_signal'):
-            r2 = wh_client.post(
-                '/webhook',
-                json={'secret': secret, 'action': 'BUY',
-                      'symbol': 'AAPL', 'price': 150.0},
-                content_type='application/json',
+            r2 = _signed_post(
+                wh_client, '/webhook',
+                {'secret': secret, 'action': 'BUY',
+                 'symbol': 'AAPL', 'price': 150.0},
             )
         assert r2.status_code == 200
 

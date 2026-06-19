@@ -107,6 +107,13 @@ class TestDailyLossLimit:
 
     def test_halt_lifts_next_day(self, paper_trader):
         """The halt flag auto-resets on a new trading day."""
+        # Skip if sentencepiece not installed — freezegun scans transformers
+        # which tries to import sentencepiece; unrelated to our code.
+        try:
+            import sentencepiece  # noqa: F401
+        except ImportError:
+            pytest.skip("sentencepiece not installed — freezegun/transformers conflict")
+
         from freezegun import freeze_time
 
         paper_trader._halt_trading = True

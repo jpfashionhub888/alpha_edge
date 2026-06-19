@@ -4,15 +4,21 @@
 Webhook server that receives signals from TradingView.
 TradingView sends alerts → This server receives them →
 Your system processes and trades.
+
+Fix 4.1: HMAC-SHA256 request signature verification.
+Callers must include X-AlphaEdge-Signature: sha256=<hex> header.
+Invalid or missing signatures are rejected with HTTP 403.
 """
 
 import os
+import hmac
+import hashlib
 import json
 import logging
 import time
 from collections import defaultdict
 from datetime import datetime
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, abort
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +34,35 @@ REALIZED_ACTIONS = {'SELL', 'PARTIAL_SELL'}
 VALID_ACTIONS = {'BUY', 'SELL', 'PARTIAL_SELL', 'CLOSE', 'HOLD'}
 
 # Webhook secret — read from env, never hardcode
-WEBHOOK_SECRET = os.getenv('WEBHOOK_SECRET', 'alphaedge_secret_2026')
+# Fix 4.1: Use ALPHAEDGE_WEBHOOK_SECRET env var (stronger name, required by audit)
+WEBHOOK_SECRET = (
+    os.getenv('ALPHAEDGE_WEBHOOK_SECRET')
+    or os.getenv('WEBHOOK_SECRET', 'alphaedge_secret_2026')
+)
+
+# ── Fix 4.1: HMAC-SHA256 signature verification ───────────────────────────────
+
+def verify_signature(payload: bytes, signature_header: str) -> bool:
+    """
+    Fix 4.1: Verify HMAC-SHA256 request signature.
+    Header format: 'sha256=<hex_digest>'
+
+    TradingView / calling system must compute:
+        signature = hmac.new(ALPHAEDGE_WEBHOOK_SECRET.encode(), body_bytes, sha256).hexdigest()
+    and send: X-AlphaEdge-Signature: sha256=<signature>
+
+    Returns True if valid, False otherwise.
+    Always use hmac.compare_digest() to prevent timing attacks.
+    """
+    if not signature_header or not signature_header.startswith('sha256='):
+        return False
+    expected = hmac.new(
+        WEBHOOK_SECRET.encode('utf-8'),
+        payload,
+        hashlib.sha256,
+    ).hexdigest()
+    received = signature_header[len('sha256='):]
+    return hmac.compare_digest(expected, received)
 
 # ── Rate limiter: max 10 requests/min per IP ───────────────────────────────────
 _rate_counters: dict = defaultdict(list)  # ip -> [timestamps]
@@ -73,6 +107,20 @@ def _validate_payload(data: dict) -> tuple[bool, str]:
 def receive_webhook():
     """Receive and validate webhook signal from TradingView."""
 
+    # ── Fix 4.1: HMAC-SHA256 signature verification ───────────────────────────
+    # Check before rate limit — invalid signature = free 403 reject, no counter.
+    # Header: X-AlphaEdge-Signature: sha256=<hex>
+    raw_body  = request.get_data()   # read body once
+    signature = request.headers.get('X-AlphaEdge-Signature', '')
+    if not verify_signature(raw_body, signature):
+        logger.warning(
+            f'Webhook from {request.remote_addr}: invalid/missing HMAC signature'
+        )
+        return jsonify({
+            'status' : 'error',
+            'message': 'Invalid signature — request rejected',
+        }), 403
+
     # ── Rate limit ─────────────────────────────────────────────────────────────
     client_ip = request.headers.get('X-Real-IP', request.remote_addr)
     if not _check_rate_limit(client_ip):
@@ -89,6 +137,7 @@ def receive_webhook():
             'message': f'Kill switch active: {_kill_switch_reason}',
             'resume' : 'POST /kill-switch/reset to resume',
         }), 503
+
 
     try:
         data = request.get_json(force=True, silent=True)

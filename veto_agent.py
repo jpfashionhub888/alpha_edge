@@ -10,7 +10,9 @@
 import os
 import json
 import logging
+import time
 from datetime import datetime
+
 
 logger = logging.getLogger(__name__)
 
@@ -103,22 +105,40 @@ APPROVE if:
 - Sentiment neutral or positive
 - Market conditions reasonable"""
 
-            response = client.chat.completions.create(
-                model    = self.model,
-                messages = [
-                    {
-                        "role"   : "system",
-                        "content": "You are a strict hedge fund risk manager. Respond only with valid JSON."
-                    },
-                    {
-                        "role"   : "user",
-                        "content": prompt
-                    }
-                ],
-                temperature = 0.1,
-                max_tokens  = 150,
-                timeout     = 10,  # FIX: explicit timeout — don't hang the scan
-            )
+            # Fix 4.3: Exponential backoff retry before fail-closed VETO.
+            # 3 attempts: wait 1s, 2s, 4s between retries.
+            last_exc = None
+            response = None
+            for attempt in range(3):
+                try:
+                    response = client.chat.completions.create(
+                        model    = self.model,
+                        messages = [
+                            {
+                                "role"   : "system",
+                                "content": "You are a strict hedge fund risk manager. Respond only with valid JSON."
+                            },
+                            {
+                                "role"   : "user",
+                                "content": prompt
+                            }
+                        ],
+                        temperature = 0.1,
+                        max_tokens  = 150,
+                        timeout     = 10,
+                    )
+                    break   # success — exit retry loop
+                except Exception as exc:
+                    last_exc = exc
+                    if attempt < 2:
+                        wait = 2 ** attempt   # 1s, 2s
+                        logger.warning(
+                            f'Veto agent attempt {attempt+1}/3 failed for {symbol}: {exc} '
+                            f'— retrying in {wait}s'
+                        )
+                        time.sleep(wait)
+                    else:
+                        raise   # exhausted retries → caught by outer except
 
             response_text = response.choices[0].message.content.strip()
             if '```' in response_text:
