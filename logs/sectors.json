@@ -1,23 +1,23 @@
 {
   "Technology": {
-    "score": NaN,
-    "flow": "NEUTRAL",
-    "momentum_21d": NaN
+    "score": 0.14025775273792904,
+    "flow": "INFLOW",
+    "momentum_21d": 0.08072712600784548
   },
   "Healthcare": {
-    "score": NaN,
+    "score": 0.005082171775522249,
     "flow": "NEUTRAL",
-    "momentum_21d": NaN
+    "momentum_21d": 0.015428457407310692
   },
   "Financials": {
-    "score": NaN,
-    "flow": "NEUTRAL",
-    "momentum_21d": NaN
+    "score": 0.04318958723327693,
+    "flow": "INFLOW",
+    "momentum_21d": 0.0369725097377791
   },
   "Energy": {
-    "score": NaN,
-    "flow": "NEUTRAL",
-    "momentum_21d": NaN
+    "score": -0.09020305116952612,
+    "flow": "OUTFLOW",
+    "momentum_21d": -0.10083610127472764
   },
   "Consumer": {
     "score": NaN,
@@ -25,19 +25,19 @@
     "momentum_21d": NaN
   },
   "Industrials": {
-    "score": NaN,
-    "flow": "NEUTRAL",
-    "momentum_21d": NaN
+    "score": 0.0638347517489702,
+    "flow": "INFLOW",
+    "momentum_21d": 0.05962635851532605
   },
   "Utilities": {
-    "score": NaN,
+    "score": 0.005475835355557356,
     "flow": "NEUTRAL",
-    "momentum_21d": NaN
+    "momentum_21d": 0.005616715556671981
   },
   "Materials": {
-    "score": NaN,
-    "flow": "NEUTRAL",
-    "momentum_21d": NaN
+    "score": 0.04755207484910562,
+    "flow": "INFLOW",
+    "momentum_21d": 0.042035400266998035
   },
   "Real Estate": {
     "score": NaN,
