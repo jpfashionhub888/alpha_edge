@@ -244,8 +244,249 @@ def calc_atr(stock_data: dict, symbol: str) -> float | None:
     except Exception:
         return None
 
+# ══════════════════════════════════════════════════════════════════════
+# Fix 6.1 — DECOMPOSED SCAN COMPONENTS (each independently testable)
+# run_daily_scan() now delegates to these named functions so that each
+# phase can be unit-tested in isolation without running the full pipeline.
+# ══════════════════════════════════════════════════════════════════════
+
+def fetch_market_regime(telegram=None) -> dict:
+    """
+    Fix 6.1: Fetch SPY-based market regime via MarketRegimeFilter.
+
+    Returns dict with keys: can_trade, regime, reason, vix
+    Never raises — on failure returns tradeable=True (fail-open is
+    safer than blocking all trading due to a transient API error).
+    """
+    regime_filter = MarketRegimeFilter()
+    try:
+        import yfinance as yf
+        _spy = yf.download('SPY', period='2y', interval='1d',
+                           progress=False, auto_adjust=True)
+        if hasattr(_spy.columns, 'levels'):
+            _spy.columns = [c[0] if isinstance(c, tuple) else c
+                            for c in _spy.columns]
+        _spy.columns = [c.lower() for c in _spy.columns]
+        _spy = _spy.rename(columns={
+            'close': 'Close', 'open': 'Open',
+            'high': 'High', 'low': 'Low', 'volume': 'Volume',
+        })
+        raw = regime_filter.detect(_spy)
+    except Exception as e:
+        logger.warning(f'Regime detect failed ({e}), defaulting to tradeable')
+        raw = {'regime': 'unknown', 'tradeable': True,
+               'confidence': 0.5, 'signals': {}}
+
+    return {
+        'can_trade': raw.get('tradeable', True),
+        'regime'   : raw.get('regime', 'unknown'),
+        'reason'   : (f"Regime={raw.get('regime','?')} "
+                      f"confidence={raw.get('confidence',0):.2f}"),
+        'vix'      : raw.get('signals', {}).get('vix_level', 20),
+    }
+
+
+def check_circuit_breaker(trader, market_regime: dict, telegram) -> dict:
+    """
+    Fix 6.1: Check risk circuit breaker and update can_trade flag.
+
+    Returns updated market_regime dict (may have can_trade set to False).
+    """
+    circuit_breaker = RiskCircuitBreaker()
+    portfolio_value = trader.capital + sum(
+        pos.get('shares', 0) * pos.get('current_price', pos.get('entry_price', 0))
+        for pos in trader.positions.values()
+    )
+    triggered = circuit_breaker.check(
+        current_value    = portfolio_value,
+        starting_capital = trader.starting_capital,
+        telegram         = telegram,
+    )
+    if triggered:
+        market_regime = dict(market_regime)   # don't mutate caller's dict
+        market_regime['can_trade'] = False
+        logger.warning('Circuit breaker triggered — trading suspended')
+    return market_regime
+
+
+def fetch_mtf_scores(watchlist: list, can_trade: bool) -> dict:
+    """
+    Fix 6.1: Fetch multi-timeframe composite scores for all symbols.
+
+    Returns {symbol: float} composite (-1 to +1).
+    Fills 0.0 on failure so the pipeline never blocks.
+    """
+    mtf_analyzer = MultiTimeframeAnalyzer()
+    composites   = {}
+
+    if not can_trade:
+        return {sym: 0.0 for sym in watchlist}
+
+    for symbol in watchlist:
+        try:
+            composites[symbol] = mtf_analyzer.get_mtf_score(symbol)
+        except Exception as e:
+            logger.warning(f'MTF failed for {symbol}: {e}')
+            composites[symbol] = 0.0
+
+    bullish = sum(1 for s in composites.values() if s > 0)
+    logger.info(f'MTF complete: {bullish}/{len(watchlist)} bullish')
+    return composites
+
+
+def fetch_stock_signals(
+    watchlist      : list,
+    stock_data     : dict,
+    engine         : 'FeatureEngine',
+    regime_detector: 'RegimeDetector',
+    sector_analyzer: 'SectorRotation',
+) -> dict:
+    """
+    Fix 6.1: Train ensemble models and collect raw prediction + metadata
+    for every symbol. Returns {symbol: {prediction, regime, price, ...}}.
+
+    Separated from signal scoring so it can be tested with mock data.
+    """
+    from sklearn.feature_selection import SelectKBest, mutual_info_classif
+
+    stock_signals = {}
+
+    for symbol, raw_df in stock_data.items():
+        try:
+            df            = engine.add_all_features(raw_df)
+            feature_names = engine.get_feature_names()
+            df            = regime_detector.detect(df)
+
+            if len(df) < 100:
+                continue
+
+            split             = len(df) - 30
+            walk_forward_days = 180
+            train_start       = max(0, split - walk_forward_days)
+            train             = df.iloc[train_start:split]
+
+            if len(train) < 100:
+                train = df.iloc[:split]
+
+            X_train = train[feature_names]
+            y_train = train['target']
+
+            if len(y_train.unique()) < 2:
+                continue
+            if y_train.value_counts().min() < 10:
+                continue
+
+            selector = SelectKBest(
+                score_func=mutual_info_classif,
+                k=min(20, len(feature_names))
+            )
+            selector.fit(X_train, y_train)
+            mask     = selector.get_support()
+            selected = [f for f, m in zip(feature_names, mask) if m]
+
+            cached = load_models(symbol)
+            if cached:
+                selected = cached.get('selected_features', selected)
+                model    = TechnicalPredictor(use_lstm=False)
+                model.models = {
+                    'xgboost'      : cached.get('xgboost'),
+                    'lightgbm'     : cached.get('lightgbm'),
+                    'random_forest': cached.get('random_forest'),
+                    'catboost'     : cached.get('catboost'),
+                }
+                model.feature_names = selected
+                model.trained       = True
+            else:
+                model = TechnicalPredictor(use_lstm=True)
+                model.train(X_train[selected], y_train)
+                try:
+                    save_models(symbol, {
+                        'xgboost'          : model.models.get('xgboost'),
+                        'lightgbm'         : model.models.get('lightgbm'),
+                        'random_forest'    : model.models.get('random_forest'),
+                        'catboost'         : model.models.get('catboost'),
+                        'selected_features': selected,
+                    })
+                except Exception as e:
+                    logger.warning(f'Cache save failed for {symbol}: {e}')
+
+            latest = df.iloc[-1:]
+            _preds = model.predict(latest[selected])
+            pred   = _preds[0] if len(_preds) > 0 else 0.5
+            regime      = latest['regime'].iloc[0]
+            price       = latest['close'].iloc[0]
+            sector_mult = sector_analyzer.get_sector_signal(symbol)
+            sector      = sector_analyzer.get_sector_for_stock(symbol)
+
+            stock_signals[symbol] = {
+                'prediction'       : pred,
+                'regime'           : regime,
+                'price'            : price,
+                'sector'           : sector,
+                'sector_multiplier': sector_mult,
+            }
+
+        except Exception as e:
+            logger.warning(f'Error processing {symbol}: {e}')
+
+    return stock_signals
+
+
+def manage_open_positions(trader, current_prices: dict, telegram) -> None:
+    """
+    Fix 6.1: Check stop-loss / take-profit for all open positions.
+
+    Extracted so it can be tested without running the full scan.
+    """
+    if not trader.positions:
+        print('\n  No open positions to manage')
+        return
+
+    print('\n  Checking stop loss / take profit...')
+    for symbol in list(trader.positions.keys()):
+        if symbol in current_prices:
+            pos   = trader.positions.get(symbol, {})
+            entry = pos.get('entry_price', 0)
+            trader.update_position(symbol, current_prices[symbol])
+            if symbol not in trader.positions:
+                exit_price = current_prices[symbol]
+                pnl        = (exit_price - entry) * pos.get('shares', 0)
+                if pnl < 0:
+                    telegram.alert_stop_loss(symbol, exit_price, pnl)
+                else:
+                    telegram.alert_take_profit(symbol, exit_price, pnl)
+
+
+def save_dashboard_data(
+    dashboard_signals: dict,
+    earnings_soon    : list,
+    sector_scores    : dict,
+) -> None:
+    """
+    Fix 6.1: Persist signal data for the Dash dashboard.
+
+    Extracted so dashboard writes can be tested without a full scan.
+    """
+    os.makedirs('logs', exist_ok=True)
+    with open('logs/latest_signals.json', 'w') as f:
+        json.dump(dashboard_signals, f, indent=2)
+    with open('logs/earnings.json', 'w') as f:
+        json.dump(earnings_soon, f, indent=2)
+    with open('logs/sectors.json', 'w') as f:
+        sector_data = {
+            sector: {
+                'score'        : float(data['score']),
+                'flow'         : data['flow'],
+                'momentum_21d' : float(data['momentum_21d']),
+            }
+            for sector, data in sector_scores.items()
+        }
+        json.dump(sector_data, f, indent=2)
+    logger.info('Dashboard data saved → logs/')
+
 
 def run_daily_scan():
+
     """Run the complete daily trading scan."""
     now = datetime.now().strftime('%Y-%m-%d %H:%M')
     print("\n" + "🚀" * 25)

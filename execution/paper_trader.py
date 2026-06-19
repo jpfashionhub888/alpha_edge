@@ -222,14 +222,23 @@ class PaperTrader:
     # ------------------------------------------------------------------ #
 
     def open_position(self, symbol, price, signal,
-                      reason='signal', atr=None, ml_score=None):
+                      reason='signal', atr=None, ml_score=None,
+                      next_open_price=None):
         """
         Open a new long position.
+
+        Fix 2.1: If next_open_price is provided, fills at next-bar open
+        (+ slippage) instead of the signal-bar close. This eliminates the
+        'buy at close of signal bar' look-ahead bias in backtesting.
+
+        next_open_price: float or None. Pass the following bar's open price
+          from the walk-forward loop: next_open = df.iloc[split+1]['open']
 
         Guards (in order):
             1. Daily loss limit halt
             2. Max concurrent positions
             3. Duplicate symbol
+            3b. Portfolio exposure cap (Fix 3.4)
             4. Zero shares after sizing
             5. Insufficient capital
             6. Per-trade max loss cap
@@ -265,8 +274,19 @@ class PaperTrader:
             logger.info("Position size is 0 for %s, skipping", symbol)
             return False
 
+        # Fix 2.1: Use next-bar open as fill price when available.
+        # This is the correct simulation — the order fires at next day's open,
+        # not at the close of the signal bar (which would be lookahead).
+        signal_price = price
+        if next_open_price and next_open_price > 0:
+            fill_base  = next_open_price
+            fill_type  = 'next_open'
+        else:
+            fill_base  = price
+            fill_type  = 'close'  # legacy fallback
+
         # Apply slippage on the buy side
-        fill_price = price * (1 + self.slippage_pct)
+        fill_price = fill_base * (1 + self.slippage_pct)
         cost       = shares * fill_price + self.commission
 
         # Guard 5: insufficient capital — scale down instead of rejecting
@@ -305,7 +325,7 @@ class PaperTrader:
         self.positions[symbol] = {
             'shares'             : shares,
             'entry_price'        : fill_price,
-            'market_price'       : price,
+            'market_price'       : signal_price,
             'entry_date'         : datetime.now().isoformat(),
             'highest_price'      : fill_price,
             'signal'             : signal,
@@ -314,23 +334,25 @@ class PaperTrader:
             'stop_loss_pct'      : stop_loss_pct,
             'atr'                : atr or 0,
             'partial_exit_done'  : False,
-            'entry_ml_score'     : ml_score,   # v3: track entry confidence
+            'entry_ml_score'     : ml_score,
+            'fill_type'          : fill_type,   # Fix 2.1: audit trail
         }
 
         trade = {
-            'action'      : 'BUY',
-            'symbol'      : symbol,
-            'shares'      : shares,
-            'price'       : price,
-            'fill_price'  : fill_price,
-            'slippage_pct': self.slippage_pct,
-            'commission'  : self.commission,
-            'cost'        : cost,
-            'date'        : datetime.now().isoformat(),
-            'reason'      : reason,
-            'atr'         : atr or 0,
-            'stop_loss_pct': stop_loss_pct,
-            'entry_ml_score': ml_score,
+            'action'         : 'BUY',
+            'symbol'         : symbol,
+            'shares'         : shares,
+            'price'          : signal_price,
+            'fill_price'     : fill_price,
+            'fill_type'      : fill_type,   # Fix 2.1: 'next_open' or 'close'
+            'slippage_pct'   : self.slippage_pct,
+            'commission'     : self.commission,
+            'cost'           : cost,
+            'date'           : datetime.now().isoformat(),
+            'reason'         : reason,
+            'atr'            : atr or 0,
+            'stop_loss_pct'  : stop_loss_pct,
+            'entry_ml_score' : ml_score,
         }
         self.trade_history.append(trade)
 

@@ -2,9 +2,9 @@
 """
 AlphaEdge — Alpaca Stock Trading Loop
 
-Runs the stock scanner every 30 minutes during market hours.
-Routes BUY signals through AlpacaBroker (paper or live).
-Manages positions with stop loss and take profit.
+Fix 2.3: Runs exactly once per day at 16:15 ET (after market close).
+A daily-bar model has no new signal information within the trading day;
+running every 30 minutes wastes API quota and retrains models unnecessarily.
 
 Modes:
   Paper (default): trades on Alpaca paper account
@@ -16,7 +16,7 @@ How to run:
   set ALPACA_BASE_URL=https://paper-api.alpaca.markets
   python alpaca_live.py
 
-Scan interval: every 30 minutes during market hours (9:30-16:00 ET)
+Scan schedule: once daily at 16:15 ET (15 min after market close)
 """
 
 import os
@@ -37,14 +37,32 @@ logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
 # ── Config ───────────────────────────────────────────────────────────
-SCAN_INTERVAL_MIN   = 30       # minutes between scans
-RISK_PER_TRADE_PCT  = 0.015    # 1.5% of portfolio per trade
-MAX_POSITIONS       = 5        # max open positions at once
+# Fix 2.3: Once-daily scan at 16:15 ET (after all daily bars are final)
+DAILY_SCAN_HOUR     = 16      # 4 PM ET
+DAILY_SCAN_MIN      = 15      # 16:15 ET — 15 min after market close
+RISK_PER_TRADE_PCT  = 0.015   # 1.5% of portfolio per trade
+MAX_POSITIONS       = 5       # max open positions at once
 MARKET_TZ           = pytz.timezone('America/New_York')
 MARKET_OPEN         = dtime(9, 30)
 MARKET_CLOSE        = dtime(16, 0)
-SCAN_OUTSIDE_HOURS  = True    # set True to scan pre/post market
 # ─────────────────────────────────────────────────────────────────────
+
+
+def _seconds_until_next_scan() -> float:
+    """
+    Fix 2.3: Calculate seconds until the next 16:15 ET scan window.
+    If it's already past 16:15 today, schedule for tomorrow at 16:15.
+    """
+    now_et    = datetime.now(MARKET_TZ)
+    target_et = now_et.replace(
+        hour=DAILY_SCAN_HOUR, minute=DAILY_SCAN_MIN, second=0, microsecond=0
+    )
+    if now_et >= target_et:
+        # Already past today's scan time — wait for tomorrow
+        from datetime import timedelta
+        target_et += timedelta(days=1)
+    delta = (target_et - now_et).total_seconds()
+    return max(delta, 1.0)
 
 
 def is_market_hours() -> bool:
@@ -92,7 +110,7 @@ class AlpacaLiveTrader:
     def start(self):
         print('\n' + '🚀' * 25)
         print(f'ALPHAEDGE ALPACA STOCKS  —  {datetime.now().strftime("%Y-%m-%d %H:%M")}')
-        print(f'Mode: {self.mode}  |  Scan interval: {SCAN_INTERVAL_MIN}min')
+        print(f'Mode: {self.mode}  |  Scan interval: 16:15 ET daily')
         print(f'Max positions: {MAX_POSITIONS}  |  Risk per trade: {RISK_PER_TRADE_PCT*100:.1f}%')
         print('🚀' * 25)
 
@@ -130,18 +148,31 @@ class AlpacaLiveTrader:
 
         print(f'\n✅ System ready. Running first scan now...\n')
 
-        # Main scan loop
+        # Fix 2.3: Once-daily scan loop at 16:15 ET
+        # For the very first run, scan immediately then schedule subsequent
+        # runs at 16:15 ET. This gives instant feedback on startup.
         try:
+            first_run = True
             while True:
-                if is_market_hours() or SCAN_OUTSIDE_HOURS:
+                if first_run:
+                    # Always run immediately on startup for operator feedback
                     self._run_scan()
-                    self.heartbeat.ping()    # Phase 4: register completed cycle
+                    self.heartbeat.ping()
+                    first_run = False
                 else:
-                    now_et = datetime.now(MARKET_TZ).strftime('%H:%M ET')
-                    print(f'[{now_et}] Market closed — waiting...')
-
-                print(f'\n  ⏰ Next scan in {SCAN_INTERVAL_MIN} minutes\n')
-                time.sleep(SCAN_INTERVAL_MIN * 60)
+                    # Schedule: wait until next 16:15 ET
+                    wait_sec = _seconds_until_next_scan()
+                    next_et  = datetime.now(MARKET_TZ)
+                    from datetime import timedelta
+                    next_et  = (next_et +
+                        timedelta(seconds=wait_sec)).strftime('%Y-%m-%d %H:%M ET')
+                    print(
+                        f'\n  ⏰ Fix 2.3: Next scan at {next_et} '
+                        f'({wait_sec/3600:.1f}h away)\n'
+                    )
+                    time.sleep(wait_sec)
+                    self._run_scan()
+                    self.heartbeat.ping()
 
         except KeyboardInterrupt:
             print('\n\nShutting down...')

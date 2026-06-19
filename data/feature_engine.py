@@ -1,5 +1,14 @@
 # data/feature_engine.py
-# FIXED VERSION - All look-ahead bias removed
+# FIXED VERSION — All look-ahead bias removed
+#
+# Fix 1.2 Audit (alphaedge_roadmap.md):
+# FeatureEngine contains NO global scalers (StandardScaler / MinMaxScaler).
+# All normalization is purely rolling-window arithmetic:
+#   - price_vs_ma{N}  = (close - rolling_mean) / rolling_mean
+#   - volatility_Nd   = returns.rolling(N).std() * sqrt(252)
+#   - volume_ratio_Nd = volume / rolling_mean(volume)
+# These computations use ONLY past bars at each timestamp, making them
+# safe for walk-forward backtesting. No future data leaks here.
 
 import pandas as pd
 import numpy as np

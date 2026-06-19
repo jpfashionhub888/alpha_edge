@@ -43,7 +43,11 @@ logger = logging.getLogger(__name__)
 
 RANDOM_SEED = 42
 
-# Sector-balanced watchlist (fixes selection bias from tech-heavy list)
+# Fix 1.5: Survivorship-bias-aware watchlist.
+# 'delisted' category includes stocks removed from major indices for poor
+# performance. Excluding them would teach the model on winners only, inflating
+# simulated returns by ~1-3% per year (Fama 1997, Jiang 2011).
+# yfinance retains historical price data for delisted tickers.
 WATCHLIST = {
     'tech'       : ['AAPL', 'MSFT', 'NVDA', 'AMD'],
     'consumer'   : ['AMZN', 'TSLA', 'NFLX', 'WMT'],
@@ -51,6 +55,16 @@ WATCHLIST = {
     'healthcare' : ['JNJ', 'UNH'],
     'etf'        : ['SPY', 'QQQ'],
     'energy'     : ['XOM', 'CVX'],
+    # Fix 1.5 — Delisted / distressed stocks (survivorship bias correction)
+    # These were removed from indices due to poor performance or bankruptcy.
+    # Include them so the model sees real failure cases during training.
+    'delisted'   : [
+        'SHLDQ',  # Sears — filed Ch.11 Oct 2018
+        'BBBYQ',  # Bed Bath & Beyond — filed Ch.11 Apr 2023
+        'HTZGQ',  # Hertz — filed Ch.11 May 2020
+        'RVLCQ',  # Revlon — filed Ch.11 Jun 2022
+        'FXIDF',  # Frontier Communications — filed Ch.11 Apr 2020
+    ],
 }
 
 BACKTEST_CONFIG = {

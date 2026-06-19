@@ -956,9 +956,13 @@ class WalkForwardBacktester:
 
 
                     if combined >= buy_threshold:
-                        entry_price = float(
-                            test_clean['close'].iloc[i]
-                        )
+                        # Fix 2.1: fill at next-bar OPEN not signal-bar CLOSE
+                        # Signal fires on bar i close; order executes at bar i+1 open.
+                        signal_close = float(test_clean['close'].iloc[i])
+                        if 'open' in test_clean.columns and i + 1 < len(test_clean):
+                            entry_price = float(test_clean['open'].iloc[i + 1])
+                        else:
+                            entry_price = signal_close  # fallback (legacy)
                         exit_idx = min(
                             i + hold_days,
                             len(test_clean) - 1,
@@ -973,6 +977,7 @@ class WalkForwardBacktester:
                         raw_return = (
                             exit_price - entry_price
                         ) / entry_price
+
 
                         capped = self._apply_risk_to_return(raw_return)
 
