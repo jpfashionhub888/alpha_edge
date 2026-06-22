@@ -1,5 +1,5 @@
 {
-  "capital": 6917.768104606628,
+  "capital": 7660.765074552355,
   "starting_capital": 10000.0,
   "positions": {
     "UNH": {
@@ -14,21 +14,7 @@
       "stop_loss_pct": 0.04827360361198013,
       "atr": 9.37642342703683,
       "partial_exit_done": false,
-      "current_price": 406.1499938964844
-    },
-    "SPY": {
-      "shares": 1,
-      "entry_price": 741.3305019836425,
-      "market_price": 740.9600219726562,
-      "entry_date": "2026-06-17T22:20:53.026535",
-      "highest_price": 746.9799194335938,
-      "signal": 0.6614078849275714,
-      "cost": 742.3305019836425,
-      "reason": "uptrend",
-      "stop_loss_pct": 0.02904728841778184,
-      "atr": 10.761439732142858,
-      "partial_exit_done": false,
-      "current_price": 744.1199951171875
+      "current_price": 406.67999267578125
     },
     "CRWD": {
       "shares": 1,
@@ -42,7 +28,7 @@
       "stop_loss_pct": 0.08,
       "atr": 39.088208879743306,
       "partial_exit_done": false,
-      "current_price": 676.7100219726562
+      "current_price": 675.4400024414062
     },
     "HD": {
       "shares": 3,
@@ -58,7 +44,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 327.3299865722656
+      "current_price": 326.6199951171875
     }
   },
   "trade_history": [
@@ -245,11 +231,25 @@
       "atr": 8.595350696296501,
       "stop_loss_pct": 0.05142605437169124,
       "entry_ml_score": null
+    },
+    {
+      "action": "SELL",
+      "symbol": "SPY",
+      "shares": 1,
+      "price": 744.3900146484375,
+      "fill_price": 744.0178196411133,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "revenue": 742.9969699457273,
+      "pnl": 0.6664679620847664,
+      "pnl_pct": 0.0036249926993157325,
+      "date": "2026-06-22T22:23:12.893803",
+      "reason": "time_stop"
     }
   ],
-  "daily_realized_pnl": 0.0,
+  "daily_realized_pnl": 0.6664679620847664,
   "daily_loss_limit": 500.0,
-  "last_reset_date": "2026-06-19",
+  "last_reset_date": "2026-06-22",
   "_halt_trading": false,
-  "saved_at": "2026-06-22T20:00:53.994608"
+  "saved_at": "2026-06-22T22:23:13.310446"
 }
