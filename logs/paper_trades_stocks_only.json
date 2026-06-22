@@ -14,7 +14,7 @@
       "stop_loss_pct": 0.04827360361198013,
       "atr": 9.37642342703683,
       "partial_exit_done": false,
-      "current_price": 407.7601013183594
+      "current_price": 406.1499938964844
     },
     "SPY": {
       "shares": 1,
@@ -28,7 +28,7 @@
       "stop_loss_pct": 0.02904728841778184,
       "atr": 10.761439732142858,
       "partial_exit_done": false,
-      "current_price": 744.77001953125
+      "current_price": 744.1199951171875
     },
     "CRWD": {
       "shares": 1,
@@ -42,7 +42,7 @@
       "stop_loss_pct": 0.08,
       "atr": 39.088208879743306,
       "partial_exit_done": false,
-      "current_price": 681.4099731445312
+      "current_price": 676.7100219726562
     },
     "HD": {
       "shares": 3,
@@ -58,7 +58,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 327.7449951171875
+      "current_price": 327.3299865722656
     }
   },
   "trade_history": [
@@ -251,5 +251,5 @@
   "daily_loss_limit": 500.0,
   "last_reset_date": "2026-06-19",
   "_halt_trading": false,
-  "saved_at": "2026-06-22T18:12:18.177061"
+  "saved_at": "2026-06-22T20:00:53.994608"
 }
