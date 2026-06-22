@@ -1,57 +1,57 @@
 {
   "Technology": {
-    "score": 0.14025775273792904,
+    "score": 0.09061781881714766,
     "flow": "INFLOW",
-    "momentum_21d": 0.08072712600784548
+    "momentum_21d": 0.07491595278148244
   },
   "Healthcare": {
-    "score": 0.005082171775522249,
+    "score": 0.00880020037307322,
     "flow": "NEUTRAL",
-    "momentum_21d": 0.015428457407310692
+    "momentum_21d": 0.014107402516263523
   },
   "Financials": {
-    "score": 0.04318958723327693,
+    "score": 0.04564379800251586,
     "flow": "INFLOW",
-    "momentum_21d": 0.0369725097377791
+    "momentum_21d": 0.03779241926067445
   },
   "Energy": {
-    "score": -0.09020305116952612,
+    "score": -0.08874233537607104,
     "flow": "OUTFLOW",
-    "momentum_21d": -0.10083610127472764
+    "momentum_21d": -0.08988673000840286
   },
   "Consumer": {
-    "score": NaN,
+    "score": -0.005143321862732818,
     "flow": "NEUTRAL",
-    "momentum_21d": NaN
+    "momentum_21d": -0.0275905137378597
   },
   "Industrials": {
-    "score": 0.0638347517489702,
+    "score": 0.06811402083358362,
     "flow": "INFLOW",
-    "momentum_21d": 0.05962635851532605
+    "momentum_21d": 0.06512048206785814
   },
   "Utilities": {
-    "score": 0.005475835355557356,
+    "score": 0.0070772586749251135,
     "flow": "NEUTRAL",
-    "momentum_21d": 0.005616715556671981
+    "momentum_21d": -0.0029999627007378793
   },
   "Materials": {
-    "score": 0.04755207484910562,
+    "score": 0.0423094590408984,
     "flow": "INFLOW",
-    "momentum_21d": 0.042035400266998035
+    "momentum_21d": 0.03228704216292866
   },
   "Real Estate": {
-    "score": NaN,
+    "score": 0.015805188324533013,
     "flow": "NEUTRAL",
-    "momentum_21d": NaN
+    "momentum_21d": -0.008876414781206154
   },
   "Communications": {
-    "score": NaN,
-    "flow": "NEUTRAL",
-    "momentum_21d": NaN
+    "score": -0.08215732450623736,
+    "flow": "OUTFLOW",
+    "momentum_21d": -0.08010332079751292
   },
   "Staples": {
-    "score": NaN,
+    "score": -0.014434593105165892,
     "flow": "NEUTRAL",
-    "momentum_21d": NaN
+    "momentum_21d": -0.02728567314038699
   }
 }
