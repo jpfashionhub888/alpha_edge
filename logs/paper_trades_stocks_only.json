@@ -7,14 +7,14 @@
       "entry_price": 388.66423622131344,
       "market_price": 388.4700012207031,
       "entry_date": "2026-05-25T21:41:33.230747",
-      "highest_price": 408.7200012207031,
+      "highest_price": 409.25,
       "signal": 0.41751270030658444,
       "cost": 259.4428241475423,
       "reason": "uptrend",
       "stop_loss_pct": 0.04827360361198013,
       "atr": 9.37642342703683,
       "partial_exit_done": true,
-      "current_price": 408.43499755859375
+      "current_price": 409.25
     },
     "CRWD": {
       "shares": 1,
@@ -28,7 +28,7 @@
       "stop_loss_pct": 0.08,
       "atr": 39.088208879743306,
       "partial_exit_done": false,
-      "current_price": 685.0999755859375
+      "current_price": 680.9199829101562
     },
     "HD": {
       "shares": 3,
@@ -44,7 +44,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 325.8999938964844
+      "current_price": 324.45001220703125
     }
   },
   "trade_history": [
@@ -265,5 +265,5 @@
   "daily_loss_limit": 500.0,
   "last_reset_date": "2026-06-22",
   "_halt_trading": false,
-  "saved_at": "2026-06-23T18:28:57.992451"
+  "saved_at": "2026-06-23T21:58:06.585158"
 }
