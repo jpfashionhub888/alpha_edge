@@ -1,34 +1,34 @@
 {
-  "capital": 7660.765074552355,
+  "capital": 8068.280715772448,
   "starting_capital": 10000.0,
   "positions": {
     "UNH": {
-      "shares": 2,
+      "shares": 1,
       "entry_price": 388.66423622131344,
       "market_price": 388.4700012207031,
       "entry_date": "2026-05-25T21:41:33.230747",
-      "highest_price": 407.7601013183594,
+      "highest_price": 408.7200012207031,
       "signal": 0.41751270030658444,
-      "cost": 778.3284724426269,
+      "cost": 259.4428241475423,
       "reason": "uptrend",
       "stop_loss_pct": 0.04827360361198013,
       "atr": 9.37642342703683,
-      "partial_exit_done": false,
-      "current_price": 406.67999267578125
+      "partial_exit_done": true,
+      "current_price": 408.7200012207031
     },
     "CRWD": {
       "shares": 1,
       "entry_price": 685.2024153442383,
       "market_price": 684.8599853515625,
       "entry_date": "2026-06-18T22:32:20.002804",
-      "highest_price": 685.2024153442383,
+      "highest_price": 687.5650024414062,
       "signal": 0.6322918118674781,
       "cost": 686.2024153442383,
       "reason": "uptrend",
       "stop_loss_pct": 0.08,
       "atr": 39.088208879743306,
       "partial_exit_done": false,
-      "current_price": 675.4400024414062
+      "current_price": 687.5650024414062
     },
     "HD": {
       "shares": 3,
@@ -44,7 +44,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 326.6199951171875
+      "current_price": 325.9800109863281
     }
   },
   "trade_history": [
@@ -245,11 +245,25 @@
       "pnl_pct": 0.0036249926993157325,
       "date": "2026-06-22T22:23:12.893803",
       "reason": "time_stop"
+    },
+    {
+      "action": "PARTIAL_SELL",
+      "symbol": "UNH",
+      "shares": 1,
+      "price": 408.7200012207031,
+      "fill_price": 408.5156412200928,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "revenue": 407.5156412200928,
+      "pnl": 19.851404998779344,
+      "pnl_pct": 0.051601776367119906,
+      "date": "2026-06-23T16:20:11.013096",
+      "reason": "partial_exit_5pct"
     }
   ],
   "daily_realized_pnl": 0.6664679620847664,
   "daily_loss_limit": 500.0,
   "last_reset_date": "2026-06-22",
   "_halt_trading": false,
-  "saved_at": "2026-06-22T22:23:13.310446"
+  "saved_at": "2026-06-23T16:20:11.014848"
 }
