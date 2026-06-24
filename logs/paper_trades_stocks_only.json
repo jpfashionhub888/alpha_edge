@@ -1,5 +1,5 @@
 {
-  "capital": 8746.301987332066,
+  "capital": 9767.131922278246,
   "starting_capital": 10000.0,
   "positions": {
     "UNH": {
@@ -14,23 +14,7 @@
       "stop_loss_pct": 0.04827360361198013,
       "atr": 9.37642342703683,
       "partial_exit_done": true,
-      "current_price": 406.69000244140625
-    },
-    "HD": {
-      "shares": 3,
-      "entry_price": 334.4471387786865,
-      "market_price": 334.2799987792969,
-      "entry_date": "2026-06-19T16:26:54.991093",
-      "highest_price": 341.05999755859375,
-      "signal": 0.6291878663102737,
-      "cost": 1004.3414163360595,
-      "reason": "sideways",
-      "stop_loss_pct": 0.05142605437169124,
-      "atr": 8.595350696296501,
-      "partial_exit_done": false,
-      "entry_ml_score": null,
-      "fill_type": "close",
-      "current_price": 341.05999755859375
+      "current_price": 403.875
     }
   },
   "trade_history": [
@@ -259,11 +243,25 @@
       "pnl_pct": -0.008993109664932105,
       "date": "2026-06-24T16:07:52.814347",
       "reason": "time_stop"
+    },
+    {
+      "action": "SELL",
+      "symbol": "HD",
+      "shares": 3,
+      "price": 340.7900085449219,
+      "fill_price": 340.6196135406494,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "revenue": 1020.829934946179,
+      "pnl": 16.488518610119513,
+      "pnl_pct": 0.01845575592155813,
+      "date": "2026-06-24T18:23:50.155341",
+      "reason": "time_stop"
     }
   ],
-  "daily_realized_pnl": -8.181143784620758,
+  "daily_realized_pnl": 8.307374825498755,
   "daily_loss_limit": 500.0,
   "last_reset_date": "2026-06-24",
   "_halt_trading": false,
-  "saved_at": "2026-06-24T16:07:53.632231"
+  "saved_at": "2026-06-24T18:23:50.670306"
 }
