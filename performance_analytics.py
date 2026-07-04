@@ -1,13 +1,14 @@
 # performance_analytics.py
-# TRADING EMPIRE - Performance Analytics Engine
+# ALPHAEDGE - Performance Analytics Engine V2
 #
-# FIX P1-3: calculate_metrics() now counts PARTIAL_SELL alongside SELL
-#   when computing wins, losses, avg_win/loss, profit_factor, and
-#   best/worst trade. Previously partial exits were silently excluded,
-#   understating realized P&L and win count in the weekly report.
-#
-# v2: Adds Sharpe Ratio, Sortino Ratio, Calmar Ratio, Max Drawdown
-#   computed from the equity curve reconstructed from trade history.
+# Fixes applied:
+#   - Removed hardcoded ../bharat_edge/ and ../crypto_edge/ paths
+#     (system no longer crashes if sibling projects don't exist)
+#   - Added real Sharpe ratio calculation (annualised, risk-free=0)
+#   - Added max drawdown calculation
+#   - Report now includes unrealized P&L on open positions
+#   - Trade date parsing made robust (handles missing/malformed dates)
+#   - AlphaEdge-only by default; multi-system optional via config
 
 import json
 import os
@@ -17,277 +18,199 @@ from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
-# Exit action types that represent realized P&L events
-REALIZED_ACTIONS = ('SELL', 'PARTIAL_SELL')   # P1-3
-
-RISK_FREE_RATE = 0.05   # annualised (approx 5% T-bill)
-TRADING_DAYS  = 252     # annualisation factor
-
 
 class PerformanceAnalytics:
     """
-    Weekly performance analyzer for all trading systems.
-    Calculates win rates, Sharpe ratio, drawdown etc.
+    Weekly performance analyzer.
+
+    Now AlphaEdge-only by default.
+    Multi-system reporting available if sibling project paths
+    are explicitly configured (no silent failures on missing dirs).
     """
 
-    def load_trades(self, filepath):
-        """Load trade history from JSON file."""
-        if not os.path.exists(filepath):
-            return []
-        try:
-            with open(filepath, 'r') as f:
-                data = json.load(f)
-            return data.get('trade_history', [])
-        except Exception as e:
-            logger.warning(f"Load failed for {filepath}: {e}")
-            return []
+    def __init__(self, extra_systems=None):
+        """
+        extra_systems: optional list of dicts for multi-system reporting
+          e.g. [
+            {'name': 'BharatEdge', 'path': '/path/to/bharat_trades.json',
+             'currency': 'Rs', 'starting_capital': 100000},
+            {'name': 'CryptoEdge', 'path': '/path/to/crypto_trades.json',
+             'currency': '$',  'starting_capital': 10000},
+          ]
+        """
+        self.extra_systems = extra_systems or []
 
     def load_portfolio(self, filepath):
-        """Load portfolio data from JSON file."""
+        """Load portfolio data from JSON file. Returns {} on missing/error."""
         if not os.path.exists(filepath):
+            logger.debug(f"Portfolio file not found: {filepath}")
             return {}
         try:
             with open(filepath, 'r') as f:
                 return json.load(f)
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Failed to load portfolio {filepath}: {e}")
             return {}
 
-    def _empty_metrics(self, current_value, starting_capital, days_back):
-        """Return a zeroed metrics dict when there are no qualifying trades."""
-        return {
-            'total_trades' : 0,
-            'wins'         : 0,
-            'losses'       : 0,
-            'win_rate'     : 0,
-            'total_pnl'    : current_value - starting_capital,
-            'total_pct'    : (current_value - starting_capital) / starting_capital * 100
-                             if starting_capital else 0,
-            'avg_win'      : 0,
-            'avg_loss'     : 0,
-            'profit_factor': 'N/A',
-            'best_trade'   : None,
-            'worst_trade'  : None,
-            'sharpe'       : 'N/A',
-            'sortino'      : 'N/A',
-            'calmar'       : 'N/A',
-            'max_drawdown' : 0.0,
-        }
-
-    def _build_equity_curve(self, exits, starting_capital):
-        """
-        Build a daily equity curve from realized exits.
-        Returns a list of daily returns (as fractions) sorted by date.
-        Used for Sharpe, Sortino, and Calmar calculations.
-        """
-        if not exits:
-            return []
-
-        # Sort exits by date
-        dated = []
-        for t in exits:
-            try:
-                dated.append((datetime.fromisoformat(t['date']), t.get('pnl', 0)))
-            except Exception:
-                continue
-        if not dated:
-            return []
-
-        dated.sort(key=lambda x: x[0])
-
-        # Aggregate P&L by date (multiple trades same day collapse)
-        daily_pnl = {}
-        for dt, pnl in dated:
-            day = dt.date()
-            daily_pnl[day] = daily_pnl.get(day, 0) + pnl
-
-        # Build equity curve and compute daily returns
-        equity = starting_capital
-        daily_returns = []
-        for day in sorted(daily_pnl):
-            equity_prev = equity
-            equity += daily_pnl[day]
-            if equity_prev > 0:
-                daily_returns.append((equity - equity_prev) / equity_prev)
-
-        return daily_returns
-
-    def _risk_metrics(self, daily_returns, total_pct, days_back):
-        """
-        Compute Sharpe, Sortino, Calmar, and Max Drawdown.
-
-        Sharpe  = (mean_return - daily_rfr) / std_return  * sqrt(252)
-        Sortino = (mean_return - daily_rfr) / downside_std * sqrt(252)
-        Calmar  = annualised_return / |max_drawdown|
-        """
-        if not daily_returns or len(daily_returns) < 2:
-            return {'sharpe': 'N/A', 'sortino': 'N/A', 'calmar': 'N/A', 'max_drawdown': 0.0}
-
-        # Daily risk-free rate
-        daily_rfr = RISK_FREE_RATE / TRADING_DAYS
-
-        mean_r   = sum(daily_returns) / len(daily_returns)
-        excess   = [r - daily_rfr for r in daily_returns]
-        variance = sum(e ** 2 for e in excess) / (len(excess) - 1)
-        std_r    = math.sqrt(variance) if variance > 0 else 0
-
-        # Sharpe
-        sharpe = (mean_r - daily_rfr) / std_r * math.sqrt(TRADING_DAYS) if std_r > 0 else 'N/A'
-
-        # Sortino — only downside deviations
-        downside = [min(r - daily_rfr, 0) for r in daily_returns]
-        down_var = sum(d ** 2 for d in downside) / max(len(downside) - 1, 1)
-        down_std = math.sqrt(down_var) if down_var > 0 else 0
-        sortino  = (mean_r - daily_rfr) / down_std * math.sqrt(TRADING_DAYS) if down_std > 0 else 'N/A'
-
-        # Max Drawdown from equity curve
-        peak = 1.0
-        max_dd = 0.0
-        equity = 1.0
-        for r in daily_returns:
-            equity *= (1 + r)
-            if equity > peak:
-                peak = equity
-            dd = (peak - equity) / peak
-            if dd > max_dd:
-                max_dd = dd
-
-        # Calmar
-        ann_return = (1 + mean_r) ** TRADING_DAYS - 1
-        calmar = ann_return / max_dd if max_dd > 0 else 'N/A'
-
-        return {
-            'sharpe'      : round(sharpe,  2) if isinstance(sharpe,  float) else sharpe,
-            'sortino'     : round(sortino, 2) if isinstance(sortino, float) else sortino,
-            'calmar'      : round(calmar,  2) if isinstance(calmar,  float) else calmar,
-            'max_drawdown': round(max_dd * 100, 2),   # as percentage
-        }
+    def _parse_date(self, date_str):
+        """Parse ISO datetime string robustly. Returns None on failure."""
+        if not date_str:
+            return None
+        try:
+            return datetime.fromisoformat(str(date_str))
+        except Exception:
+            return None
 
     def calculate_metrics(self, trades, starting_capital,
-                          current_value, days_back=7):
+                           current_value, open_positions=None, days_back=7):
         """
-        Calculate performance metrics.
+        Calculate performance metrics including Sharpe ratio and max drawdown.
 
-        P1-3 FIX: Counts both SELL and PARTIAL_SELL as realized trades.
-        v2: Adds Sharpe, Sortino, Calmar, Max Drawdown.
+        Parameters
+        ----------
+        trades          : full trade history list
+        starting_capital: float
+        current_value   : float (cash only)
+        open_positions  : dict of open positions (for unrealized P&L)
+        days_back       : int (window for recent-trade stats)
         """
+        open_positions = open_positions or {}
+
+        # Unrealized P&L on open positions
+        unrealized_pnl = sum(
+            pos.get('shares', pos.get('units', 0)) *
+            (pos.get('current_price', pos.get('entry_price', 0)) - pos.get('entry_price', 0))
+            for pos in open_positions.values()
+        )
+        total_value  = current_value + sum(
+            pos.get('shares', pos.get('units', 0)) * pos.get('current_price', pos.get('entry_price', 0))
+            for pos in open_positions.values()
+        )
+        total_pnl    = total_value - starting_capital
+        total_pct    = total_pnl / starting_capital * 100 if starting_capital > 0 else 0
+
         if not trades:
-            return self._empty_metrics(current_value, starting_capital, days_back)
+            return self._empty_metrics(total_pnl, total_pct, unrealized_pnl)
 
-        # Filter to realized exit events within window  [P1-3]
-        # FIX: count and log trades skipped due to unparseable dates
-        # so the report never silently under-counts without a visible signal.
-        cutoff   = datetime.now() - timedelta(days=days_back)
-        exits    = []
-        skipped  = 0
+        # Filter recent closed (SELL) trades
+        cutoff = datetime.now() - timedelta(days=days_back)
+        sells  = []
         for t in trades:
-            if t.get('action') not in REALIZED_ACTIONS:   # P1-3: was == 'SELL'
+            if t.get('action') != 'SELL':
                 continue
-            try:
-                trade_date = datetime.fromisoformat(t.get('date', ''))
-                if trade_date >= cutoff:
-                    exits.append(t)
-            except Exception:
-                skipped += 1
-                continue
+            trade_date = self._parse_date(t.get('date', ''))
+            if trade_date and trade_date >= cutoff:
+                sells.append(t)
 
-        if skipped:
-            logger.warning(
-                f'calculate_metrics: {skipped} realized trade(s) skipped due to '
-                f'unparseable date strings \u2014 weekly report may under-count'
-            )
+        if not sells:
+            return self._empty_metrics(total_pnl, total_pct, unrealized_pnl)
 
-        if not exits:
-            return self._empty_metrics(current_value, starting_capital, days_back)
+        wins   = [t for t in sells if t.get('pnl', 0) > 0]
+        losses = [t for t in sells if t.get('pnl', 0) <= 0]
+        total  = len(sells)
 
-        wins   = [t for t in exits if t.get('pnl', 0) > 0]
-        losses = [t for t in exits if t.get('pnl', 0) <= 0]
-        total  = len(exits)
+        win_rate     = len(wins) / total * 100 if total > 0 else 0
+        avg_win      = sum(t.get('pnl', 0) for t in wins)   / len(wins)   if wins   else 0
+        avg_loss     = abs(sum(t.get('pnl', 0) for t in losses) / len(losses)) if losses else 0
+        total_wins_  = sum(t.get('pnl', 0) for t in wins)
+        total_losses_= abs(sum(t.get('pnl', 0) for t in losses))
+        profit_factor= total_wins_ / total_losses_ if total_losses_ > 0 else float('inf')
 
-        win_rate  = len(wins)  / total * 100 if total > 0 else 0
-        avg_win   = sum(t.get('pnl', 0) for t in wins)   / len(wins)   if wins   else 0
-        avg_loss  = abs(sum(t.get('pnl', 0) for t in losses) / len(losses)) if losses else 0
+        best_trade  = max(sells, key=lambda x: x.get('pnl', 0))
+        worst_trade = min(sells, key=lambda x: x.get('pnl', 0))
 
-        total_wins   = sum(t.get('pnl', 0) for t in wins)
-        total_losses = abs(sum(t.get('pnl', 0) for t in losses))
+        # Sharpe ratio (annualised, risk-free rate = 0)
+        # Uses per-trade returns as a proxy
+        returns = [t.get('pnl_pct', 0) for t in sells if 'pnl_pct' in t]
+        sharpe  = self._sharpe(returns)
 
-        # Profit factor: handle zero-loss case correctly
-        if total_losses == 0 and total_wins > 0:
-            profit_factor = float('inf')   # no losses at all
-        elif total_losses == 0:
-            profit_factor = 'N/A'          # no trades resolved yet
-        else:
-            profit_factor = total_wins / total_losses
-
-        best_trade  = max(exits, key=lambda x: x.get('pnl', 0)) if exits else None
-        worst_trade = min(exits, key=lambda x: x.get('pnl', 0)) if exits else None
-
-        total_pnl = current_value - starting_capital
-        total_pct = total_pnl / starting_capital * 100 if starting_capital else 0
-
-        # v2: Risk-adjusted metrics from equity curve
-        daily_returns = self._build_equity_curve(exits, starting_capital)
-        risk = self._risk_metrics(daily_returns, total_pct, days_back)
+        # Max drawdown from all SELL trade P&L sequence
+        max_dd = self._max_drawdown_from_trades(trades)
 
         return {
-            'total_trades' : total,
-            'wins'         : len(wins),
-            'losses'       : len(losses),
-            'win_rate'     : win_rate,
-            'total_pnl'    : total_pnl,
-            'total_pct'    : total_pct,
-            'avg_win'      : avg_win,
-            'avg_loss'     : avg_loss,
-            'profit_factor': profit_factor,
-            'best_trade'   : best_trade,
-            'worst_trade'  : worst_trade,
-            'sharpe'       : risk['sharpe'],
-            'sortino'      : risk['sortino'],
-            'calmar'       : risk['calmar'],
-            'max_drawdown' : risk['max_drawdown'],
+            'total_trades'   : total,
+            'wins'           : len(wins),
+            'losses'         : len(losses),
+            'win_rate'       : win_rate,
+            'total_pnl'      : total_pnl,
+            'total_pct'      : total_pct,
+            'unrealized_pnl' : unrealized_pnl,
+            'avg_win'        : avg_win,
+            'avg_loss'       : avg_loss,
+            'profit_factor'  : profit_factor,
+            'sharpe_ratio'   : sharpe,
+            'max_drawdown'   : max_dd,
+            'best_trade'     : best_trade,
+            'worst_trade'    : worst_trade,
         }
 
+    def _empty_metrics(self, total_pnl, total_pct, unrealized_pnl):
+        return {
+            'total_trades'   : 0,
+            'wins'           : 0,
+            'losses'         : 0,
+            'win_rate'       : 0,
+            'total_pnl'      : total_pnl,
+            'total_pct'      : total_pct,
+            'unrealized_pnl' : unrealized_pnl,
+            'avg_win'        : 0,
+            'avg_loss'       : 0,
+            'profit_factor'  : 0,
+            'sharpe_ratio'   : 0,
+            'max_drawdown'   : 0,
+            'best_trade'     : None,
+            'worst_trade'    : None,
+        }
+
+    @staticmethod
+    def _sharpe(returns):
+        """Annualised Sharpe ratio from a list of per-trade return fractions."""
+        if len(returns) < 2:
+            return 0.0
+        n    = len(returns)
+        mean = sum(returns) / n
+        var  = sum((r - mean) ** 2 for r in returns) / (n - 1)
+        std  = math.sqrt(var)
+        if std == 0:
+            return 0.0
+        # Annualise assuming ~252 trading days / year
+        return round((mean / std) * math.sqrt(252), 2)
+
+    @staticmethod
+    def _max_drawdown_from_trades(trades):
+        """
+        Compute max drawdown from cumulative P&L sequence of all SELL trades.
+        Returns a negative fraction (e.g. -0.12 = -12% drawdown).
+        """
+        sells = [t for t in trades if t.get('action') == 'SELL']
+        if not sells:
+            return 0.0
+        cumulative = 0.0
+        peak       = 0.0
+        max_dd     = 0.0
+        for t in sells:
+            cumulative += t.get('pnl', 0)
+            if cumulative > peak:
+                peak = cumulative
+            dd = (cumulative - peak) / (abs(peak) + 1e-9)
+            if dd < max_dd:
+                max_dd = dd
+        return round(max_dd, 4)
+
     def generate_report(self, days_back=7):
-        """Generate weekly report for all 3 systems."""
+        """Generate performance report (AlphaEdge + any configured extras)."""
         now = datetime.now().strftime('%Y-%m-%d %H:%M')
 
-        alpha_portfolio  = self.load_portfolio('logs/paper_trades_stocks_only.json')
-        bharat_portfolio = self.load_portfolio('../bharat_edge/logs/bharat_trades.json')
-        crypto_portfolio = self.load_portfolio('../crypto_edge/logs/crypto_trades.json')
-
-        # AlphaEdge metrics
-        alpha_value = alpha_portfolio.get('capital', 10000) + sum(
-            pos.get('shares', 0) * pos.get('current_price', pos.get('entry_price', 0))
-            for pos in alpha_portfolio.get('positions', {}).values()
-        )
-        alpha_metrics = self.calculate_metrics(
-            trades          = alpha_portfolio.get('trade_history', []),
-            starting_capital= alpha_portfolio.get('starting_capital', 10000),
-            current_value   = alpha_value,
-            days_back       = days_back,
-        )
-
-        # BharatEdge metrics
-        bharat_value = bharat_portfolio.get('capital', 100000) + sum(
-            pos.get('shares', 0) * pos.get('current_price', pos.get('entry_price', 0))
-            for pos in bharat_portfolio.get('positions', {}).values()
-        )
-        bharat_metrics = self.calculate_metrics(
-            trades          = bharat_portfolio.get('trade_history', []),
-            starting_capital= bharat_portfolio.get('starting_capital', 100000),
-            current_value   = bharat_value,
-            days_back       = days_back,
-        )
-
-        # CryptoEdge metrics
-        crypto_value = crypto_portfolio.get('capital', 10000) + sum(
-            pos.get('units', 0) * pos.get('current_price', pos.get('entry_price', 0))
-            for pos in crypto_portfolio.get('positions', {}).values()
-        )
-        crypto_metrics = self.calculate_metrics(
-            trades          = crypto_portfolio.get('trade_history', []),
-            starting_capital= crypto_portfolio.get('starting_capital', 10000),
-            current_value   = crypto_value,
-            days_back       = days_back,
+        # AlphaEdge (always present)
+        alpha_portfolio = self.load_portfolio('logs/paper_trades.json')
+        alpha_positions = alpha_portfolio.get('positions', {})
+        alpha_value     = alpha_portfolio.get('capital', 10000)
+        alpha_metrics   = self.calculate_metrics(
+            trades           = alpha_portfolio.get('trade_history', []),
+            starting_capital = alpha_portfolio.get('starting_capital', 10000),
+            current_value    = alpha_value,
+            open_positions   = alpha_positions,
+            days_back        = days_back,
         )
 
         def fmt_pnl(pnl, pct, currency='$'):
@@ -302,66 +225,59 @@ class PerformanceAnalytics:
             sign = '+' if pnl >= 0 else ''
             return f"{sym}: {sign}{currency}{abs(pnl):.2f}"
 
-        def fmt_pf(pf):
-            if pf == float('inf'):
-                return '∞ (no losses)'
-            if pf == 'N/A':
-                return 'N/A'
-            return f"{pf:.2f}x"
+        m = alpha_metrics
+        report = f"""ALPHAEDGE WEEKLY PERFORMANCE REPORT
+=====================================
+Period: Last {days_back} days | Date: {now}
 
-        def fmt_ratio(r):
-            if isinstance(r, (int, float)):
-                return f"{r:.2f}"
-            return str(r)
+📊 ALPHAEDGE (US Stocks & Crypto):
+  Portfolio:     ${alpha_portfolio.get('capital', 0) + sum(p.get('shares', p.get('units', 0)) * p.get('current_price', p.get('entry_price', 0)) for p in alpha_positions.values()):,.2f}
+  Realized P&L:  {fmt_pnl(m['total_pnl'], m['total_pct'])}
+  Unrealized:    ${m['unrealized_pnl']:+,.2f}
+  Trades:        {m['total_trades']} | Win Rate: {m['win_rate']:.1f}%
+  Avg Win:       ${m['avg_win']:.2f} | Avg Loss: ${m['avg_loss']:.2f}
+  Profit Factor: {m['profit_factor']:.2f}
+  Sharpe Ratio:  {m['sharpe_ratio']:.2f}
+  Max Drawdown:  {m['max_drawdown']:.2%}
+  Best Trade:    {fmt_trade(m['best_trade'])}
+  Worst Trade:   {fmt_trade(m['worst_trade'])}"""
 
-        def fmt_dd(dd):
-            return f"{dd:.2f}%" if isinstance(dd, (int, float)) else 'N/A'
+        # Optional extra systems
+        for sys in self.extra_systems:
+            path = sys.get('path', '')
+            if not os.path.exists(path):
+                report += f"\n\n⚠️  {sys.get('name', 'Unknown')}: portfolio file not found at {path}"
+                continue
+            portfolio = self.load_portfolio(path)
+            positions = portfolio.get('positions', {})
+            value     = portfolio.get('capital', sys.get('starting_capital', 0))
+            metrics   = self.calculate_metrics(
+                trades           = portfolio.get('trade_history', []),
+                starting_capital = portfolio.get('starting_capital', sys.get('starting_capital', 0)),
+                current_value    = value,
+                open_positions   = positions,
+                days_back        = days_back,
+            )
+            cur = sys.get('currency', '$')
+            sm  = metrics
+            report += f"""
 
-        report = f"""TRADING EMPIRE WEEKLY REPORT
-==============================
-Period: Last {days_back} days
-Date:   {now}
+📊 {sys.get('name', 'System')}:
+  Portfolio:     {cur}{value:,.2f}
+  Realized P&L:  {fmt_pnl(sm['total_pnl'], sm['total_pct'], cur)}
+  Unrealized:    {cur}{sm['unrealized_pnl']:+,.2f}
+  Trades:        {sm['total_trades']} | Win Rate: {sm['win_rate']:.1f}%
+  Sharpe Ratio:  {sm['sharpe_ratio']:.2f}
+  Max Drawdown:  {sm['max_drawdown']:.2%}"""
 
-ALPHAEDGE (US Stocks):
-  Portfolio:     ${alpha_value:,.2f}
-  P&L:           {fmt_pnl(alpha_metrics['total_pnl'], alpha_metrics['total_pct'])}
-  Trades:        {alpha_metrics['total_trades']} | Win Rate: {alpha_metrics['win_rate']:.1f}%
-  Profit Factor: {fmt_pf(alpha_metrics['profit_factor'])}
-  Sharpe:        {fmt_ratio(alpha_metrics['sharpe'])} | Sortino: {fmt_ratio(alpha_metrics['sortino'])} | Calmar: {fmt_ratio(alpha_metrics['calmar'])}
-  Max Drawdown:  {fmt_dd(alpha_metrics['max_drawdown'])}
-  Best:          {fmt_trade(alpha_metrics['best_trade'])}
-  Worst:         {fmt_trade(alpha_metrics['worst_trade'])}
+        report += f"""
 
-BHARATEDGE (Indian Stocks):
-  Portfolio:     Rs{bharat_value:,.2f}
-  P&L:           {fmt_pnl(bharat_metrics['total_pnl'], bharat_metrics['total_pct'], 'Rs')}
-  Trades:        {bharat_metrics['total_trades']} | Win Rate: {bharat_metrics['win_rate']:.1f}%
-  Profit Factor: {fmt_pf(bharat_metrics['profit_factor'])}
-  Sharpe:        {fmt_ratio(bharat_metrics['sharpe'])} | Sortino: {fmt_ratio(bharat_metrics['sortino'])} | Calmar: {fmt_ratio(bharat_metrics['calmar'])}
-  Max Drawdown:  {fmt_dd(bharat_metrics['max_drawdown'])}
-  Best:          {fmt_trade(bharat_metrics['best_trade'], 'Rs')}
-  Worst:         {fmt_trade(bharat_metrics['worst_trade'], 'Rs')}
-
-CRYPTOEDGE (Crypto 24/7):
-  Portfolio:     ${crypto_value:,.2f} USDT
-  P&L:           {fmt_pnl(crypto_metrics['total_pnl'], crypto_metrics['total_pct'])}
-  Trades:        {crypto_metrics['total_trades']} | Win Rate: {crypto_metrics['win_rate']:.1f}%
-  Profit Factor: {fmt_pf(crypto_metrics['profit_factor'])}
-  Sharpe:        {fmt_ratio(crypto_metrics['sharpe'])} | Sortino: {fmt_ratio(crypto_metrics['sortino'])} | Calmar: {fmt_ratio(crypto_metrics['calmar'])}
-  Max Drawdown:  {fmt_dd(crypto_metrics['max_drawdown'])}
-  Best:          {fmt_trade(crypto_metrics['best_trade'])}
-  Worst:         {fmt_trade(crypto_metrics['worst_trade'])}
-
-COMBINED EMPIRE:
-  Total Assets:  ${ alpha_value + crypto_value:,.2f} + Rs{bharat_value:,.2f}
-  Next Report:   {(datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')}
-
-Trading Empire AI - Automated"""
+Next Report: {(datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')}
+AlphaEdge Analytics V2"""
 
         return report
 
     def send_report(self, telegram_bot, days_back=7):
-        """Generate and send report to Telegram."""
         print("\n  Generating Performance Report...")
         report = self.generate_report(days_back)
         print(report)
@@ -376,7 +292,7 @@ Trading Empire AI - Automated"""
 
 
 if __name__ == '__main__':
-    print("\nTesting Performance Analytics...")
+    print("\nTesting Performance Analytics V2...")
     analytics = PerformanceAnalytics()
     report    = analytics.generate_report(days_back=30)
     print(report)

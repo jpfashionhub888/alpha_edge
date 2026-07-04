@@ -123,6 +123,12 @@ class AlpacaLiveTrader:
         self._print_account()
 
         # Phase 4: startup reconciliation
+        # Enforced, not advisory: a phantom/orphan position after a crash
+        # is exactly the double-buy scenario this module exists to catch.
+        # Logging it and trading anyway (the previous behavior) makes the
+        # check pointless — the Telegram alert literally says "do NOT
+        # place new trades until resolved" while the code did precisely
+        # that. Set ALPHAEDGE_FORCE_START=1 to override after manual review.
         try:
             from monitoring.reconciliation import reconcile_on_startup
             discrepancies = reconcile_on_startup(
@@ -135,6 +141,20 @@ class AlpacaLiveTrader:
                     f'Reconciliation found {len(discrepancies)} discrepancies — '
                     f'review logs/reconciliation.log before trading'
                 )
+                if os.getenv('ALPHAEDGE_FORCE_START') != '1':
+                    print(
+                        f'\n❌ HALTED: {len(discrepancies)} position discrepancies '
+                        f'found on startup.\n'
+                        f'   Review logs/reconciliation.log, resolve manually, '
+                        f'then either fix the local state file or set\n'
+                        f'   ALPHAEDGE_FORCE_START=1 to proceed anyway.\n'
+                    )
+                    return
+                else:
+                    logger.warning(
+                        'ALPHAEDGE_FORCE_START=1 set — proceeding despite '
+                        'unresolved reconciliation discrepancies'
+                    )
         except Exception as e:
             logger.warning(f'Reconciliation skipped: {e}')
 
@@ -199,18 +219,17 @@ class AlpacaLiveTrader:
             from models.sentiment_model import SentimentAnalyzer
             from models.regime_detector import RegimeDetector
             from models.sector_rotation import SectorRotation
-            from market_regime          import MarketRegimeDetector            
+            from market_regime          import MarketRegimeFilter
             from multi_timeframe        import MultiTimeframeAnalyzer
             from correlation_filter     import CorrelationFilter
             from veto_agent             import VetoAgent
             from main import (
                 get_full_watchlist,
                 compute_signal,
-                check_volume_confirmation,
-                check_risk_reward,
                 calc_atr,
                 get_earnings_calendar,
             )
+            from scanner import check_volume_confirmation, check_risk_reward
             from model_cache import load_models, save_models
             from sklearn.feature_selection import SelectKBest, mutual_info_classif
             import pandas as pd
@@ -250,7 +269,7 @@ class AlpacaLiveTrader:
 
         # ── Market regime ─────────────────────────────────────────────
         try:
-            regime_detector = MarketRegimeDetector()
+            regime_detector = MarketRegimeFilter()
             market_regime   = regime_detector.analyze() if hasattr(regime_detector, 'analyze') else {'can_trade': True, 'regime': 'unknown', 'reason': ''}
         except Exception as e:
             logger.warning(f'Regime detect error: {e}')
@@ -406,8 +425,8 @@ class AlpacaLiveTrader:
             signal, combined = compute_signal(
                 pred, regime, sent_score, sect_mult,
                 symbol, earnings_symbols,
-                mtf_composite=mtf_comp,
             )
+            # MTF gate applied below via mtf_comp threshold check
 
             if signal != 'BUY':
                 continue

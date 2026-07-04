@@ -804,9 +804,9 @@ class WalkForwardBacktester:
                         )
                         feature_names = self.feature_engine.get_feature_names()
                     else:
-                        fold_featured = fold_combined
+                        fold_featured = fold_raw
                         feature_names = [
-                            c for c in fold_combined.columns
+                            c for c in fold_raw.columns
                             if c not in (
                                 'open', 'high', 'low',
                                 'close', 'volume', 'target'

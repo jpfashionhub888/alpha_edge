@@ -2,6 +2,8 @@
 
 import ccxt
 import logging
+import time
+from datetime import datetime
 from config.settings import (
     CRYPTO_EXCHANGE, COINBASE_API_KEY, COINBASE_SECRET_KEY,
     COINBASE_PASSPHRASE, COINBASE_SANDBOX
@@ -64,11 +66,12 @@ class CoinbaseBroker:
             return {}
 
     def place_order(self, symbol: str, side: str, amount: float,
-                    order_type: str = 'market') -> dict:
+                    order_type: str = 'market', price: float = None) -> dict:
         """
         Place an order.
         side = 'buy' or 'sell'
         amount = quantity (e.g., BTC amount)
+        price = required when order_type == 'limit'
         """
         if self.mode == 'paper':
             # Simulated fill using latest price
@@ -91,6 +94,8 @@ class CoinbaseBroker:
                 order = self.exchange.create_market_order(symbol, side, amount)
             else:
                 # For limit orders later (Phase 6+)
+                if price is None:
+                    raise ValueError("price is required for limit orders")
                 order = self.exchange.create_limit_order(symbol, side, amount, price)
             logger.info(f"LIVE ORDER: {order}")
             return order

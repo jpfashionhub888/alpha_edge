@@ -33,12 +33,26 @@ REALIZED_ACTIONS = {'SELL', 'PARTIAL_SELL'}
 # All valid action types
 VALID_ACTIONS = {'BUY', 'SELL', 'PARTIAL_SELL', 'CLOSE', 'HOLD'}
 
+# Webhook order sizing/limits — kept in sync with alpaca_live.py's own
+# RISK_PER_TRADE_PCT / MAX_POSITIONS so this entry point doesn't run under
+# a different risk regime than the primary strategy.
+WEBHOOK_RISK_PER_TRADE_PCT = 0.015
+MAX_WEBHOOK_POSITIONS      = 5
+
 # Webhook secret — read from env, never hardcode
 # Fix 4.1: Use ALPHAEDGE_WEBHOOK_SECRET env var (stronger name, required by audit)
-WEBHOOK_SECRET = (
-    os.getenv('ALPHAEDGE_WEBHOOK_SECRET')
-    or os.getenv('WEBHOOK_SECRET', 'alphaedge_secret_2026')
-)
+#
+# No hardcoded fallback: this file is in a public GitHub repo, so any
+# fallback string here is a known value to anyone who reads the source.
+# A silent fallback means a forgotten env var on a fresh deploy degrades
+# auth to "anyone who read the repo" with no error and no log line.
+# Fail loudly instead — refuse to import rather than run unauthenticated.
+WEBHOOK_SECRET = os.getenv('ALPHAEDGE_WEBHOOK_SECRET') or os.getenv('WEBHOOK_SECRET')
+if not WEBHOOK_SECRET:
+    raise RuntimeError(
+        'ALPHAEDGE_WEBHOOK_SECRET is not set. Refusing to start the webhook '
+        'server without a real secret — there is no safe hardcoded default.'
+    )
 
 # ── Fix 4.1: HMAC-SHA256 signature verification ───────────────────────────────
 
@@ -163,7 +177,7 @@ def receive_webhook():
                 'status' : 'error',
                 'message': 'Missing required field: secret'
             }), 401
-        if secret != WEBHOOK_SECRET:
+        if not hmac.compare_digest(secret, WEBHOOK_SECRET):
             logger.warning(f'Webhook from {client_ip}: invalid secret')
             return jsonify({
                 'status' : 'error',
@@ -233,8 +247,44 @@ def health_check():
 
 
 # ── Kill Switch ────────────────────────────────────────────────────────────────
-_kill_switch_active: bool = False
-_kill_switch_reason: str  = ''
+# Persisted to disk: an in-memory-only flag means a crash or systemd restart
+# while the kill switch is active would silently re-enable trading with no
+# record it ever happened. That defeats the point of an emergency halt.
+KILL_SWITCH_FILE = 'logs/kill_switch.json'
+
+
+def _load_kill_switch_state() -> tuple[bool, str]:
+    try:
+        if os.path.exists(KILL_SWITCH_FILE):
+            with open(KILL_SWITCH_FILE, 'r') as f:
+                data = json.load(f)
+            return bool(data.get('active', False)), str(data.get('reason', ''))
+    except Exception as e:
+        logger.error(f'Failed to load kill switch state: {e}')
+    return False, ''
+
+
+def _save_kill_switch_state(active: bool, reason: str) -> None:
+    try:
+        os.makedirs('logs', exist_ok=True)
+        tmp_path = KILL_SWITCH_FILE + '.tmp'
+        with open(tmp_path, 'w') as f:
+            json.dump({
+                'active': active,
+                'reason': reason,
+                'updated': datetime.now().isoformat(),
+            }, f, indent=2)
+        os.replace(tmp_path, KILL_SWITCH_FILE)
+    except Exception as e:
+        logger.error(f'Failed to persist kill switch state: {e}')
+
+
+_kill_switch_active, _kill_switch_reason = _load_kill_switch_state()
+if _kill_switch_active:
+    logger.critical(
+        f'Kill switch loaded as ACTIVE from disk on startup — '
+        f'reason: {_kill_switch_reason}'
+    )
 
 
 @app.route('/kill-switch', methods=['POST'])
@@ -247,13 +297,14 @@ def activate_kill_switch():
     try:
         data   = request.get_json(force=True, silent=True) or {}
         secret = data.get('secret', '')
-        if not secret or secret != WEBHOOK_SECRET:
+        if not secret or not hmac.compare_digest(secret, WEBHOOK_SECRET):
             logger.warning('Kill switch attempt with invalid secret')
             return jsonify({'status': 'error', 'message': 'Invalid secret'}), 401
 
         reason = str(data.get('reason', 'Manual halt'))[:200]
         _kill_switch_active = True
         _kill_switch_reason = reason
+        _save_kill_switch_state(_kill_switch_active, _kill_switch_reason)
         logger.critical(f'KILL SWITCH ACTIVATED — reason: {reason}')
 
         try:
@@ -281,11 +332,12 @@ def reset_kill_switch():
     try:
         data   = request.get_json(force=True, silent=True) or {}
         secret = data.get('secret', '')
-        if not secret or secret != WEBHOOK_SECRET:
+        if not secret or not hmac.compare_digest(secret, WEBHOOK_SECRET):
             return jsonify({'status': 'error', 'message': 'Invalid secret'}), 401
 
         _kill_switch_active = False
         _kill_switch_reason = ''
+        _save_kill_switch_state(_kill_switch_active, _kill_switch_reason)
         logger.info('Kill switch RESET — trading resumed')
 
         try:
@@ -323,32 +375,69 @@ def process_signal(signal):
     try:
         from execution.alpaca_broker import AlpacaBroker
         from monitoring.telegram_bot import TelegramBot
+        from risk_circuit_breaker import RiskCircuitBreaker
 
         broker = AlpacaBroker()
         telegram = TelegramBot()
 
         if action == 'BUY':
+            # ── Circuit breaker gate ────────────────────────────────────
+            # The primary strategy (alpaca_live.py) checks this before
+            # every trade. The webhook path must not be a side door that
+            # bypasses daily-loss / drawdown / total-loss protection.
             account = broker.get_account()
-            if account:
-                # Use 10% of buying power per trade
-                amount = account['buying_power'] * 0.10
+            if not account:
+                logger.error('Webhook BUY blocked — could not fetch account')
+                return
 
-                success = broker.set_bracket_order(
-                    symbol,
-                    amount_dollars=amount,
-                    stop_loss_pct=0.03,
-                    take_profit_pct=0.08
+            circuit_breaker = RiskCircuitBreaker()
+            starting_capital = circuit_breaker.state.get('starting_capital') \
+                or account['portfolio_value']
+            if circuit_breaker.check(
+                current_value=account['portfolio_value'],
+                starting_capital=starting_capital,
+                telegram=telegram,
+            ):
+                logger.warning(
+                    f'Webhook BUY {symbol} blocked — circuit breaker active'
                 )
+                return
 
-                if success:
-                    telegram.send_message(
-                        f"📡 <b>WEBHOOK BUY</b>\n\n"
-                        f"Symbol: {symbol}\n"
-                        f"Source: TradingView\n"
-                        f"Amount: ${amount:.2f}\n"
-                        f"Stop Loss: 3%\n"
-                        f"Take Profit: 8%"
-                    )
+            # ── Max open positions gate ─────────────────────────────────
+            open_positions = broker.get_positions() if hasattr(broker, 'get_positions') else None
+            if open_positions and len(open_positions) >= MAX_WEBHOOK_POSITIONS:
+                logger.warning(
+                    f'Webhook BUY {symbol} blocked — max positions '
+                    f'({MAX_WEBHOOK_POSITIONS}) already open'
+                )
+                return
+
+            # ── Risk-based sizing (matches alpaca_live.py RISK_PER_TRADE_PCT) ──
+            # NOT a flat % of buying power — buying_power on a margin account
+            # is not equity, and 10% of it can be a much larger fraction of
+            # actual capital than intended.
+            stop_loss_pct   = 0.03
+            take_profit_pct = 0.08
+            portfolio       = account['portfolio_value']
+            dollar_risk     = portfolio * WEBHOOK_RISK_PER_TRADE_PCT
+            amount          = min(dollar_risk / stop_loss_pct, portfolio * 0.15)
+
+            success = broker.set_bracket_order(
+                symbol,
+                amount_dollars=amount,
+                stop_loss_pct=stop_loss_pct,
+                take_profit_pct=take_profit_pct,
+            )
+
+            if success:
+                telegram.send_message(
+                    f"📡 <b>WEBHOOK BUY</b>\n\n"
+                    f"Symbol: {symbol}\n"
+                    f"Source: TradingView\n"
+                    f"Amount: ${amount:.2f}\n"
+                    f"Stop Loss: 3%\n"
+                    f"Take Profit: 8%"
+                )
 
         elif action in REALIZED_ACTIONS:
             success = broker.sell(symbol)
@@ -365,13 +454,21 @@ def process_signal(signal):
 
 
 def save_signals():
-    """Save signals to file."""
-
-    import os
+    """Save signals to file atomically (temp + rename).
+    Prevents a truncated/corrupted JSON if the process is killed mid-write.
+    """
+    import tempfile
+    target = 'logs/webhook_signals.json'
     os.makedirs('logs', exist_ok=True)
-
-    with open('logs/webhook_signals.json', 'w') as f:
-        json.dump(received_signals[-100:], f, indent=2)
+    tmp_fd, tmp_path = tempfile.mkstemp(dir='logs', suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            json.dump(received_signals[-100:], f, indent=2)
+        os.replace(tmp_path, target)   # atomic on POSIX + Windows
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
 
 
 def start_webhook_server(port=5000):

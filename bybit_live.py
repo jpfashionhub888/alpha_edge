@@ -93,6 +93,42 @@ class BybitLiveTrader:
         if not self.client.connected:
             print('\n⚠️  No API keys — running in SIGNAL-ONLY mode (no execution)\n')
 
+        # Startup reconciliation — bybit_live.py has NO persisted local
+        # position state (self.positions is in-memory only and starts
+        # empty on every restart). That means if the bot restarts while
+        # holding any real Bybit position, it has zero memory of it and
+        # could double-buy on the next signal for that symbol. Since
+        # there's no honest local record to compare against, treat ANY
+        # exchange position found at startup as unverified and pause
+        # rather than silently start trading blind.
+        if self.client.connected:
+            try:
+                from monitoring.reconciliation import reconcile_on_startup
+                discrepancies = reconcile_on_startup(
+                    broker  = self.client,
+                    log_file= 'logs/bybit_positions_UNTRACKED.json',  # never exists — see note above
+                    service = 'bybit_bot',
+                )
+                if discrepancies:
+                    logger.error(
+                        f'Reconciliation found {len(discrepancies)} open Bybit '
+                        f'position(s) the bot has no local record of.'
+                    )
+                    if os.getenv('ALPHAEDGE_FORCE_START') != '1':
+                        print(
+                            f'\n❌ HALTED: {len(discrepancies)} Bybit position(s) '
+                            f'found with no local record (likely from before a '
+                            f'restart).\n   Review logs/reconciliation.log, then '
+                            f'set ALPHAEDGE_FORCE_START=1 to proceed anyway.\n'
+                        )
+                        return
+                    logger.warning(
+                        'ALPHAEDGE_FORCE_START=1 set — proceeding despite '
+                        'unrecognized open positions'
+                    )
+            except Exception as e:
+                logger.warning(f'Reconciliation skipped: {e}')
+
         # Seed history from REST API
         print('\nLoading historical candles...')
         for symbol in CRYPTO_SYMBOLS:

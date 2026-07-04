@@ -171,7 +171,7 @@ python-multipart==0.0.27
 python-telegram-bot==21.11.1
 pytube==15.0.0
 pytz==2026.1.post1
-pywin32==311
+pywin32==311; sys_platform == 'win32'
 PyYAML==6.0.3
 referencing==0.37.0
 regex==2026.1.15
@@ -221,7 +221,7 @@ websocket-client==1.9.0
 websockets==16.0
 Werkzeug==3.0.6
 wheel==0.47.0
-win32_setctime==1.2.0
+win32_setctime==1.2.0; sys_platform == 'win32'
 xgboost==2.1.4
 xxhash==3.7.0
 yarl==1.23.0

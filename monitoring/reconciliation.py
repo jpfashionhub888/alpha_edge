@@ -194,7 +194,7 @@ class PositionReconciler:
                     result[sym.upper()] = mv
                 return result
 
-            # Gate.io / crypto broker
+            # Gate.io / crypto broker (Alpaca-style crypto wrapper)
             if hasattr(broker, 'get_balances'):
                 raw = broker.get_balances()
                 if raw is None:
@@ -207,6 +207,53 @@ class PositionReconciler:
                         mv = float(bal) if bal else 0.0
                     if mv > 1.0:   # ignore dust < $1
                         result[sym.upper()] = mv
+                return result
+
+            # Bybit client: get_all_positions() -> list of position dicts
+            # with 'symbol', 'size', 'markPrice'/'avgPrice'
+            if hasattr(broker, 'get_all_positions'):
+                raw = broker.get_all_positions()
+                result = {}
+                for pos in (raw or []):
+                    sym = pos.get('symbol')
+                    if not sym:
+                        continue
+                    size  = float(pos.get('size', 0))
+                    price = float(pos.get('markPrice', pos.get('avgPrice', 0)) or 0)
+                    mv    = abs(size * price)
+                    if mv > 1.0:
+                        result[str(sym).upper()] = mv
+                return result
+
+            # Gate.io client: get_spot_balances() -> list of
+            # {'currency': ..., 'available': ..., 'locked': ...}
+            # Balances are coin amounts, not USD values, so price each
+            # non-cash currency against USDT via get_last_price if possible.
+            if hasattr(broker, 'get_spot_balances'):
+                raw = broker.get_spot_balances()
+                result = {}
+                for bal in (raw or []):
+                    currency = str(bal.get('currency', '')).upper()
+                    if not currency or currency in ('USDT', 'USD', 'USDC'):
+                        continue  # cash, not a position
+                    amount = float(bal.get('available', 0) or 0) + float(bal.get('locked', 0) or 0)
+                    if amount <= 0:
+                        continue
+                    price = None
+                    if hasattr(broker, 'get_last_price'):
+                        try:
+                            price = broker.get_last_price(f'{currency}_USDT')
+                        except Exception:
+                            price = None
+                    if not price:
+                        logger.warning(
+                            f'[Reconcile] Could not price {currency} balance '
+                            f'({amount}) — cannot verify against local state'
+                        )
+                        continue
+                    mv = amount * price
+                    if mv > 1.0:
+                        result[currency] = mv
                 return result
 
             logger.warning('[Reconcile] Unknown broker type — cannot fetch positions')

@@ -92,6 +92,40 @@ class GateioLiveTrader:
             print(f'Paper capital: ${PAPER_CAPITAL:,.0f}  |  Available: ${self.paper.capital:,.2f}')
         print('🚀' * 25)
 
+        # Startup reconciliation — only meaningful in live mode; paper
+        # mode has its own PaperTrader state which isn't a real exchange
+        # position. Live self.positions is in-memory only and starts
+        # empty on restart, so any real Gate.io holding at startup is
+        # unverified from the bot's point of view — pause rather than
+        # trade blind. See bybit_live.py for the same gap and rationale.
+        if not PAPER_TRADE and self.client.connected:
+            try:
+                from monitoring.reconciliation import reconcile_on_startup
+                discrepancies = reconcile_on_startup(
+                    broker  = self.client,
+                    log_file= 'logs/gateio_live_positions_UNTRACKED.json',  # never exists
+                    service = 'gateio_bot',
+                )
+                if discrepancies:
+                    logger.error(
+                        f'Reconciliation found {len(discrepancies)} open Gate.io '
+                        f'holding(s) the bot has no local record of.'
+                    )
+                    if os.getenv('ALPHAEDGE_FORCE_START') != '1':
+                        print(
+                            f'\n❌ HALTED: {len(discrepancies)} Gate.io holding(s) '
+                            f'found with no local record.\n   Review '
+                            f'logs/reconciliation.log, then set '
+                            f'ALPHAEDGE_FORCE_START=1 to proceed anyway.\n'
+                        )
+                        return
+                    logger.warning(
+                        'ALPHAEDGE_FORCE_START=1 set — proceeding despite '
+                        'unrecognized open positions'
+                    )
+            except Exception as e:
+                logger.warning(f'Reconciliation skipped: {e}')
+
         print('\nLoading historical candles...')
         for symbol in CRYPTO_SYMBOLS:
             self._load_history(symbol)
