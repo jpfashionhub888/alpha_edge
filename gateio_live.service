@@ -1,0 +1,38 @@
+[Unit]
+Description=AlphaEdge Gate.io Crypto Trading System
+Documentation=https://github.com/jpfashionhub888/alpha_edge
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=alphaedge
+Group=alphaedge
+WorkingDirectory=/root/alpha_edge
+
+# Load secrets from env file
+# Add to /root/alpha_edge/config/secrets.env:
+#   GATEIO_API_KEY=...
+#   GATEIO_API_SECRET=...
+#   ALPHAEDGE_WEBHOOK_SECRET=...
+#   TELEGRAM_BOT_TOKEN=...
+#   TELEGRAM_CHAT_ID=...
+#   GATEIO_PAPER_TRADE=true     # set to false for live trading
+#   GATEIO_PAPER_CAPITAL=10000
+EnvironmentFile=-/root/alpha_edge/config/secrets.env
+
+ExecStart=/root/alpha_edge/venv/bin/python gateio_live.py
+
+# Restart on crash, back off up to 5 min between retries
+Restart=on-failure
+RestartSec=30
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# Route stdout/stderr to journald
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=alphaedge-gateio
+
+[Install]
+WantedBy=multi-user.target
