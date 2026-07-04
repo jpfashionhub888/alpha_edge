@@ -1,14 +1,36 @@
 [Unit]
-Description=AlphaEdge Trading System
-After=network.target
+Description=AlphaEdge Stock Trading System (Alpaca)
+Documentation=https://github.com/jpfashionhub888/alpha_edge
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
-User=root
+User=alphaedge
+Group=alphaedge
 WorkingDirectory=/root/alpha_edge
-ExecStart=/usr/bin/python3 live.py
-Restart=always
-RestartSec=60
+
+# Load secrets from env file (never hardcode secrets in this file)
+# Create /root/alpha_edge/config/secrets.env with:
+#   ALPACA_API_KEY=...
+#   ALPACA_SECRET_KEY=...
+#   ALPHAEDGE_WEBHOOK_SECRET=...
+#   TELEGRAM_BOT_TOKEN=...
+#   TELEGRAM_CHAT_ID=...
+EnvironmentFile=-/root/alpha_edge/config/secrets.env
+
+ExecStart=/root/alpha_edge/venv/bin/python alpaca_live.py
+
+# Restart on crash, back off up to 5 min between retries
+Restart=on-failure
+RestartSec=30
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# Route stdout/stderr to journald
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=alphaedge
 
 [Install]
 WantedBy=multi-user.target

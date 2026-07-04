@@ -53,7 +53,9 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          WEBHOOK_SECRET:    ${{ secrets.WEBHOOK_SECRET }}
+          # webhook_server.py now requires ALPHAEDGE_WEBHOOK_SECRET (no hardcoded fallback)
+          ALPHAEDGE_WEBHOOK_SECRET: ${{ secrets.ALPHAEDGE_WEBHOOK_SECRET || secrets.WEBHOOK_SECRET }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
         run: |
           echo "Token starts with: ${TELEGRAM_BOT_TOKEN:0:10}"
           echo "Chat ID: $TELEGRAM_CHAT_ID"
