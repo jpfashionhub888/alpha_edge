@@ -665,19 +665,28 @@ def run_daily_scan():
             mask     = selector.get_support()
             selected = [f for f, m in zip(feature_names, mask) if m]
 
-            cached = load_models(symbol)
+            # Pass selected features so load_models can validate the hash.
+            # If features changed since last training, cache is rejected → retrain.
+            cached = load_models(symbol, feature_names=selected)
             if cached:
-                selected = cached.get('selected_features', selected)
-                model    = TechnicalPredictor(use_lstm=False)
-                model.models = {
-                    'xgboost'      : cached.get('xgboost'),
-                    'lightgbm'     : cached.get('lightgbm'),
-                    'random_forest': cached.get('random_forest'),
-                    'catboost'     : cached.get('catboost'),
-                }
-                model.feature_names = selected
-                model.trained       = True
-            else:
+                cached_selected = cached.get('selected_features', [])
+                # Extra safety: ensure every cached feature actually exists in df
+                cached_selected = [f for f in cached_selected if f in df.columns]
+                if not cached_selected:
+                    logger.warning(f"{symbol}: cached feature list empty or all missing — retraining")
+                    cached = None  # fall through to retrain below
+                else:
+                    selected = cached_selected
+                    model    = TechnicalPredictor(use_lstm=False)
+                    model.models = {
+                        'xgboost'      : cached.get('xgboost'),
+                        'lightgbm'     : cached.get('lightgbm'),
+                        'random_forest': cached.get('random_forest'),
+                        'catboost'     : cached.get('catboost'),
+                    }
+                    model.feature_names = selected
+                    model.trained       = True
+            if not cached:
                 model = TechnicalPredictor(use_lstm=True)
                 model.train(X_train[selected], y_train)
                 try:
@@ -687,7 +696,7 @@ def run_daily_scan():
                         'random_forest'    : model.models.get('random_forest'),
                         'catboost'         : model.models.get('catboost'),
                         'selected_features': selected,
-                    })
+                    }, feature_names=selected)
                 except Exception as e:
                     logger.warning(f"Cache save failed for {symbol}: {e}")
 

@@ -21,7 +21,9 @@ from typing import Any, Optional, Dict, List
 logger = logging.getLogger(__name__)
 
 # ── Constants ──────────────────────────────────────────────────────────────────
-CACHE_VERSION = "2.0"          # Bump this manually when model architecture changes
+# Bumped 3.1: force retrain after feature_engine macro-feature removal
+# (gld_level/vix_level/dxy_level/tlt_level removed → old models crash on predict)
+CACHE_VERSION = "3.1"          # Bump this manually when model architecture changes
 DEFAULT_TTL_DAYS = 7           # Max age before forced retrain
 DEFAULT_CACHE_DIR = "cache/models"
 
@@ -302,16 +304,64 @@ def is_cache_valid(symbol: str, feature_names: List[str]) -> bool:
     return model is not None
 
 
-def load_models(symbol: str) -> Optional[Any]:
+def load_models(symbol: str, feature_names: Optional[List[str]] = None) -> Optional[Any]:
     """
     Load cached model for symbol.
-    Returns None if cache miss or invalid.
+    Returns None if cache miss, version mismatch, TTL expired, or feature mismatch.
 
-    Note: feature validation is skipped here for backward
-    compatibility. Use ModelCache.get() directly for full
-    feature hash validation.
+    Fix: no longer bypasses version and TTL checks — doing so caused
+    stale models (trained on old feature sets like gld_level, vix_level)
+    to be silently loaded, crashing prediction with KeyError on missing columns.
+
+    feature_names: current feature list. If provided, feature hash is
+      validated and None is returned on mismatch (forces retrain).
     """
     meta_path, model_path = _cache._paths(symbol)
+
+    # ── Check metadata first ──────────────────────────────────────────
+    if meta_path.exists():
+        try:
+            with open(meta_path, "r") as f:
+                meta = json.load(f)
+
+            # Version check — reject caches from incompatible training runs
+            if meta.get("cache_version") != CACHE_VERSION:
+                logger.info(
+                    f"[{symbol}] Cache version mismatch "
+                    f"({meta.get('cache_version')} vs {CACHE_VERSION}), forcing retrain"
+                )
+                _cache._delete(symbol)
+                return None
+
+            # TTL check — reject caches older than allowed window
+            try:
+                trained_at = datetime.fromisoformat(meta["trained_at"])
+                age_days = (datetime.utcnow() - trained_at).days
+                if age_days > _cache.ttl_days:
+                    logger.info(
+                        f"[{symbol}] Cache expired ({age_days}d > {_cache.ttl_days}d), retraining"
+                    )
+                    _cache._delete(symbol)
+                    return None
+            except Exception:
+                pass  # Non-critical: if date parse fails, proceed
+
+            # Feature hash check (when caller provides current feature list)
+            if feature_names:
+                current_hash = ModelCache._hash_features(feature_names)
+                cached_hash  = meta.get("feature_hash", "")
+                if cached_hash and cached_hash != current_hash:
+                    logger.warning(
+                        f"[{symbol}] Feature set changed since training — "
+                        f"cached={cached_hash[:8]} current={current_hash[:8]} — forcing retrain"
+                    )
+                    _cache._delete(symbol)
+                    return None
+
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning(f"[{symbol}] Corrupt metadata ({e}), invalidating")
+            _cache._delete(symbol)
+            return None
 
     if not model_path.exists():
         return None
@@ -322,22 +372,24 @@ def load_models(symbol: str) -> Optional[Any]:
             return pickle.load(f)
     except Exception as e:
         logger.warning(f"[{symbol}] load_models failed: {e}")
+        _cache._delete(symbol)
         return None
 
 
-def save_models(symbol: str, models: Any, trained_through: str = None) -> bool:
+def save_models(symbol: str, models: Any, trained_through: str = None,
+                feature_names: Optional[List[str]] = None) -> bool:
     """
     Save models to cache for symbol.
 
     models: can be a dict or a single model object
     trained_through: ISO date string of last training bar (Fix 1.4).
       Pass str(train.index[-1].date()) from the walk-forward loop.
-    Feature names stored as empty list for backward compatibility.
-    Use ModelCache.save() directly for full feature hash tracking.
+    feature_names: list of features the model was trained on.
+      Used for hash-based staleness detection on next load.
     """
     return _cache.save(
         symbol=symbol,
         model=models,
-        feature_names=[],
+        feature_names=feature_names or [],
         trained_through=trained_through,
     )
