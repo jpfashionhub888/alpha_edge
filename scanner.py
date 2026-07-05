@@ -46,11 +46,51 @@ from models.technical_model import TechnicalPredictor
 from multi_timeframe import MultiTimeframeAnalyzer
 from veto_agent import VetoAgent
 
+# ── Meta-Labeler (Phase B) ────────────────────────────────────────────
+try:
+    from models.meta_labeler import MetaLabeler
+    _META_LABELER_AVAILABLE = True
+except ImportError:
+    _META_LABELER_AVAILABLE = False
+    logger.warning('MetaLabeler not available — BUY signals unfiltered')
+
 logger = logging.getLogger(__name__)
 
-# ------------------------------------------------------------------ #
-#  MODULE-LEVEL CONSTANTS — single source of truth                   #
-# ------------------------------------------------------------------ #
+# ── Strategy settings loader (reads from config/settings.yaml) ───────
+# HyperOpt writes best params here; scanner picks them up automatically.
+def _load_signal_settings() -> dict:
+    """
+    Load signal thresholds from config/settings.yaml.
+    Falls back to safe hardcoded defaults if file is missing / malformed.
+    """
+    defaults = {
+        'buy_threshold'    : 0.55,
+        'volume_spike_min' : 1.3,
+        'atr_stop_mult'    : 1.0,
+        'atr_target_mult'  : 2.5,
+        'meta_threshold'   : 0.55,
+    }
+    try:
+        import yaml
+        with open('config/settings.yaml') as f:
+            cfg = yaml.safe_load(f) or {}
+        thr = cfg.get('signal_thresholds', {})
+        risk = cfg.get('risk_management', {})
+        hyp  = cfg.get('hyperopt', {})
+        return {
+            'buy_threshold'    : float(thr.get('buy_threshold',     hyp.get('buy_threshold',     defaults['buy_threshold']))),
+            'volume_spike_min' : float(thr.get('volume_spike_min',  hyp.get('volume_spike_min',  defaults['volume_spike_min']))),
+            'atr_stop_mult'    : float(risk.get('atr_stop_mult',    hyp.get('atr_stop_mult',     defaults['atr_stop_mult']))),
+            'atr_target_mult'  : float(risk.get('atr_target_mult',  hyp.get('atr_target_mult',   defaults['atr_target_mult']))),
+            'meta_threshold'   : float(hyp.get('meta_threshold',    defaults['meta_threshold'])),
+        }
+    except Exception as e:
+        logger.warning(f'Could not load settings.yaml ({e}) — using defaults')
+        return defaults
+
+# Load once at module import; refreshed each scan cycle via StockScanner
+_SIGNAL_SETTINGS = _load_signal_settings()
+
 
 # Signal weight configuration
 # These weights have no empirical basis yet.
@@ -184,15 +224,13 @@ def compute_signal(
     )
     combined = max(0.0, min(1.0, combined))
 
-    # ── Optimized threshold from backtest ─────────────────────────
-    BUY_THRESHOLD = 0.55
+    # ── Threshold from settings.yaml (HyperOpt writes here) ───────
+    BUY_THRESHOLD = _SIGNAL_SETTINGS.get('buy_threshold', 0.55)
 
     # ── Regime-based signal ───────────────────────────────────────
     signal = 'HOLD'
 
     if regime == 'uptrend':
-        # Optimizer result was based on prediction threshold,
-        # so use pred as the live BUY trigger.
         if pred >= BUY_THRESHOLD:
             signal = 'BUY'
     elif regime == 'downtrend':
@@ -261,6 +299,27 @@ class StockScanner:
         self.insider_tracker = InsiderTracker()
         self.news_fetcher    = NewsFetcher()
         self.sentiment_model = SentimentAnalyzer()
+
+        # ── Meta-Labeler cache ─────────────────────────────────────────
+        # MetaLabelers are loaded lazily per symbol from ModelCache.
+        # An unfitted labeler passes all signals through (fail-open).
+        self._meta_labelers: dict = {}   # {symbol: MetaLabeler | None}
+        if _META_LABELER_AVAILABLE:
+            try:
+                from model_cache import ModelCache
+                self._meta_cache = ModelCache()
+            except Exception:
+                self._meta_cache = None
+        else:
+            self._meta_cache = None
+
+        # Settings (refreshed each scan so HyperOpt changes take effect)
+        global _SIGNAL_SETTINGS
+        _SIGNAL_SETTINGS = _load_signal_settings()
+        logger.info(
+            f'Scanner init | BUY_THRESHOLD={_SIGNAL_SETTINGS["buy_threshold"]} '
+            f'| meta_threshold={_SIGNAL_SETTINGS["meta_threshold"]}'
+        )
 
         # Populated by scan methods — accessible by main.py
         self.stock_data      = {}   # raw OHLCV per symbol
@@ -783,6 +842,44 @@ class StockScanner:
             symbol, self.earnings_symbols,
         )
 
+        # ── Meta-Labeler BUY gate ───────────────────────────────────
+        # Only runs if signal is BUY — saves compute on HOLD/AVOID.
+        # Loads meta model from cache; pass-through if not fitted yet.
+        meta_confidence = 1.0   # default: let through
+        if signal == 'BUY' and _META_LABELER_AVAILABLE and self._meta_cache:
+            try:
+                # Lazy-load from cache
+                if symbol not in self._meta_labelers:
+                    self._meta_labelers[symbol] = (
+                        self._meta_cache.get_meta_labeler(symbol)
+                    )
+                meta_model = self._meta_labelers.get(symbol)
+
+                if meta_model is not None and meta_model._is_fitted:
+                    latest_features = self.stock_data[symbol].copy()
+                    latest_features = self.engine.add_all_features(latest_features)
+                    feat_cols = [c for c in latest_features.columns
+                                 if c not in ('open','high','low','close',
+                                              'volume','target','future_return')]
+                    X_live = latest_features[feat_cols].iloc[-1:]
+
+                    approved, meta_confidence = meta_model.should_trade(
+                        X_live, pred
+                    )
+                    if not approved:
+                        signal = 'HOLD'
+                        logger.info(
+                            f'{symbol}: Meta-Labeler filtered BUY '
+                            f'(meta_conf={meta_confidence:.3f} < '
+                            f'{_SIGNAL_SETTINGS["meta_threshold"]:.2f})'
+                        )
+                else:
+                    logger.debug(
+                        f'{symbol}: MetaLabeler not fitted yet — passing BUY through'
+                    )
+            except Exception as e:
+                logger.warning(f'{symbol}: MetaLabeler gate error (non-fatal): {e}')
+
         # ── Insider boost (sizing only — does NOT promote signal) ─
         insider_score   = self.insider_scores.get(symbol, 0.0)
         sizing_combined = combined
@@ -867,6 +964,7 @@ class StockScanner:
             'sizing_combined'  : float(sizing_combined),
             'atr'              : float(atr),
             'mtf_score'        : float(mtf_score),
+            'meta_confidence'  : float(meta_confidence),
             'veto_result'      : veto_result,
             'action'           : action,
         }
