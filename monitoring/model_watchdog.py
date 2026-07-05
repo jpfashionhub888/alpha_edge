@@ -72,6 +72,7 @@ class ModelWatchdog:
         self._check_circuit_breaker()
         self._check_heartbeats()
         self._check_alpaca_api()
+        self._check_trade_progress()   # <-- trade count toward 50-trade milestone
 
         self._print_summary()
 
@@ -160,6 +161,36 @@ class ModelWatchdog:
                 logger.debug('cache meta parse error: %s', e)
 
         return None
+
+    # ── Check: Trade progress ─────────────────────────────────────────
+
+    def _check_trade_progress(self) -> None:
+        """Report closed trade count and live-eligibility progress."""
+        try:
+            from monitoring.trade_tracker import get_trade_stats
+            ts    = get_trade_stats()
+            total = ts.get('total', 0)
+            wr    = ts.get('win_rate', 0) * 100
+            pf    = ts.get('profit_factor') or 0
+            pnl   = ts.get('total_pnl', 0)
+            goal  = 50
+            left  = max(0, goal - total)
+
+            bar   = '█' * min(total, goal) + '░' * left
+            bar_s = bar[:25] + f'  {total}/{goal}'
+
+            wr_note = '✅' if wr >= 55 else ('⚠️' if total >= 10 else '(need ≥10 trades to evaluate)')
+            pf_note = '✅' if pf >= 1.5 else ('⚠️' if total >= 10 else '(need ≥10 trades to evaluate)')
+
+            self.ok_msgs.append(
+                f'  📊 Trade progress: {total}/{goal} closed trades\n'
+                f'     [{bar_s}]\n'
+                f'     Win rate: {wr:.1f}% {wr_note}\n'
+                f'     Profit factor: {pf:.2f} {pf_note}\n'
+                f'     Total P&L: {"+" if pnl >= 0 else ""}${pnl:,.2f}'
+            )
+        except Exception as e:
+            self.ok_msgs.append(f'  ⚠️  Trade tracker: could not read ({e})')
 
     # ── Check: Circuit breaker ────────────────────────────────────────
 

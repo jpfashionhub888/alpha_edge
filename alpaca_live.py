@@ -88,6 +88,7 @@ class AlpacaLiveTrader:
         from monitoring.telegram_bot        import TelegramBot
         from monitoring.heartbeat           import HeartbeatMonitor
         from monitoring.command_listener    import start_command_listener
+        from monitoring.trade_tracker       import TradeTracker
 
         self.broker          = AlpacaBroker()
         self.telegram        = TelegramBot()
@@ -102,6 +103,9 @@ class AlpacaLiveTrader:
         self.bot_state, self.cmd_listener = start_command_listener(
             get_portfolio_fn=self._get_portfolio_snapshot
         )
+
+        # Trade tracker — logs closed trades, fires milestone alerts
+        self.trade_tracker = TradeTracker(telegram=self.telegram)
 
         # Track our own stop/target levels since Alpaca paper
         # doesn't support bracket orders on all account types
@@ -594,6 +598,22 @@ class AlpacaLiveTrader:
                     self.telegram.alert_take_profit(symbol, current_price, pnl_usd)
             except Exception as e:
                 logger.warning(f'Telegram alert failed for {symbol}: {e}')
+
+            # Log the closed trade — counts toward 50-trade milestone
+            try:
+                self.trade_tracker.record(
+                    symbol      = symbol,
+                    entry_price = entry,
+                    exit_price  = current_price,
+                    shares      = shares,
+                    reason      = reason,
+                    entry_time  = str(managed.get('open_time', '')),
+                    exit_time   = datetime.now(timezone.utc).isoformat(),
+                )
+                total = self.trade_tracker.count()
+                logger.info('Closed trade #%d logged (%s %s)', total, symbol, reason)
+            except Exception as e:
+                logger.warning(f'Trade tracker record failed for {symbol}: {e}')
 
             del self.managed_positions[symbol]
 

@@ -347,6 +347,36 @@ class CommandListener:
         except Exception:
             pass
 
+        # Trade progress toward 50-trade milestone
+        trade_text = ''
+        try:
+            from monitoring.trade_tracker import get_trade_stats
+            ts    = get_trade_stats()
+            total = ts.get('total', 0)
+            wins  = ts.get('wins', 0)
+            wr    = ts.get('win_rate', 0) * 100
+            pnl   = ts.get('total_pnl', 0)
+            pf    = ts.get('profit_factor') or 0
+            goal  = 50
+            done  = min(total, goal)
+            bar   = '█' * done + '░' * (goal - done)  # 50-char progress bar
+            bar_short = bar[:25] + f' {total}/{goal}'  # shorten for Telegram
+
+            wr_flag  = '✅' if wr >= 55 else ('⚠️' if total >= 10 else '❓')
+            pf_flag  = '✅' if pf >= 1.5 else ('⚠️' if total >= 10 else '❓')
+
+            trade_text = (
+                f'\n\n📉 Trade Progress ({total}/{goal} to live eligibility):\n'
+                f'  [{bar_short}]\n'
+                f'  Win rate:  {wr_flag} {wr:.1f}%  (need ≥55%)\n'
+                f'  Profit fac:{pf_flag} {pf:.2f}  (need ≥1.5)\n'
+                f'  Total P&L: {"+" if pnl >= 0 else ""}${pnl:,.2f}'
+            )
+            if total >= 50:
+                trade_text += '\n\n  🚀 LIVE ELIGIBILITY REACHED! Review go/no-go criteria.'
+        except Exception as e:
+            logger.debug('Trade stats for /status failed: %s', e)
+
         msg = (
             f'🤖 AlphaEdge Status\n'
             f'{"=" * 25}\n'
@@ -354,6 +384,7 @@ class CommandListener:
             f'State: {paused}{paused_since}\n'
             f'Time: {datetime.now().strftime("%Y-%m-%d %H:%M ET")}'
             f'{portfolio_text}'
+            f'{trade_text}'
             f'{cb_text}'
         )
         self._send(msg)
