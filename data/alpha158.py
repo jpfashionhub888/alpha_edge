@@ -27,27 +27,29 @@ _WINDOWS = [5, 10, 20, 30, 60]
 class Alpha158:
     """
     Microsoft qlib Alpha158 feature set — standalone, no qlib dependency.
-    Adds 158 financial features to an OHLCV DataFrame.
+    Adds ~105+ financial features to an OHLCV DataFrame.
 
     Feature groups:
-        RETURN    (30) — N-day returns, log-returns, forward-shifted returns
-        VOLUME    (25) — volume ratios, VWAP-based, turnover
-        VOLATILITY(20) — rolling std, normalised range, ATR variants
-        CORRELATION(20)— price-volume correlation, auto-correlation
-        MA / CROSS(30) — moving average spreads, crosses, rank
-        MOMENTUM  (20) — RSI, MOM, KDJ variants
-        MISC      (13) — candle patterns, market microstructure
+        RETURN     — N-day returns, log-returns, rolling mean/skew
+        VOLUME     — volume ratios, VWAP-based, turnover
+        VOLATILITY — rolling std, normalised range, Parkinson, Garman-Klass
+        CORRELATION— price-volume correlation (CORR, CORD), autocorr, beta
+        MA / CROSS — EMA spreads, crosses, DEMA, volume-weighted MA, RSV
+        MOMENTUM   — momentum, residual momentum, win/loss ratio, Z-score
+        MISC       — candle structure, gap, intraday, 52-week pos, seasonality
+
+    All group methods return a dict {col_name: pd.Series} for efficient
+    batch concat (avoids DataFrame fragmentation PerformanceWarning).
     """
 
     @classmethod
     def build(cls, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Add all Alpha158 features to df in-place (returns copy).
+        Add all Alpha158 features to df (returns enriched copy).
+        Uses a single pd.concat to avoid DataFrame fragmentation.
         df must have columns: open, high, low, close, volume
         """
         df = df.copy()
-
-        # Normalise column names to lowercase
         df.columns = [c.lower() for c in df.columns]
 
         required = {'open', 'high', 'low', 'close', 'volume'}
@@ -57,298 +59,249 @@ class Alpha158:
 
         logger.info("Building Alpha158 features...")
 
-        df = cls._return_features(df)
-        df = cls._volume_features(df)
-        df = cls._volatility_features(df)
-        df = cls._correlation_features(df)
-        df = cls._ma_features(df)
-        df = cls._momentum_features(df)
-        df = cls._misc_features(df)
+        # Collect all new feature Series into one dict, then concat once
+        features: dict = {}
+        features.update(cls._return_features(df))
+        features.update(cls._volume_features(df))
+        features.update(cls._volatility_features(df, features))   # depends on rvol_ features
+        features.update(cls._correlation_features(df))
+        features.update(cls._ma_features(df))
+        features.update(cls._momentum_features(df))
+        features.update(cls._misc_features(df))
 
-        n = len([c for c in df.columns if c.startswith('alpha_')])
+        alpha_df = pd.concat([df, pd.DataFrame(features, index=df.index)], axis=1)
+        n = len([c for c in alpha_df.columns if c.startswith('alpha_')])
         logger.info(f"Alpha158: generated {n} alpha features")
-        return df
+        return alpha_df
 
     # ──────────────────────────────────────────────────────────────────────
-    # GROUP 1: RETURN features (30)
-    # ──────────────────────────────────────────────────────────────────────
-    @staticmethod
-    def _return_features(df: pd.DataFrame) -> pd.DataFrame:
-        c = df['close']
-
-        # N-day simple returns
-        for n in [1, 2, 3, 4, 5, 10, 20, 30, 60]:
-            df[f'alpha_ret_{n}d'] = c.pct_change(n)
-
-        # Log returns
-        log_ret = np.log(c / c.shift(1))
-        for n in [5, 10, 20, 60]:
-            df[f'alpha_logret_{n}d'] = log_ret.rolling(n).sum()
-
-        # Rolling mean of daily returns (trend strength)
-        for n in [5, 10, 20, 30, 60]:
-            df[f'alpha_ret_mean_{n}d'] = c.pct_change(1).rolling(n).mean()
-
-        # Return skewness (asymmetry of distribution over window)
-        for n in [20, 60]:
-            df[f'alpha_ret_skew_{n}d'] = c.pct_change(1).rolling(n).skew()
-
-        return df
-
-    # ──────────────────────────────────────────────────────────────────────
-    # GROUP 2: VOLUME features (25)
+    # GROUP 1: RETURN features
     # ──────────────────────────────────────────────────────────────────────
     @staticmethod
-    def _volume_features(df: pd.DataFrame) -> pd.DataFrame:
-        v = df['volume']
-        c = df['close']
-        o = df['open']
-
-        # VWAP approximation (intraday unavailable on daily bars → use typical price)
-        typical = (df['high'] + df['low'] + c) / 3
-        vwap = (typical * v).rolling(20).sum() / (v.rolling(20).sum() + 1e-9)
-        df['alpha_vwap_ratio']    = c / (vwap + 1e-9)
-        df['alpha_vwap_spread']   = (c - vwap) / (vwap + 1e-9)
-
-        # Volume ratios vs rolling mean
-        for n in [5, 10, 20, 30, 60]:
-            vol_ma = v.rolling(n).mean()
-            df[f'alpha_vol_ratio_{n}d'] = v / (vol_ma + 1e-9)
-
-        # Volume trend
-        df['alpha_vol_trend_5_20']  = v.rolling(5).mean() / (v.rolling(20).mean() + 1e-9)
-        df['alpha_vol_trend_10_60'] = v.rolling(10).mean() / (v.rolling(60).mean() + 1e-9)
-
-        # Turnover proxy (volume × close normalised by rolling mean)
-        turnover = v * c
-        for n in [5, 20, 60]:
-            df[f'alpha_turnover_{n}d'] = turnover / (turnover.rolling(n).mean() + 1e-9)
-
-        # Amount-weighted price change
-        df['alpha_vwret_5d']  = ((c.pct_change(1)) * v).rolling(5).sum()  / (v.rolling(5).sum()  + 1e-9)
-        df['alpha_vwret_20d'] = ((c.pct_change(1)) * v).rolling(20).sum() / (v.rolling(20).sum() + 1e-9)
-
-        # Open-close range normalised by volume
-        df['alpha_oc_vol'] = (c - o).abs() / (v + 1e-9)
-
-        return df
-
-    # ──────────────────────────────────────────────────────────────────────
-    # GROUP 3: VOLATILITY features (20)
-    # ──────────────────────────────────────────────────────────────────────
-    @staticmethod
-    def _volatility_features(df: pd.DataFrame) -> pd.DataFrame:
+    def _return_features(df: pd.DataFrame) -> dict:
         c   = df['close']
         ret = c.pct_change(1)
+        out = {}
 
-        # Rolling realised volatility (annualised)
+        for n in [1, 2, 3, 4, 5, 10, 20, 30, 60]:
+            out[f'alpha_ret_{n}d'] = c.pct_change(n)
+
+        log_ret = np.log(c / c.shift(1))
+        for n in [5, 10, 20, 60]:
+            out[f'alpha_logret_{n}d'] = log_ret.rolling(n).sum()
+
         for n in [5, 10, 20, 30, 60]:
-            df[f'alpha_rvol_{n}d'] = ret.rolling(n).std() * np.sqrt(252)
+            out[f'alpha_ret_mean_{n}d'] = ret.rolling(n).mean()
 
-        # Volatility ratio (short vs long)
-        df['alpha_rvol_ratio_5_20']  = df['alpha_rvol_5d']  / (df['alpha_rvol_20d']  + 1e-9)
-        df['alpha_rvol_ratio_20_60'] = df['alpha_rvol_20d'] / (df['alpha_rvol_60d']  + 1e-9)
+        for n in [20, 60]:
+            out[f'alpha_ret_skew_{n}d'] = ret.rolling(n).skew()
 
-        # Normalised price range (high-low / close)
+        return out
+
+    # ──────────────────────────────────────────────────────────────────────
+    # GROUP 2: VOLUME features
+    # ──────────────────────────────────────────────────────────────────────
+    @staticmethod
+    def _volume_features(df: pd.DataFrame) -> dict:
+        v   = df['volume']
+        c   = df['close']
+        o   = df['open']
+        out = {}
+
+        typical = (df['high'] + df['low'] + c) / 3
+        vwap = (typical * v).rolling(20).sum() / (v.rolling(20).sum() + 1e-9)
+        out['alpha_vwap_ratio']  = c / (vwap + 1e-9)
+        out['alpha_vwap_spread'] = (c - vwap) / (vwap + 1e-9)
+
+        for n in [5, 10, 20, 30, 60]:
+            out[f'alpha_vol_ratio_{n}d'] = v / (v.rolling(n).mean() + 1e-9)
+
+        out['alpha_vol_trend_5_20']  = v.rolling(5).mean()  / (v.rolling(20).mean()  + 1e-9)
+        out['alpha_vol_trend_10_60'] = v.rolling(10).mean() / (v.rolling(60).mean() + 1e-9)
+
+        turnover = v * c
+        for n in [5, 20, 60]:
+            out[f'alpha_turnover_{n}d'] = turnover / (turnover.rolling(n).mean() + 1e-9)
+
+        ret = c.pct_change(1)
+        out['alpha_vwret_5d']  = (ret * v).rolling(5).sum()  / (v.rolling(5).sum()  + 1e-9)
+        out['alpha_vwret_20d'] = (ret * v).rolling(20).sum() / (v.rolling(20).sum() + 1e-9)
+        out['alpha_oc_vol']    = (c - o).abs() / (v + 1e-9)
+        return out
+
+    # ──────────────────────────────────────────────────────────────────────
+    # GROUP 3: VOLATILITY features  (takes pre-computed features dict)
+    # ──────────────────────────────────────────────────────────────────────
+    @staticmethod
+    def _volatility_features(df: pd.DataFrame, prior: dict) -> dict:
+        c   = df['close']
+        ret = c.pct_change(1)
+        out = {}
+
+        for n in [5, 10, 20, 30, 60]:
+            out[f'alpha_rvol_{n}d'] = ret.rolling(n).std() * np.sqrt(252)
+
+        out['alpha_rvol_ratio_5_20']  = out['alpha_rvol_5d']  / (out['alpha_rvol_20d']  + 1e-9)
+        out['alpha_rvol_ratio_20_60'] = out['alpha_rvol_20d'] / (out['alpha_rvol_60d'] + 1e-9)
+
+        rng = (df['high'] - df['low']) / (c + 1e-9)
         for n in [5, 20]:
-            rng = (df['high'] - df['low']) / (c + 1e-9)
-            df[f'alpha_range_{n}d'] = rng.rolling(n).mean()
+            out[f'alpha_range_{n}d'] = rng.rolling(n).mean()
 
-        # Parkinson volatility estimator (uses high-low, more efficient than close-close)
         pk = np.log(df['high'] / (df['low'] + 1e-9)) ** 2 / (4 * np.log(2))
         for n in [5, 20]:
-            df[f'alpha_parkinson_{n}d'] = pk.rolling(n).mean() * np.sqrt(252)
+            out[f'alpha_parkinson_{n}d'] = pk.rolling(n).mean() * np.sqrt(252)
 
-        # Garman-Klass volatility
         gk = (
             0.5 * np.log(df['high'] / (df['low'] + 1e-9)) ** 2
             - (2 * np.log(2) - 1) * np.log(c / (df['open'] + 1e-9)) ** 2
         )
-        df['alpha_gk_vol_20d'] = gk.rolling(20).mean() * np.sqrt(252)
-
-        # Volatility of volatility (second-order)
-        df['alpha_volvol_20d'] = df['alpha_rvol_5d'].rolling(20).std()
-
-        return df
+        out['alpha_gk_vol_20d']  = gk.rolling(20).mean() * np.sqrt(252)
+        out['alpha_volvol_20d']  = out['alpha_rvol_5d'].rolling(20).std()
+        return out
 
     # ──────────────────────────────────────────────────────────────────────
-    # GROUP 4: CORRELATION features (20)
+    # GROUP 4: CORRELATION features
     # ──────────────────────────────────────────────────────────────────────
     @staticmethod
-    def _correlation_features(df: pd.DataFrame) -> pd.DataFrame:
+    def _correlation_features(df: pd.DataFrame) -> dict:
         c   = df['close']
         v   = df['volume']
         ret = c.pct_change(1)
+        out = {}
 
-        # Price-volume correlation (qlib's CORR feature)
         for n in [5, 10, 20, 60]:
-            df[f'alpha_pv_corr_{n}d'] = ret.rolling(n).corr(np.log(v + 1))
+            out[f'alpha_pv_corr_{n}d'] = ret.rolling(n).corr(np.log(v + 1))
 
-        # Price-volume correlation using rank (qlib's CORD feature — more robust)
         for n in [5, 20]:
-            df[f'alpha_pv_cord_{n}d'] = (
-                ret.rolling(n).corr(v.pct_change(1))
-            )
+            out[f'alpha_pv_cord_{n}d'] = ret.rolling(n).corr(v.pct_change(1))
 
-        # Price autocorrelation (mean reversion signal)
         for lag in [1, 2, 5]:
-            df[f'alpha_autocorr_lag{lag}'] = ret.rolling(20).apply(
+            out[f'alpha_autocorr_lag{lag}'] = ret.rolling(20).apply(
                 lambda x: pd.Series(x).autocorr(lag=lag), raw=False
             )
 
-        # High-low correlation with volume
         hl = df['high'] - df['low']
         for n in [10, 20]:
-            df[f'alpha_hl_vol_corr_{n}d'] = hl.rolling(n).corr(np.log(v + 1))
+            out[f'alpha_hl_vol_corr_{n}d'] = hl.rolling(n).corr(np.log(v + 1))
 
-        # Rolling beta vs close (self-beta, measures trend consistency)
+        idx = pd.Series(np.arange(len(c)), index=c.index, dtype=float)
+        didx = idx.diff()
         for n in [20, 60]:
-            idx = pd.Series(np.arange(len(c)), index=c.index, dtype=float)
-            df[f'alpha_trend_beta_{n}d'] = (
-                ret.rolling(n).cov(idx.diff()) /
-                (idx.diff().rolling(n).var() + 1e-9)
+            out[f'alpha_trend_beta_{n}d'] = (
+                ret.rolling(n).cov(didx) / (didx.rolling(n).var() + 1e-9)
             )
-
-        return df
+        return out
 
     # ──────────────────────────────────────────────────────────────────────
-    # GROUP 5: MA / CROSS features (30)
+    # GROUP 5: MA / CROSS features
     # ──────────────────────────────────────────────────────────────────────
     @staticmethod
-    def _ma_features(df: pd.DataFrame) -> pd.DataFrame:
-        c = df['close']
-        v = df['volume']
+    def _ma_features(df: pd.DataFrame) -> dict:
+        c   = df['close']
+        v   = df['volume']
+        out = {}
 
-        # EMA-based
         for n in [5, 10, 20, 30, 60]:
             ema = c.ewm(span=n, adjust=False).mean()
-            df[f'alpha_ema_ratio_{n}d']  = c / (ema + 1e-9)
-            df[f'alpha_ema_spread_{n}d'] = (c - ema) / (ema + 1e-9)
+            out[f'alpha_ema_ratio_{n}d']  = c / (ema + 1e-9)
+            out[f'alpha_ema_spread_{n}d'] = (c - ema) / (ema + 1e-9)
 
-        # Cross signals (short EMA / long EMA)
-        pairs = [(5, 20), (10, 60), (20, 60)]
-        for s, l in pairs:
+        for s, l in [(5, 20), (10, 60), (20, 60)]:
             ema_s = c.ewm(span=s, adjust=False).mean()
             ema_l = c.ewm(span=l, adjust=False).mean()
-            df[f'alpha_ema_cross_{s}_{l}'] = (ema_s - ema_l) / (ema_l + 1e-9)
+            out[f'alpha_ema_cross_{s}_{l}'] = (ema_s - ema_l) / (ema_l + 1e-9)
 
-        # DEMA (Double EMA) — reduces lag
-        for n in [20]:
-            ema1 = c.ewm(span=n, adjust=False).mean()
-            dema = 2 * ema1 - ema1.ewm(span=n, adjust=False).mean()
-            df[f'alpha_dema_ratio_{n}d'] = c / (dema + 1e-9)
+        ema20 = c.ewm(span=20, adjust=False).mean()
+        dema  = 2 * ema20 - ema20.ewm(span=20, adjust=False).mean()
+        out['alpha_dema_ratio_20d'] = c / (dema + 1e-9)
 
-        # Volume-weighted MA spread
         for n in [5, 20]:
             vwma = (c * v).rolling(n).sum() / (v.rolling(n).sum() + 1e-9)
-            df[f'alpha_vwma_spread_{n}d'] = (c - vwma) / (vwma + 1e-9)
+            out[f'alpha_vwma_spread_{n}d'] = (c - vwma) / (vwma + 1e-9)
 
-        # RSV (Raw Stochastic Value) — qlib's RSV feature
         for n in [5, 10, 20]:
             lo = df['low'].rolling(n).min()
             hi = df['high'].rolling(n).max()
-            df[f'alpha_rsv_{n}d'] = (c - lo) / (hi - lo + 1e-9)
+            out[f'alpha_rsv_{n}d'] = (c - lo) / (hi - lo + 1e-9)
 
-        # KLEN — candle body as fraction of range
-        df['alpha_klen'] = (
-            (df['close'] - df['open']).abs() /
-            (df['high'] - df['low'] + 1e-9)
+        out['alpha_klen'] = (
+            (df['close'] - df['open']).abs() / (df['high'] - df['low'] + 1e-9)
         )
-
-        return df
+        return out
 
     # ──────────────────────────────────────────────────────────────────────
-    # GROUP 6: MOMENTUM features (20)
+    # GROUP 6: MOMENTUM features
     # ──────────────────────────────────────────────────────────────────────
     @staticmethod
-    def _momentum_features(df: pd.DataFrame) -> pd.DataFrame:
+    def _momentum_features(df: pd.DataFrame) -> dict:
         c   = df['close']
         ret = c.pct_change(1)
+        out = {}
 
-        # Signed momentum (direction × magnitude)
         for n in [5, 10, 20, 60]:
-            mom = c.pct_change(n)
-            df[f'alpha_mom_{n}d'] = mom
+            out[f'alpha_mom_{n}d'] = c.pct_change(n)
 
-        # Residual momentum (vs rolling mean — removes trend)
         for n in [20, 60]:
-            df[f'alpha_resmom_{n}d'] = ret - ret.rolling(n).mean()
+            out[f'alpha_resmom_{n}d'] = ret - ret.rolling(n).mean()
 
-        # Max/min drawdown in window
         for n in [5, 20]:
-            df[f'alpha_maxret_{n}d']  = ret.rolling(n).max()
-            df[f'alpha_minret_{n}d']  = ret.rolling(n).min()
+            out[f'alpha_maxret_{n}d'] = ret.rolling(n).max()
+            out[f'alpha_minret_{n}d'] = ret.rolling(n).min()
 
-        # Wins/losses ratio in window
         wins   = (ret > 0).astype(float)
         losses = (ret < 0).astype(float)
         for n in [10, 20]:
-            df[f'alpha_wlratio_{n}d'] = (
+            out[f'alpha_wlratio_{n}d'] = (
                 wins.rolling(n).sum() / (losses.rolling(n).sum() + 1e-9)
             )
 
-        # Return deviation from its own rolling std (Z-score of return)
-        for n in [20]:
-            mu  = ret.rolling(n).mean()
-            sig = ret.rolling(n).std()
-            df[f'alpha_ret_zscore_{n}d'] = (ret - mu) / (sig + 1e-9)
-
-        # Kurtosis of returns (tail risk)
-        for n in [60]:
-            df[f'alpha_ret_kurt_{n}d'] = ret.rolling(n).kurt()
-
-        return df
+        mu  = ret.rolling(20).mean()
+        sig = ret.rolling(20).std()
+        out['alpha_ret_zscore_20d'] = (ret - mu) / (sig + 1e-9)
+        out['alpha_ret_kurt_60d']   = ret.rolling(60).kurt()
+        return out
 
     # ──────────────────────────────────────────────────────────────────────
-    # GROUP 7: MISC features (13)
+    # GROUP 7: MISC features
     # ──────────────────────────────────────────────────────────────────────
     @staticmethod
-    def _misc_features(df: pd.DataFrame) -> pd.DataFrame:
-        c = df['close']
-        o = df['open']
-        h = df['high']
-        l = df['low']
-        v = df['volume']
+    def _misc_features(df: pd.DataFrame) -> dict:
+        c   = df['close']
+        o   = df['open']
+        h   = df['high']
+        l   = df['low']
+        v   = df['volume']
+        ret = c.pct_change(1)
+        out = {}
 
-        # WVMA — weighted moving average of volatility × volume
-        ret   = c.pct_change(1)
-        wvma  = (ret.abs() * v).rolling(5).sum() / (v.rolling(5).sum() + 1e-9)
-        df['alpha_wvma_5d'] = wvma
+        out['alpha_wvma_5d']     = (ret.abs() * v).rolling(5).sum() / (v.rolling(5).sum() + 1e-9)
+        out['alpha_gap']         = (o - c.shift(1)) / (c.shift(1) + 1e-9)
+        out['alpha_intraday']    = (c - o) / (o + 1e-9)
 
-        # Gap (overnight return)
-        df['alpha_gap'] = (o - c.shift(1)) / (c.shift(1) + 1e-9)
-
-        # Intraday return (open-to-close)
-        df['alpha_intraday'] = (c - o) / (o + 1e-9)
-
-        # Upper / lower shadow (candle structure)
-        body_top    = df[['open', 'close']].max(axis=1)
-        body_bottom = df[['open', 'close']].min(axis=1)
+        body_top    = pd.concat([o, c], axis=1).max(axis=1)
+        body_bottom = pd.concat([o, c], axis=1).min(axis=1)
         rng         = (h - l + 1e-9)
-        df['alpha_upper_shadow'] = (h - body_top)    / rng
-        df['alpha_lower_shadow'] = (body_bottom - l) / rng
+        out['alpha_upper_shadow'] = (h - body_top)    / rng
+        out['alpha_lower_shadow'] = (body_bottom - l) / rng
 
-        # Weekday seasonality (0=Mon, 4=Fri)
         if hasattr(df.index, 'dayofweek'):
-            df['alpha_weekday']  = df.index.dayofweek
-            df['alpha_month']    = df.index.month
+            out['alpha_weekday'] = pd.Series(df.index.dayofweek, index=df.index, dtype=float)
+            out['alpha_month']   = pd.Series(df.index.month,     index=df.index, dtype=float)
 
-        # 52-week high/low position
         hi_52w = h.rolling(252).max()
         lo_52w = l.rolling(252).min()
-        df['alpha_52w_pos'] = (c - lo_52w) / (hi_52w - lo_52w + 1e-9)
+        out['alpha_52w_pos'] = (c - lo_52w) / (hi_52w - lo_52w + 1e-9)
 
-        # Consecutive up/down days
         up_day   = (ret > 0).astype(int)
         down_day = (ret < 0).astype(int)
-        df['alpha_consec_up']   = up_day.groupby(
-            (up_day != up_day.shift()).cumsum()
-        ).cumsum() * up_day
-        df['alpha_consec_down'] = down_day.groupby(
-            (down_day != down_day.shift()).cumsum()
-        ).cumsum() * down_day
-
-        return df
+        out['alpha_consec_up']   = (
+            up_day.groupby((up_day != up_day.shift()).cumsum()).cumsum() * up_day
+        )
+        out['alpha_consec_down'] = (
+            down_day.groupby((down_day != down_day.shift()).cumsum()).cumsum() * down_day
+        )
+        return out
 
 
 def build_alpha158(df: pd.DataFrame) -> pd.DataFrame:

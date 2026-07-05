@@ -594,7 +594,10 @@ class EventDrivenBacktest:
             # Position sizing: max_pos_pct of total portfolio
             alloc   = portfolio.total_value * self.max_pos_pct * signal.strength
             alloc   = min(alloc, portfolio.cash * 0.95)
-            shares  = math.floor(alloc / (bar.close + 1e-9))
+            # Guard against NaN close prices at data boundaries
+            if not alloc or math.isnan(bar.close) or bar.close <= 0:
+                return None
+            shares  = math.floor(alloc / bar.close)
             if shares < 1:
                 return None
 
