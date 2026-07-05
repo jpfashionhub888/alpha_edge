@@ -56,13 +56,15 @@ MIN_TRADES = 10               # Minimum trades to be statistically meaningful
 
 
 def load_settings() -> dict:
-    """Load current strategy params from settings.yaml."""
+    """Load current strategy params from settings.yaml.
+    Priority: [hyperopt] section > [signal_thresholds] > [risk_management] > defaults.
+    """
     defaults = {
-        'buy_threshold' : 0.55,
-        'atr_stop_mult' : 1.0,
-        'atr_target_mult': 2.5,
+        'buy_threshold'   : 0.55,
+        'atr_stop_mult'   : 1.0,
+        'atr_target_mult' : 2.5,
         'kelly_multiplier': 0.5,
-        'max_pos_pct'   : 0.10,
+        'max_pos_pct'     : 0.10,
     }
     try:
         import yaml
@@ -70,13 +72,13 @@ def load_settings() -> dict:
             cfg = yaml.safe_load(f) or {}
         thr  = cfg.get('signal_thresholds', {})
         risk = cfg.get('risk_management', {})
-        hyp  = cfg.get('hyperopt', {})
+        hyp  = cfg.get('hyperopt', {})   # HyperOpt section has highest priority
         return {
-            'buy_threshold'   : float(thr.get('buy_threshold',    hyp.get('buy_threshold',    defaults['buy_threshold']))),
-            'atr_stop_mult'   : float(risk.get('atr_stop_mult',   hyp.get('atr_stop_mult',   defaults['atr_stop_mult']))),
-            'atr_target_mult' : float(risk.get('atr_target_mult', hyp.get('atr_target_mult', defaults['atr_target_mult']))),
-            'kelly_multiplier': float(risk.get('kelly_multiplier', hyp.get('kelly_multiplier', defaults['kelly_multiplier']))),
-            'max_pos_pct'     : float(risk.get('max_position_size', defaults['max_pos_pct'])),
+            'buy_threshold'   : float(hyp.get('buy_threshold',    thr.get('buy_threshold',    defaults['buy_threshold']))),
+            'atr_stop_mult'   : float(hyp.get('atr_stop_mult',    risk.get('atr_stop_mult',   defaults['atr_stop_mult']))),
+            'atr_target_mult' : float(hyp.get('atr_target_mult',  risk.get('atr_target_mult', defaults['atr_target_mult']))),
+            'kelly_multiplier': float(hyp.get('kelly_multiplier',  risk.get('kelly_multiplier', defaults['kelly_multiplier']))),
+            'max_pos_pct'     : float(hyp.get('max_position_pct', risk.get('max_position_size', defaults['max_pos_pct']))),
         }
     except Exception as e:
         logger.warning(f'Could not load settings.yaml: {e} — using defaults')

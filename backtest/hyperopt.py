@@ -175,9 +175,9 @@ class AlphaEdgeHyperOpt:
         Run a simplified vectorised backtest on one fold's test window.
         Returns annualised Sharpe ratio of strategy returns.
 
-        This is NOT a tick-level simulation — it's a fast approximation
-        used purely for parameter ranking. Phase 4 (event engine) does
-        the proper simulation for final validation.
+        fold_data contains WARMUP + TEST bars.
+        Signals are only counted once we enter the test window
+        (marked by the 'in_test' boolean index).
         """
         all_returns = []
 
@@ -192,40 +192,44 @@ class AlphaEdgeHyperOpt:
                 continue
 
             try:
-                # Fast feature proxies (no full Alpha158 for speed)
                 close   = df['close']
                 volume  = df['volume']
-                ret_1d  = close.pct_change(1)
                 vol_ma  = volume.rolling(20).mean()
                 vol_spi = volume / (vol_ma + 1e-9)
 
-                # Momentum score (proxy for model prediction)
                 ma5   = close.rolling(5).mean()
                 ma20  = close.rolling(20).mean()
                 mom   = (ma5 - ma20) / (ma20 + 1e-9)
 
-                # ATR (proxy stop/target)
                 hl   = df['high'] - df['low']
                 atr  = hl.rolling(14).mean()
 
-                # Signal: buy when momentum > threshold AND volume spike
-                score  = (mom - mom.rolling(60).min()) / (mom.rolling(60).max() - mom.rolling(60).min() + 1e-9)
+                score = (mom - mom.rolling(60).min()) / (
+                    mom.rolling(60).max() - mom.rolling(60).min() + 1e-9
+                )
                 signal = (score > buy_thr) & (vol_spi > vol_thr)
 
-                # Simulate returns: hold until stop or target (fixed bars)
+                # Only trade after the warm-up period
+                # Rows marked in_test=True are the real OOS test window
+                test_mask = df.get('in_test', pd.Series(True, index=df.index))
+
                 for i in range(len(df) - 20):
+                    if not test_mask.iloc[i]:     # skip warm-up bars
+                        continue
                     if not signal.iloc[i]:
                         continue
-                    entry  = close.iloc[i]
-                    a      = float(atr.iloc[i]) if not pd.isna(atr.iloc[i]) else entry * 0.02
-                    stop   = entry - atr_stop * a
-                    target = entry + atr_tgt * a
 
-                    # Check if RR ratio is met
-                    if (target - entry) / (entry - stop + 1e-9) < rr_ratio:
+                    entry = close.iloc[i]
+                    a     = float(atr.iloc[i]) if not pd.isna(atr.iloc[i]) else entry * 0.02
+                    stop   = entry - atr_stop * a
+                    target = entry + atr_tgt   * a
+
+                    risk = entry - stop
+                    if risk <= 0:
+                        continue
+                    if (target - entry) / risk < rr_ratio:
                         continue
 
-                    # Walk forward until stop, target, or 20 bars
                     exit_ret = 0.0
                     for j in range(1, 21):
                         idx = i + j
@@ -247,8 +251,8 @@ class AlphaEdgeHyperOpt:
                 logger.debug(f'HyperOpt backtest failed for {symbol}: {e}')
                 continue
 
-        if len(all_returns) < 5:
-            return -1.0  # insufficient trades
+        if len(all_returns) < 2:   # was 5 — relaxed so edge-case params aren't penalised -1
+            return -1.0
 
         returns = np.array(all_returns)
         return self._sharpe(returns)
@@ -291,6 +295,9 @@ class AlphaEdgeHyperOpt:
 
         return data
 
+    WARMUP_BARS = 150   # bars of lookback included before each test window
+                        # needed so rolling(60) indicators have history
+
     def _make_folds(
         self,
         data: Dict[str, pd.DataFrame],
@@ -298,18 +305,17 @@ class AlphaEdgeHyperOpt:
     ):
         """
         Generate anchored walk-forward folds.
-        Each fold yields a dict[symbol → DataFrame] for the TEST period only.
+        Each fold yields a dict[symbol → DataFrame] containing
+        WARMUP_BARS of pre-test history + the test window.
+        Rows in the test window are flagged with in_test=True.
         """
-        # Find common date range across all symbols
         all_dates = sorted(set.union(*[set(df.index) for df in data.values()]))
         if not all_dates:
             return
 
-        total_days  = (all_dates[-1] - all_dates[0]).days
-        test_days   = self.test_months * 30
-        min_train   = self.train_years * 365
+        test_days = self.test_months * 30
+        min_train = self.train_years * 365
 
-        # Build fold boundaries
         folds = []
         for fold in range(self.n_folds):
             test_end   = all_dates[-1] - timedelta(days=fold * test_days)
@@ -319,12 +325,18 @@ class AlphaEdgeHyperOpt:
             folds.append((test_start, test_end))
 
         for test_start, test_end in reversed(folds):
-            fold_data = {
-                sym: df.loc[
-                    (df.index >= test_start) & (df.index <= test_end)
+            fold_data = {}
+            for sym, df in data.items():
+                # Include warmup window before test_start
+                warmup_start = test_start - timedelta(days=self.WARMUP_BARS * 2)
+                chunk = df.loc[
+                    (df.index >= warmup_start) & (df.index <= test_end)
                 ].copy()
-                for sym, df in data.items()
-            }
+                if chunk.empty:
+                    continue
+                # Mark which rows are the real test window
+                chunk['in_test'] = chunk.index >= test_start
+                fold_data[sym] = chunk
             yield fold_data
 
     def _build_combos(self) -> List[Dict]:
