@@ -358,8 +358,10 @@ class AlphaEdgeHyperOpt:
 
     def save_best_params(self, params: Dict) -> None:
         """
-        Write best params into config/settings.yaml.
-        Preserves all existing settings — only updates the optimised keys.
+        Write best params into config/settings.yaml under [hyperopt] section.
+        Also updates signal_thresholds.buy_threshold so the scanner
+        picks it up immediately without a restart.
+        Preserves all existing settings — never overwrites other keys.
         """
         try:
             import yaml
@@ -375,15 +377,24 @@ class AlphaEdgeHyperOpt:
             with open(SETTINGS_PATH) as f:
                 existing = yaml.safe_load(f) or {}
 
-        # Update only the optimised keys
-        existing.update({k: v for k, v in params.items() if k != 'sharpe'})
-        existing['hyperopt_last_run']    = datetime.now().isoformat()
-        existing['hyperopt_best_sharpe'] = params.get('sharpe', None)
+        # ── Write into a dedicated [hyperopt] section ─────────────────
+        clean = {k: v for k, v in params.items() if k not in ('sharpe', 'fold_sharpes')}
+        existing.setdefault('hyperopt', {})
+        existing['hyperopt'].update(clean)
+        existing['hyperopt']['last_run']    = datetime.now().isoformat()
+        existing['hyperopt']['best_sharpe'] = float(params.get('sharpe', 0) or 0)
+
+        # ── Also mirror buy_threshold into signal_thresholds ──────────
+        # so scanner._load_signal_settings() picks it up immediately
+        if 'buy_threshold' in clean:
+            existing.setdefault('signal_thresholds', {})
+            existing['signal_thresholds']['buy_threshold'] = clean['buy_threshold']
 
         with open(SETTINGS_PATH, 'w') as f:
             yaml.dump(existing, f, default_flow_style=False, sort_keys=True)
 
         logger.info(f'Best params written to {SETTINGS_PATH}')
+        logger.info(f'  buy_threshold updated to {clean.get("buy_threshold")}')
 
     def top_results(self, n: int = 10) -> pd.DataFrame:
         """Return top N results as a DataFrame for analysis."""
