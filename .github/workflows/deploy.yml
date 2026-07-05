@@ -4,7 +4,7 @@
 #
 # Required GitHub Secrets (Settings → Secrets → Actions):
 #   VPS_SSH_KEY      — contents of C:\Users\giris\.ssh\id_alpha_edge  (private key)
-#   VPS_HOST         — 67.205.185.84
+#   VPS_HOST         — alphaedgetrading.duckdns.org  (domain resolves automatically)
 #   VPS_USER         — root
 
 name: 🚀 Deploy to VPS
@@ -32,7 +32,11 @@ jobs:
       - name: 🌐 Add VPS to known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          # Try keyscan; if it fails, fall back to StrictHostKeyChecking=accept-new
+          ssh-keyscan -T 10 -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+          echo "Host ${{ secrets.VPS_HOST }}" >> ~/.ssh/config
+          echo "  StrictHostKeyChecking accept-new" >> ~/.ssh/config
+          echo "  ConnectTimeout 15" >> ~/.ssh/config
 
       - name: 🚀 Deploy — git pull + regenerate dashboard
         run: |
