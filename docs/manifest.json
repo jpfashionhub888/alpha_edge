@@ -1,6 +1,6 @@
 {
-    "name": "Trading Empire",
-    "short_name": "TradeEmpire",
+    "name": "Alpha Edge Terminal",
+    "short_name": "AlphaEdge",
     "description": "Global AI Trading System - AlphaEdge + BharatEdge + CryptoEdge",
     "start_url": "/alpha_edge/master.html",
     "display": "standalone",

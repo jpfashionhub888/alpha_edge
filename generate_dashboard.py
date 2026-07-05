@@ -657,6 +657,9 @@ def generate_dashboard():
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>AlphaEdge — Institutional Trading Terminal</title>
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -740,12 +743,18 @@ def generate_dashboard():
     }}
     .logo {{ display:flex; align-items:center; gap:10px; }}
     .logo-mark {{
-      width:32px; height:32px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      border-radius: 8px;
+      width:38px; height:38px;
+      border-radius: 50%;
       display:flex; align-items:center; justify-content:center;
-      font-size:16px; font-weight:800; color:#070b0f;
-      box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+      overflow: hidden;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.45), 0 0 28px rgba(16, 185, 129, 0.15);
+      border: 1.5px solid rgba(16, 185, 129, 0.35);
+      flex-shrink: 0;
+    }}
+    .logo-mark img {{
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
     }}
     .logo-text {{
       font-size:18px; font-weight:800; letter-spacing:-0.5px;
@@ -1096,7 +1105,7 @@ def generate_dashboard():
 <!-- ════════════════════════════════════════════════════════ HEADER -->
 <header class="header">
   <div class="logo">
-    <div class="logo-mark">α</div>
+    <div class="logo-mark"><img src="alpha_edge_logo.png" alt="Alpha Edge Logo"></div>
     <span class="logo-text">AlphaEdge Terminal</span>
     <span class="chip chip-paper">PAPER</span>
     <span class="chip chip-v5">V6</span>
