@@ -50,7 +50,7 @@ VALIDATION_SYMBOLS = [
 LOOKBACK_DAYS  = 365          # 1 year out-of-sample validation
 INITIAL_CAPITAL = 50_000      # USD
 SHARPE_THRESHOLD = 0.5        # Minimum acceptable Sharpe
-WIN_RATE_THRESHOLD = 0.45     # Minimum acceptable win rate
+WIN_RATE_THRESHOLD = 45.0        # Minimum acceptable win rate (already in % from summary())
 MIN_TRADES = 10               # Minimum trades to be statistically meaningful
 # ──────────────────────────────────────────────────────────────────────
 
@@ -176,7 +176,7 @@ def run_validation(lookback_days: int = LOOKBACK_DAYS,
     print(f'  Total trades      : {n_trades}')
     print(f'  Total return      : {ret_pct:+.2f}%')
     print(f'  Sharpe ratio      : {sharpe:.3f}')
-    print(f'  Win rate          : {win_rate:.1%}')
+    print(f'  Win rate          : {win_rate:.1f}%')
     print(f'  Costs (C+S)       : ${commission + slippage:.2f}')
     print(f'  Verdict           : {verdict}')
     print(f'  Runtime           : {elapsed:.1f}s')
@@ -194,7 +194,7 @@ def run_validation(lookback_days: int = LOOKBACK_DAYS,
                 f'━━━━━━━━━━━━━━━━━━━━\n'
                 f'📈 Return     : {ret_pct:+.2f}%\n'
                 f'📉 Sharpe     : {sharpe:.3f}\n'
-                f'🎯 Win Rate   : {win_rate:.1%}\n'
+                f'🎯 Win Rate   : {win_rate:.1f}%\n'
                 f'🔁 Trades     : {n_trades}\n'
                 f'💸 C+S costs  : ${commission + slippage:.2f}\n'
                 f'🔑 Params     : buy={params["buy_threshold"]:.2f} '
