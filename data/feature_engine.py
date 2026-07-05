@@ -17,6 +17,18 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Alpha158 — Microsoft qlib feature set (158 institutional-grade features)
+try:
+    from data.alpha158 import build_alpha158 as _build_alpha158
+    _ALPHA158_AVAILABLE = True
+except ImportError:
+    try:
+        from alpha158 import build_alpha158 as _build_alpha158
+        _ALPHA158_AVAILABLE = True
+    except ImportError:
+        _ALPHA158_AVAILABLE = False
+        logger.warning('alpha158 module not found — running with base features only')
+
 
 class FeatureEngine:
     """
@@ -52,6 +64,20 @@ class FeatureEngine:
         df = self._add_volatility_indicators(df)
         df = self._add_pattern_features(df)
         df = self._add_market_context(df, end_date)
+
+        # ── Alpha158 (Microsoft qlib) ─────────────────────────────────────
+        # Adds 158 institutional-grade features after base TA features.
+        # Only new alpha_ columns are merged; no existing columns overwritten.
+        if _ALPHA158_AVAILABLE:
+            try:
+                alpha_df = _build_alpha158(df)
+                new_cols = [c for c in alpha_df.columns
+                            if c.startswith('alpha_') and c not in df.columns]
+                df = pd.concat([df, alpha_df[new_cols]], axis=1)
+                logger.info(f'Alpha158: merged {len(new_cols)} new features')
+            except Exception as e:
+                logger.warning(f'Alpha158 build failed (non-fatal): {e}')
+
         df = self._add_target_variable(df)
 
         df.dropna(inplace=True)
@@ -67,7 +93,8 @@ class FeatureEngine:
         ]
 
         logger.info(
-            f"Generated {len(self.feature_names)} features"
+            f"Generated {len(self.feature_names)} features "
+            f"({'with' if _ALPHA158_AVAILABLE else 'without'} Alpha158)"
         )
 
         return df

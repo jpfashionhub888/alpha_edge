@@ -215,6 +215,65 @@ class ModelCache:
             logger.warning(f"Full cache wipe: {count} files removed")
             return count
 
+    # ── Meta-Labeler persistence ───────────────────────────────────────────────
+
+    def get_meta_labeler(self, symbol: str) -> Optional[Any]:
+        """
+        Load cached MetaLabeler for symbol.
+        Returns None if not found or expired.
+        MetaLabelers use the same TTL as primary models.
+        """
+        path = self.cache_dir / f"{symbol.replace('/', '_')}.meta_labeler.pkl"
+        if not path.exists():
+            return None
+        try:
+            with open(path, 'rb') as f:
+                state = pickle.load(f)
+            # Check TTL
+            saved_at = datetime.fromisoformat(state.get('saved_at', '2000-01-01'))
+            if (datetime.utcnow() - saved_at).days > self.ttl_days:
+                path.unlink(missing_ok=True)
+                logger.info(f"[{symbol}] MetaLabeler cache expired")
+                return None
+            from models.meta_labeler import MetaLabeler
+            labeler = MetaLabeler(
+                threshold  = state['threshold'],
+                model_type = state['model_type'],
+            )
+            labeler._model         = state['model']
+            labeler._scaler        = state['scaler']
+            labeler._feature_names = state['feature_names']
+            labeler._is_fitted     = state['is_fitted']
+            logger.info(f"[{symbol}] MetaLabeler cache hit")
+            return labeler
+        except Exception as e:
+            logger.warning(f"[{symbol}] MetaLabeler load failed: {e}")
+            return None
+
+    def save_meta_labeler(self, symbol: str, labeler: Any) -> bool:
+        """Atomically save MetaLabeler for symbol."""
+        path = self.cache_dir / f"{symbol.replace('/', '_')}.meta_labeler.pkl"
+        tmp  = path.with_suffix('.tmp')
+        try:
+            state = {
+                'saved_at'    : datetime.utcnow().isoformat(),
+                'threshold'   : labeler.threshold,
+                'model_type'  : labeler.model_type,
+                'model'       : labeler._model,
+                'scaler'      : labeler._scaler,
+                'feature_names': labeler._feature_names,
+                'is_fitted'   : labeler._is_fitted,
+            }
+            with open(tmp, 'wb') as f:
+                pickle.dump(state, f)
+            tmp.replace(path)
+            logger.info(f"[{symbol}] MetaLabeler saved")
+            return True
+        except Exception as e:
+            logger.error(f"[{symbol}] MetaLabeler save failed: {e}")
+            tmp.unlink(missing_ok=True)
+            return False
+
     def get_cache_status(self) -> Dict[str, Any]:
         """Return summary of all cached models — useful for dashboard."""
         status = {}
