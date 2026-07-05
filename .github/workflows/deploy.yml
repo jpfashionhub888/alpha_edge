@@ -43,8 +43,12 @@ jobs:
           ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
             set -e
 
-            echo "=== Pulling latest code ==="
+            echo "=== Stashing any local generated files ==="
             cd /root/alpha_edge
+            git stash
+
+            echo ""
+            echo "=== Pulling latest code ==="
             git pull origin main
 
             echo ""
