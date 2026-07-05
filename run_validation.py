@@ -144,7 +144,7 @@ def run_validation(lookback_days: int = LOOKBACK_DAYS,
         engine = EventDrivenBacktest(
             strategy        = strategy,
             initial_capital = INITIAL_CAPITAL,
-            commission_per_share = 0.005,
+            commission      = 0.005,
             slippage_pct    = 0.0005,
         )
         result = engine.run(all_data)
