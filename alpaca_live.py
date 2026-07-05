@@ -87,6 +87,7 @@ class AlpacaLiveTrader:
         from execution.alpaca_broker        import AlpacaBroker
         from monitoring.telegram_bot        import TelegramBot
         from monitoring.heartbeat           import HeartbeatMonitor
+        from monitoring.command_listener    import start_command_listener
 
         self.broker          = AlpacaBroker()
         self.telegram        = TelegramBot()
@@ -96,6 +97,11 @@ class AlpacaLiveTrader:
         # Phase 4: heartbeat monitor — writes logs/heartbeats/alpaca_bot.json
         self.heartbeat = HeartbeatMonitor(service_name='alpaca_bot')
         self.heartbeat.start()
+
+        # Telegram kill switch — /pause /resume /status from phone
+        self.bot_state, self.cmd_listener = start_command_listener(
+            get_portfolio_fn=self._get_portfolio_snapshot
+        )
 
         # Track our own stop/target levels since Alpaca paper
         # doesn't support bracket orders on all account types
@@ -161,6 +167,10 @@ class AlpacaLiveTrader:
         # Load any existing Alpaca positions into managed_positions
         self._sync_positions()
 
+        # Start Telegram kill switch listener
+        self.cmd_listener.start()
+        print('\n  Telegram command listener started (/pause /resume /status)')
+
         # Start price monitor for stop/target management
         self._monitor_running = True
         threading.Thread(target=self._monitor_loop, daemon=True).start()
@@ -209,6 +219,12 @@ class AlpacaLiveTrader:
         print(f'\n{"="*60}')
         print(f'SCAN  —  {now}  |  Mode: {self.mode}')
         print(f'{"="*60}')
+
+        # ── Kill switch check ─────────────────────────────────────────
+        if self.bot_state.is_paused:
+            print('  ⏸️  Bot is PAUSED — skipping new entries (sends/stops still active)')
+            print('     Send /resume via Telegram to re-enable.')
+            return
 
         try:
             # Import signal generation components from existing main.py
@@ -616,6 +632,42 @@ class AlpacaLiveTrader:
                     f'PnL=${pos["pnl"]:+.2f} ({pos["pnl_pct"]:.1%})'
                 )
 
+    def _get_portfolio_snapshot(self) -> dict:
+        """
+        Return a portfolio summary dict for the /status Telegram command.
+        Safe to call from any thread — broker calls are thread-safe.
+        """
+        try:
+            account   = self.broker.get_account()
+            positions = self.broker.get_positions()
+            if not account:
+                return {}
+
+            port_value = float(account.get('portfolio_value', 0))
+            cash       = float(account.get('cash', 0))
+            # Estimate starting capital from circuit breaker state
+            starting   = self.circuit_breaker.state.get('starting_capital', port_value)
+            pnl        = port_value - starting
+
+            pos_data = {}
+            for sym, pos in positions.items():
+                pos_data[sym] = {
+                    'qty'           : pos.get('shares', 0),
+                    'avg_entry'     : pos.get('entry_price', 0),
+                    'unrealized_pnl': pos.get('pnl', 0),
+                }
+
+            return {
+                'value'       : port_value,
+                'cash'        : cash,
+                'pnl'         : pnl,
+                'n_positions' : len(positions),
+                'positions'   : pos_data,
+                'mode'        : self.mode,
+            }
+        except Exception as e:
+            logger.warning('Portfolio snapshot error: %s', e)
+            return {}
 
 if __name__ == '__main__':
     trader = AlpacaLiveTrader()
