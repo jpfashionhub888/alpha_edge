@@ -4,9 +4,9 @@
 #
 # Required GitHub Secrets (Settings → Secrets → Actions):
 #   VPS_SSH_KEY      — contents of C:\Users\giris\.ssh\id_alpha_edge  (private key)
-#   VPS_USER         — root
 #
-# VPS IP is hardcoded below. Update it here if the server moves.
+# Connection is hardcoded: root@67.207.82.11
+# Update IP/user in this file if the server moves.
 
 name: 🚀 Deploy to VPS
 
@@ -41,7 +41,7 @@ jobs:
 
       - name: 🚀 Deploy — git pull + regenerate dashboard
         run: |
-          ssh ${{ secrets.VPS_USER }}@67.207.82.11 << 'ENDSSH'
+          ssh -v root@67.207.82.11 << 'ENDSSH'
             set -e
 
             echo "=== Stashing any local generated files ==="
