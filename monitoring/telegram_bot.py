@@ -12,7 +12,39 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
+# ── Secrets loader ────────────────────────────────────────────────────
+# systemd services inject env vars via EnvironmentFile=/etc/alphaedge/secrets.
+# When scripts are run directly (retrain.py, run_validation.py) that file
+# is not loaded automatically, so we load it here as a fallback.
+_SECRETS_PATHS = [
+    '/etc/alphaedge/secrets',
+    'config/secrets.env',
+    '.env',
+]
+
+def _load_secrets_if_needed() -> None:
+    """Load secrets file into os.environ if Telegram vars are missing."""
+    if os.getenv('TELEGRAM_BOT_TOKEN'):
+        return   # already in environment — nothing to do
+    for path in _SECRETS_PATHS:
+        try:
+            with open(path) as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#') or '=' not in line:
+                        continue
+                    key, _, val = line.partition('=')
+                    os.environ.setdefault(key.strip(), val.strip())
+            logger.debug(f'Loaded secrets from {path}')
+            return
+        except FileNotFoundError:
+            continue
+        except Exception as e:
+            logger.warning(f'Could not load secrets from {path}: {e}')
+
+_load_secrets_if_needed()
+
+TELEGRAM_TOKEN   = os.getenv('TELEGRAM_BOT_TOKEN', '')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '')
 
 class TelegramBot:
