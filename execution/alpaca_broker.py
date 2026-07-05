@@ -113,7 +113,7 @@ class AlpacaBroker:
 
             for pos in positions:
                 result[pos.symbol] = {
-                    'shares': int(pos.qty),
+                    'shares': float(pos.qty),   # float: Alpaca returns fractional qty strings
                     'entry_price': float(pos.avg_entry_price),
                     'current_price': float(pos.current_price),
                     'market_value': float(pos.market_value),
