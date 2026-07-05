@@ -313,3 +313,7 @@ def detect_regime(
 ) -> Dict[str, Any]:
     """Module-level function for backward compatibility."""
     return _default_detector.detect(price_df, vix_df)
+
+
+# Alias — both names are valid imports
+MarketRegimeFilter = MarketRegimeDetector
