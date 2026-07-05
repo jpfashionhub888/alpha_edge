@@ -132,7 +132,7 @@ def run_weekly_report():
     total_pnl     = capital - starting_capital
     total_pnl_pct = (total_pnl / starting_capital) * 100 if starting_capital > 0 else 0
 
-    sells = [t for t in trade_history if t.get('action') == 'SELL']
+    sells = [t for t in trade_history if t.get('action') in ('SELL', 'PARTIAL_SELL')]
     wins  = [t for t in sells if t.get('pnl', 0) > 0]
     win_rate = len(wins) / len(sells) * 100 if sells else 0
 

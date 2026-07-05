@@ -523,7 +523,9 @@ def create_app():
         total_pnl   = total_value - starting
         total_pct   = (total_pnl / starting) * 100 if starting > 0 else 0
 
-        sells      = [t for t in history if t.get('action') == 'SELL']
+        # SELL + PARTIAL_SELL both count as realized exits
+        _realized  = {'SELL', 'PARTIAL_SELL'}
+        sells      = [t for t in history if t.get('action') in _realized]
         wins       = len([t for t in sells if t.get('pnl', 0) > 0])
         losses     = len([t for t in sells if t.get('pnl', 0) <= 0])
         total_closed = wins + losses
@@ -620,7 +622,7 @@ def create_app():
         dates  = ['Start']
 
         for trade in history:
-            if trade.get('action') == 'SELL':
+            if trade.get('action') in {'SELL', 'PARTIAL_SELL'}:
                 values.append(values[-1] + trade.get('pnl', 0))
                 dates.append(trade.get('date', '')[:10])
 

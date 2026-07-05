@@ -18,6 +18,9 @@ from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
+# Treat both SELL and PARTIAL_SELL as realized exits everywhere
+REALIZED_ACTIONS = {'SELL', 'PARTIAL_SELL'}
+
 
 class PerformanceAnalytics:
     """
@@ -92,11 +95,11 @@ class PerformanceAnalytics:
         if not trades:
             return self._empty_metrics(total_pnl, total_pct, unrealized_pnl)
 
-        # Filter recent closed (SELL) trades
+        # Filter recent closed trades (SELL + PARTIAL_SELL)
         cutoff = datetime.now() - timedelta(days=days_back)
         sells  = []
         for t in trades:
-            if t.get('action') != 'SELL':
+            if t.get('action') not in REALIZED_ACTIONS:
                 continue
             trade_date = self._parse_date(t.get('date', ''))
             if trade_date and trade_date >= cutoff:
@@ -179,10 +182,11 @@ class PerformanceAnalytics:
     @staticmethod
     def _max_drawdown_from_trades(trades):
         """
-        Compute max drawdown from cumulative P&L sequence of all SELL trades.
+        Compute max drawdown from cumulative P&L sequence of all realized trades
+        (SELL + PARTIAL_SELL).
         Returns a negative fraction (e.g. -0.12 = -12% drawdown).
         """
-        sells = [t for t in trades if t.get('action') == 'SELL']
+        sells = [t for t in trades if t.get('action') in REALIZED_ACTIONS]
         if not sells:
             return 0.0
         cumulative = 0.0
