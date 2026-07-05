@@ -41,7 +41,7 @@ jobs:
 
       - name: 🚀 Deploy — git pull + regenerate dashboard
         run: |
-          ssh -v root@67.207.82.11 << 'ENDSSH'
+          ssh root@67.207.82.11 << 'ENDSSH'
             set -e
 
             echo "=== Stashing any local generated files ==="
