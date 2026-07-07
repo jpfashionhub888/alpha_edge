@@ -28,6 +28,7 @@ from datetime import datetime, time as dtime
 import pytz
 
 from risk_circuit_breaker import RiskCircuitBreaker
+from risk.position_sizer import PositionSizer, get_trade_stats_for_sizing
 
 warnings.filterwarnings('ignore')
 os.environ['PYTHONWARNINGS'] = 'ignore'
@@ -40,7 +41,9 @@ logger = logging.getLogger(__name__)
 # Fix 2.3: Once-daily scan at 16:15 ET (after all daily bars are final)
 DAILY_SCAN_HOUR     = 16      # 4 PM ET
 DAILY_SCAN_MIN      = 15      # 16:15 ET — 15 min after market close
-RISK_PER_TRADE_PCT  = 0.015   # 1.5% of portfolio per trade
+# PositionSizer now handles dynamic sizing (Kelly + VaR).
+# RISK_PER_TRADE_PCT kept as fallback when trade history < 10 trades.
+RISK_PER_TRADE_PCT  = 0.015   # fallback: 1.5% of portfolio per trade
 MAX_POSITIONS       = 5       # max open positions at once
 MARKET_TZ           = pytz.timezone('America/New_York')
 MARKET_OPEN         = dtime(9, 30)
@@ -309,7 +312,12 @@ class AlpacaLiveTrader:
         # ── Watchlist + earnings ──────────────────────────────────
         watchlist        = get_full_watchlist()
         earnings_soon    = get_earnings_calendar(watchlist)
-        earnings_symbols = [e['symbol'] for e in earnings_soon]
+        # INSTITUTIONAL: blackout = within 3 trading days BEFORE earnings
+        # (not just this week — 3-day pre-earnings window catches gap risk)
+        earnings_symbols = [
+            e['symbol'] for e in earnings_soon
+            if e.get('days_until', 99) <= 3
+        ]
 
         sector_analyzer = SectorRotation()
         sector_scores   = sector_analyzer.analyze()
@@ -514,11 +522,30 @@ class AlpacaLiveTrader:
 
             # ── ALL PASSED — execute on Alpaca ────────────────────
             account     = self.broker.get_account()
-            portfolio   = account.get('portfolio_value', 10000) if account else 10000
-            dollar_risk = portfolio * RISK_PER_TRADE_PCT
+            portfolio   = float(account.get('portfolio_value', 10000)) if account else 10000.0
             stop_price  = price - (atr * 1.0) if atr else price * 0.97
             target_price = price + (atr * 2.5) if atr else price * 1.06
-            dollar_amount = min(dollar_risk * (price / abs(price - stop_price)), portfolio * 0.15)
+
+            # ── Institutional position sizing (Kelly + VaR) ───────
+            trade_stats   = get_trade_stats_for_sizing()
+            regime_conf   = market_regime.get('confidence', 1.0)
+            sizer         = PositionSizer(portfolio_value=portfolio,
+                                          base_risk_pct=RISK_PER_TRADE_PCT)
+            dollar_amount = sizer.calculate(
+                symbol         = symbol,
+                price          = price,
+                atr            = atr or price * 0.02,
+                signal_score   = combined,
+                win_rate       = trade_stats['win_rate'],
+                avg_win        = trade_stats['avg_win'],
+                avg_loss       = trade_stats['avg_loss'],
+                regime_conf    = regime_conf,
+                open_positions = current_positions,
+                n_trades       = trade_stats['n_trades'],
+            )
+            if dollar_amount <= 0:
+                print(f'  {symbol}: SKIP — position sizer returned 0')
+                continue
 
             print(
                 f'  ✅ {symbol} BUY | score={combined:.2f} | vol={vol_ratio:.1f}x'

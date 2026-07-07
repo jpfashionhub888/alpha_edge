@@ -88,3 +88,30 @@ jobs:
           path: logs/
           retention-days: 30
           if-no-files-found: ignore
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "text=🚨 AlphaEdge Daily Scan FAILED%0ARun: #${{ github.run_number }}%0ACommit: ${{ github.sha }}%0ACheck: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true
+
+      - name: Walk-Forward Sunday Report
+        if: success()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          # Only run on Sundays (day of week = 0 in Python/date)
+          python -c "
+          from datetime import datetime
+          import subprocess, sys
+          if datetime.utcnow().weekday() == 6:  # Sunday
+              print('Sunday — running walk-forward validation...')
+              subprocess.run([sys.executable, '-m', 'monitoring.walkforward_monitor'], check=False)
+          else:
+              print('Not Sunday — skipping walk-forward report')
+          " || true
