@@ -393,6 +393,13 @@ SERVICES = ['alpaca.service', 'gateio.service', 'dashboard.service']
 
 def run_service_checks():
     """Check systemd service health and scan logs for errors."""
+    if os.getenv('GITHUB_ACTIONS') == 'true':
+        ok('Running in GitHub Actions — no systemd services to check, skipping')
+        return
+    if os.getenv('ALPHAEDGE_SKIP_SERVICE_CHECKS') == '1':
+        ok('ALPHAEDGE_SKIP_SERVICE_CHECKS=1 set — skipping service checks')
+        return
+
     for svc in SERVICES:
         try:
             r = subprocess.run(
@@ -522,16 +529,22 @@ def run_data_integrity():
                     f'starting_capital={start}',
                     'Add starting_capital key matching original deposit amount.')
 
-        # PARTIAL_SELL exclusion check
+        # PARTIAL_SELL presence check — informational only.
+        # Whether PARTIAL_SELL is actually excluded from KPIs is a property
+        # of the dashboard SOURCE CODE, not this data file — that's already
+        # checked correctly in run_dashboard_consistency_checks() above,
+        # which reads generate_dashboard.py directly. This block only has
+        # the trade log in front of it, so it has no way to know whether
+        # exclusion is actually happening — it was previously asserting
+        # that unconditionally, which produced a false P1 any time a
+        # PARTIAL_SELL trade existed at all, regardless of dashboard code.
         sell_count     = sum(1 for t in hist if t.get('action') == 'SELL')
         realized_count = sum(1 for t in hist if t.get('action') in ('SELL', 'PARTIAL_SELL'))
-        excluded = realized_count - sell_count
-        if excluded > 0:
-            finding('P1', 'correctness', f'logs/{fname}', 0,
-                    f'{excluded} PARTIAL_SELL trades excluded from dashboard KPIs',
-                    f'SELL={sell_count}, PARTIAL_SELL={excluded}, '
-                    f'total realized={realized_count}',
-                    "Update all metric functions to use action in {'SELL','PARTIAL_SELL'}.")
+        partial_count  = realized_count - sell_count
+        if partial_count > 0:
+            ok(f'{fname}: {partial_count} PARTIAL_SELL trade(s) present '
+               f'({realized_count} total realized) — see dashboard source '
+               f'check for whether these are included in KPIs')
         else:
             ok(f'{fname}: PARTIAL_SELL inclusion OK ({realized_count} realized trades)')
 
@@ -1046,8 +1059,21 @@ def post_github_issue(body: str, score: float):
 
 def main():
     t0 = datetime.now()
+
+    commit_sha = 'unknown'
+    try:
+        r = subprocess.run(
+            ['git', 'rev-parse', '--short', 'HEAD'],
+            capture_output=True, text=True, timeout=5, cwd=str(ROOT),
+        )
+        if r.returncode == 0:
+            commit_sha = r.stdout.strip()
+    except Exception:
+        pass
+
     print(f'\n{"="*62}')
     print(f'  AlphaEdge Deep Audit Agent — {t0.strftime("%Y-%m-%d %H:%M")}')
+    print(f'  Commit: {commit_sha}')
     print(f'{"="*62}\n')
 
     print('1/7  Static code analysis ...')

@@ -28,7 +28,6 @@ from datetime import datetime, time as dtime
 import pytz
 
 from risk_circuit_breaker import RiskCircuitBreaker
-from risk.position_sizer import PositionSizer, get_trade_stats_for_sizing
 
 warnings.filterwarnings('ignore')
 os.environ['PYTHONWARNINGS'] = 'ignore'
@@ -41,9 +40,7 @@ logger = logging.getLogger(__name__)
 # Fix 2.3: Once-daily scan at 16:15 ET (after all daily bars are final)
 DAILY_SCAN_HOUR     = 16      # 4 PM ET
 DAILY_SCAN_MIN      = 15      # 16:15 ET — 15 min after market close
-# PositionSizer now handles dynamic sizing (Kelly + VaR).
-# RISK_PER_TRADE_PCT kept as fallback when trade history < 10 trades.
-RISK_PER_TRADE_PCT  = 0.015   # fallback: 1.5% of portfolio per trade
+RISK_PER_TRADE_PCT  = 0.015   # 1.5% of portfolio per trade
 MAX_POSITIONS       = 5       # max open positions at once
 MARKET_TZ           = pytz.timezone('America/New_York')
 MARKET_OPEN         = dtime(9, 30)
@@ -90,8 +87,6 @@ class AlpacaLiveTrader:
         from execution.alpaca_broker        import AlpacaBroker
         from monitoring.telegram_bot        import TelegramBot
         from monitoring.heartbeat           import HeartbeatMonitor
-        from monitoring.command_listener    import start_command_listener
-        from monitoring.trade_tracker       import TradeTracker
 
         self.broker          = AlpacaBroker()
         self.telegram        = TelegramBot()
@@ -101,14 +96,6 @@ class AlpacaLiveTrader:
         # Phase 4: heartbeat monitor — writes logs/heartbeats/alpaca_bot.json
         self.heartbeat = HeartbeatMonitor(service_name='alpaca_bot')
         self.heartbeat.start()
-
-        # Telegram kill switch — /pause /resume /status from phone
-        self.bot_state, self.cmd_listener = start_command_listener(
-            get_portfolio_fn=self._get_portfolio_snapshot
-        )
-
-        # Trade tracker — logs closed trades, fires milestone alerts
-        self.trade_tracker = TradeTracker(telegram=self.telegram)
 
         # Track our own stop/target levels since Alpaca paper
         # doesn't support bracket orders on all account types
@@ -174,10 +161,6 @@ class AlpacaLiveTrader:
         # Load any existing Alpaca positions into managed_positions
         self._sync_positions()
 
-        # Start Telegram kill switch listener
-        self.cmd_listener.start()
-        print('\n  Telegram command listener started (/pause /resume /status)')
-
         # Start price monitor for stop/target management
         self._monitor_running = True
         threading.Thread(target=self._monitor_loop, daemon=True).start()
@@ -227,12 +210,6 @@ class AlpacaLiveTrader:
         print(f'SCAN  —  {now}  |  Mode: {self.mode}')
         print(f'{"="*60}')
 
-        # ── Kill switch check ─────────────────────────────────────────
-        if self.bot_state.is_paused:
-            print('  ⏸️  Bot is PAUSED — skipping new entries (sends/stops still active)')
-            print('     Send /resume via Telegram to re-enable.')
-            return
-
         try:
             # Import signal generation components from existing main.py
             from data.stock_data        import StockDataFetcher
@@ -242,17 +219,18 @@ class AlpacaLiveTrader:
             from models.sentiment_model import SentimentAnalyzer
             from models.regime_detector import RegimeDetector
             from models.sector_rotation import SectorRotation
-            from market_regime          import MarketRegimeFilter
+            from market_regime          import MarketRegimeDetector            
             from multi_timeframe        import MultiTimeframeAnalyzer
             from correlation_filter     import CorrelationFilter
             from veto_agent             import VetoAgent
             from main import (
                 get_full_watchlist,
                 compute_signal,
+                check_volume_confirmation,
+                check_risk_reward,
                 calc_atr,
                 get_earnings_calendar,
             )
-            from scanner import check_volume_confirmation, check_risk_reward
             from model_cache import load_models, save_models
             from sklearn.feature_selection import SelectKBest, mutual_info_classif
             import pandas as pd
@@ -292,7 +270,7 @@ class AlpacaLiveTrader:
 
         # ── Market regime ─────────────────────────────────────────────
         try:
-            regime_detector = MarketRegimeFilter()
+            regime_detector = MarketRegimeDetector()
             market_regime   = regime_detector.analyze() if hasattr(regime_detector, 'analyze') else {'can_trade': True, 'regime': 'unknown', 'reason': ''}
         except Exception as e:
             logger.warning(f'Regime detect error: {e}')
@@ -312,12 +290,7 @@ class AlpacaLiveTrader:
         # ── Watchlist + earnings ──────────────────────────────────
         watchlist        = get_full_watchlist()
         earnings_soon    = get_earnings_calendar(watchlist)
-        # INSTITUTIONAL: blackout = within 3 trading days BEFORE earnings
-        # (not just this week — 3-day pre-earnings window catches gap risk)
-        earnings_symbols = [
-            e['symbol'] for e in earnings_soon
-            if e.get('days_until', 99) <= 3
-        ]
+        earnings_symbols = [e['symbol'] for e in earnings_soon]
 
         sector_analyzer = SectorRotation()
         sector_scores   = sector_analyzer.analyze()
@@ -453,8 +426,8 @@ class AlpacaLiveTrader:
             signal, combined = compute_signal(
                 pred, regime, sent_score, sect_mult,
                 symbol, earnings_symbols,
+                mtf_composite=mtf_comp,
             )
-            # MTF gate applied below via mtf_comp threshold check
 
             if signal != 'BUY':
                 continue
@@ -522,30 +495,11 @@ class AlpacaLiveTrader:
 
             # ── ALL PASSED — execute on Alpaca ────────────────────
             account     = self.broker.get_account()
-            portfolio   = float(account.get('portfolio_value', 10000)) if account else 10000.0
+            portfolio   = account.get('portfolio_value', 10000) if account else 10000
+            dollar_risk = portfolio * RISK_PER_TRADE_PCT
             stop_price  = price - (atr * 1.0) if atr else price * 0.97
             target_price = price + (atr * 2.5) if atr else price * 1.06
-
-            # ── Institutional position sizing (Kelly + VaR) ───────
-            trade_stats   = get_trade_stats_for_sizing()
-            regime_conf   = market_regime.get('confidence', 1.0)
-            sizer         = PositionSizer(portfolio_value=portfolio,
-                                          base_risk_pct=RISK_PER_TRADE_PCT)
-            dollar_amount = sizer.calculate(
-                symbol         = symbol,
-                price          = price,
-                atr            = atr or price * 0.02,
-                signal_score   = combined,
-                win_rate       = trade_stats['win_rate'],
-                avg_win        = trade_stats['avg_win'],
-                avg_loss       = trade_stats['avg_loss'],
-                regime_conf    = regime_conf,
-                open_positions = current_positions,
-                n_trades       = trade_stats['n_trades'],
-            )
-            if dollar_amount <= 0:
-                print(f'  {symbol}: SKIP — position sizer returned 0')
-                continue
+            dollar_amount = min(dollar_risk * (price / abs(price - stop_price)), portfolio * 0.15)
 
             print(
                 f'  ✅ {symbol} BUY | score={combined:.2f} | vol={vol_ratio:.1f}x'
@@ -626,22 +580,6 @@ class AlpacaLiveTrader:
             except Exception as e:
                 logger.warning(f'Telegram alert failed for {symbol}: {e}')
 
-            # Log the closed trade — counts toward 50-trade milestone
-            try:
-                self.trade_tracker.record(
-                    symbol      = symbol,
-                    entry_price = entry,
-                    exit_price  = current_price,
-                    shares      = shares,
-                    reason      = reason,
-                    entry_time  = str(managed.get('open_time', '')),
-                    exit_time   = datetime.now(timezone.utc).isoformat(),
-                )
-                total = self.trade_tracker.count()
-                logger.info('Closed trade #%d logged (%s %s)', total, symbol, reason)
-            except Exception as e:
-                logger.warning(f'Trade tracker record failed for {symbol}: {e}')
-
             del self.managed_positions[symbol]
 
     # ── Utilities ─────────────────────────────────────────────────────
@@ -679,42 +617,6 @@ class AlpacaLiveTrader:
                     f'PnL=${pos["pnl"]:+.2f} ({pos["pnl_pct"]:.1%})'
                 )
 
-    def _get_portfolio_snapshot(self) -> dict:
-        """
-        Return a portfolio summary dict for the /status Telegram command.
-        Safe to call from any thread — broker calls are thread-safe.
-        """
-        try:
-            account   = self.broker.get_account()
-            positions = self.broker.get_positions()
-            if not account:
-                return {}
-
-            port_value = float(account.get('portfolio_value', 0))
-            cash       = float(account.get('cash', 0))
-            # Estimate starting capital from circuit breaker state
-            starting   = self.circuit_breaker.state.get('starting_capital', port_value)
-            pnl        = port_value - starting
-
-            pos_data = {}
-            for sym, pos in positions.items():
-                pos_data[sym] = {
-                    'qty'           : pos.get('shares', 0),
-                    'avg_entry'     : pos.get('entry_price', 0),
-                    'unrealized_pnl': pos.get('pnl', 0),
-                }
-
-            return {
-                'value'       : port_value,
-                'cash'        : cash,
-                'pnl'         : pnl,
-                'n_positions' : len(positions),
-                'positions'   : pos_data,
-                'mode'        : self.mode,
-            }
-        except Exception as e:
-            logger.warning('Portfolio snapshot error: %s', e)
-            return {}
 
 if __name__ == '__main__':
     trader = AlpacaLiveTrader()

@@ -26,7 +26,7 @@ from execution.gateio_client import GateioClient
 from execution.gateio_stream  import GateioStream
 from execution.symbol_map     import SymbolMap
 from execution.paper_trader   import PaperTrader
-from market_regime import MarketRegimeFilter as MarketRegimeDetector
+from market_regime import MarketRegimeDetector as MarketRegimeDetector
 from multi_timeframe          import MultiTimeframeAnalyzer
 from monitoring.telegram_bot  import TelegramBot
 from risk_circuit_breaker     import RiskCircuitBreaker

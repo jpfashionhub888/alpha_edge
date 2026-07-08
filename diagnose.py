@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Investigate the 4 audit failures."""
 import os, sys
-ROOT = '/root/alpha_edge'
+ROOT = os.path.dirname(os.path.abspath(__file__))
 os.chdir(ROOT)
 sys.path.insert(0, ROOT)
 
 # Activate venv env vars
-os.environ['VIRTUAL_ENV'] = '/root/alpha_edge/venv'
+os.environ['VIRTUAL_ENV'] = os.path.join(ROOT, 'venv')
 
 print("=== .env contents ===")
 env_file = '/root/alpha_edge/.env'

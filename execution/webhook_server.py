@@ -345,8 +345,8 @@ def reset_kill_switch():
             TelegramBot().send_message(
                 f'Trading Resumed\nKill switch reset.\nTime: {datetime.now().isoformat()}'
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f'Kill switch reset notification failed: {e}')
 
         return jsonify({'status': 'running', 'message': 'Kill switch reset'}), 200
     except Exception as e:
@@ -454,21 +454,13 @@ def process_signal(signal):
 
 
 def save_signals():
-    """Save signals to file atomically (temp + rename).
-    Prevents a truncated/corrupted JSON if the process is killed mid-write.
-    """
-    import tempfile
-    target = 'logs/webhook_signals.json'
+    """Save signals to file."""
+
+    import os
     os.makedirs('logs', exist_ok=True)
-    tmp_fd, tmp_path = tempfile.mkstemp(dir='logs', suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            json.dump(received_signals[-100:], f, indent=2)
-        os.replace(tmp_path, target)   # atomic on POSIX + Windows
-    except Exception:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-        raise
+
+    with open('logs/webhook_signals.json', 'w') as f:
+        json.dump(received_signals[-100:], f, indent=2)
 
 
 def start_webhook_server(port=5000):

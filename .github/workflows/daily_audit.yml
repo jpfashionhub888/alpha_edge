@@ -42,7 +42,7 @@ jobs:
             pandas numpy scikit-learn \
             xgboost lightgbm \
             requests python-dotenv \
-            ta yfinance
+            ta yfinance PyYAML
           # groq is optional — audit handles ImportError gracefully
           pip install --quiet groq || true
 

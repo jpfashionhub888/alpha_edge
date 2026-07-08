@@ -1,4 +1,4 @@
-﻿import requests
+import requests
 BOT_TOKEN = "8483995149:AAFt3qPMFXfn1DGbQQiofhnvMG1FOj6dPpc"
 CHAT_ID = "8616636381"
 try:
