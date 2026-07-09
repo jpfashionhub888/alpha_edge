@@ -1,11 +1,45 @@
 {
-  "capital": 10000.0,
+  "capital": 9425.353334655762,
   "starting_capital": 10000.0,
-  "positions": {},
-  "trade_history": [],
+  "positions": {
+    "CRWD": {
+      "shares": 3,
+      "entry_price": 191.21555511474608,
+      "market_price": 191.1199951171875,
+      "entry_date": "2026-07-09T02:58:38.451022",
+      "highest_price": 191.21555511474608,
+      "signal": 0.3852411862489525,
+      "cost": 574.6466653442383,
+      "reason": "uptrend",
+      "stop_loss_pct": 0.08,
+      "atr": 8.992676871163505,
+      "partial_exit_done": false,
+      "entry_ml_score": null,
+      "fill_type": "close",
+      "current_price": 191.1199951171875
+    }
+  },
+  "trade_history": [
+    {
+      "action": "BUY",
+      "symbol": "CRWD",
+      "shares": 3,
+      "price": 191.1199951171875,
+      "fill_price": 191.21555511474608,
+      "fill_type": "close",
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "cost": 574.6466653442383,
+      "date": "2026-07-09T02:58:38.451029",
+      "reason": "uptrend",
+      "atr": 8.992676871163505,
+      "stop_loss_pct": 0.08,
+      "entry_ml_score": null
+    }
+  ],
   "daily_realized_pnl": 0.0,
   "daily_loss_limit": 200.0,
-  "last_reset_date": "2026-07-03",
+  "last_reset_date": "2026-07-09",
   "_halt_trading": false,
-  "saved_at": "2026-07-03T20:00:00.000000"
+  "saved_at": "2026-07-09T02:58:39.685285"
 }
