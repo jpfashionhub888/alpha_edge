@@ -54,81 +54,84 @@ class MarketRegimeDetector:
         self._regime_history: list = []
         self._current_regime: str = "unknown"
 
-        def analyze(self) -> Dict[str, Any]:
-                    """
-                            Backward-compatible analyze method that fetches SPY and VIX data,
-                                    runs the detect logic, and returns a dict compatible with older callers.
-                                            """
-                    import yfinance as yf
-                    print("\n   Analyzing market regime...")
+    def analyze(self) -> Dict[str, Any]:
+        """
+        Backward-compatible analyze method that fetches SPY and VIX data,
+        runs the detect logic, and returns a dict compatible with older callers.
+        """
+        import yfinance as yf
+        print("\n   Analyzing market regime...")
 
-            spy_df = None
-                try:
-                                spy = yf.Ticker("SPY")
-                                spy_df = spy.history(period="1y")
-                                if spy_df.empty:
-                                                    spy_df = None
-                except Exception as e:
-                                logger.warning(f"Error fetching SPY data for analyze: {e}")
-                            vix_df = None
-                try:
-                                vix = yf.Ticker("^VIX")
-                                vix_df = vix.history(period="5d")
-                                if vix_df.empty:
-                                                    vix_df = None
-                except Exception as e:
-                                logger.warning(f"Error fetching VIX data for analyze: {e}")
-                            detect_res = self.detect(spy_df, vix_df)
+        spy_df = None
+        try:
+            spy = yf.Ticker("SPY")
+            spy_df = spy.history(period="1y")
+            if spy_df.empty:
+                spy_df = None
+        except Exception as e:
+            logger.warning(f"Error fetching SPY data for analyze: {e}")
 
-            regime = detect_res["regime"].upper()
-                if regime == "CRISIS":
-                                regime = "CRASH"
-                elif regime == "SIDEWAYS":
-                    regime = "CAUTION"
-                spy_return_1m = 0.0
-                spy_return_3m = 0.0
-                if spy_df is not None and "Close" in spy_df.columns:
-                                close = spy_df["Close"].dropna()
-                                if len(close) >= 21:
-                                                    spy_return_1m = float((close.iloc[-1] - close.iloc[-21]) / close.iloc[-21])
-                                                if len(close) >= 63:
-                                                                    spy_return_3m = float((close.iloc[-1] - close.iloc[-63]) / close.iloc[-63])
+        vix_df = None
+        try:
+            vix = yf.Ticker("^VIX")
+            vix_df = vix.history(period="5d")
+            if vix_df.empty:
+                vix_df = None
+        except Exception as e:
+            logger.warning(f"Error fetching VIX data for analyze: {e}")
 
-            vix_level = detect_res["signals"].get("vix_level", 20.0)
-                rec_map = {
-                                "BULL": "TRADE NORMALLY",
-                                "BEAR": "CASH MODE - No new buys",
-                                "CRASH": "CASH MODE - Extreme fear",
-                                "CAUTION": "REDUCED TRADING - High confidence only",
-                                "UNKNOWN": "REDUCED TRADING - High confidence only"
-                }
-                recommendation = rec_map.get(regime, "REDUCED TRADING - High confidence only")
-                reason_map = {
-                                "BULL": f"Bull market: SPY {spy_return_1m:+.1%}, VIX={vix_level:.1f}",
-                                "BEAR": f"Bear market detected: SPY down {spy_return_1m:.1%} in 1 month, VIX={vix_level:.1f}",
-                                "CRASH": f"Extreme fear: VIX={vix_level:.1f}",
-                                "CAUTION": f"Cautious market: SPY {spy_return_1m:+.1%}, VIX={vix_level:.1f}",
-                                "UNKNOWN": "Insufficient data, cautious mode"
-                }
-                reason = reason_map.get(regime, "Normal market conditions")
-                result = {
-                                "regime": regime,
-                                "can_trade": detect_res["tradeable"],
-                                "spy_return_1m": spy_return_1m,
-                                "spy_return_3m": spy_return_3m,
-                                "vix": vix_level,
-                                "reason": reason,
-                                "recommendation": recommendation,
-                }
-                regime_emoji = {
-                                'BULL'   : 'BULL MARKET',
-                                'CAUTION': 'CAUTION',
-                                'BEAR'   : 'BEAR MARKET',
-                                'CRASH'  : 'MARKET CRASH',
-                }.get(regime, 'UNKNOWN')
+        detect_res = self.detect(spy_df, vix_df)
 
-            print(f"   Market Regime: {regime_emoji}")
-                print(f"   SPY 1-Month:   {spy_return_1m:+.2%}")
+        regime = detect_res["regime"].upper()
+        if regime == "CRISIS":
+            regime = "CRASH"
+        elif regime == "SIDEWAYS":
+            regime = "CAUTION"
+
+        spy_return_1m = 0.0
+        spy_return_3m = 0.0
+        if spy_df is not None and "Close" in spy_df.columns:
+            close = spy_df["Close"].dropna()
+            if len(close) >= 21:
+                spy_return_1m = float((close.iloc[-1] - close.iloc[-21]) / close.iloc[-21])
+            if len(close) >= 63:
+                spy_return_3m = float((close.iloc[-1] - close.iloc[-63]) / close.iloc[-63])
+
+        vix_level = detect_res["signals"].get("vix_level", 20.0)
+        rec_map = {
+            "BULL": "TRADE NORMALLY",
+            "BEAR": "CASH MODE - No new buys",
+            "CRASH": "CASH MODE - Extreme fear",
+            "CAUTION": "REDUCED TRADING - High confidence only",
+            "UNKNOWN": "REDUCED TRADING - High confidence only"
+        }
+        recommendation = rec_map.get(regime, "REDUCED TRADING - High confidence only")
+        reason_map = {
+            "BULL": f"Bull market: SPY {spy_return_1m:+.1%}, VIX={vix_level:.1f}",
+            "BEAR": f"Bear market detected: SPY down {spy_return_1m:.1%} in 1 month, VIX={vix_level:.1f}",
+            "CRASH": f"Extreme fear: VIX={vix_level:.1f}",
+            "CAUTION": f"Cautious market: SPY {spy_return_1m:+.1%}, VIX={vix_level:.1f}",
+            "UNKNOWN": "Insufficient data, cautious mode"
+        }
+        reason = reason_map.get(regime, "Normal market conditions")
+        result = {
+            "regime": regime,
+            "can_trade": detect_res["tradeable"],
+            "spy_return_1m": spy_return_1m,
+            "spy_return_3m": spy_return_3m,
+            "vix": vix_level,
+            "reason": reason,
+            "recommendation": recommendation,
+        }
+        regime_emoji = {
+            'BULL'   : 'BULL MARKET',
+            'CAUTION': 'CAUTION',
+            'BEAR'   : 'BEAR MARKET',
+            'CRASH'  : 'MARKET CRASH',
+        }.get(regime, 'UNKNOWN')
+
+        print(f"   Market Regime: {regime_emoji}")
+        print(f"   SPY 1-Month:   {spy_return_1m:+.2%}")
         print(f"   SPY 3-Month:   {spy_return_3m:+.2%}")
         print(f"   VIX Level:     {vix_level:.1f}")
         print(f"   Can Trade:     {result['can_trade']}")
