@@ -20,12 +20,15 @@ Exit codes:
 from __future__ import annotations
 
 import json
+import logging
 import os
 import subprocess
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────
 SERVICE_NAME       = 'alpaca'                          # systemd service name
@@ -254,8 +257,8 @@ class CrashRecoveryTest:
             if HEARTBEAT_FILE.exists():
                 with open(HEARTBEAT_FILE) as f:
                     return json.load(f).get('last_ping')
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f'_get_heartbeat_ts read failed: {e}')
         return None
 
     def _wait_for_new_heartbeat(self, pre_ts: str | None, timeout: int) -> str | None:
@@ -272,8 +275,8 @@ class CrashRecoveryTest:
             if CONTROL_FILE.exists():
                 with open(CONTROL_FILE) as f:
                     return json.load(f)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f'_get_pause_state read failed: {e}')
         return {}
 
     def _set_pause_state(self, paused: bool, reason: str) -> None:
@@ -296,8 +299,8 @@ class CrashRecoveryTest:
                 with open(PAPER_TRADES_FILE) as f:
                     data = json.load(f)
                 return data.get('positions', {})
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f'_load_positions read failed: {e}')
         return None
 
     def _positions_match(self, pre: dict | None, post: dict | None) -> bool:
@@ -314,8 +317,8 @@ class CrashRecoveryTest:
             broker = AlpacaBroker()
             if broker.connected:
                 return broker.get_positions()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f'Broker position check failed: {e}')
         return None
 
     def _file_updated_after(self, path: Path, since: datetime) -> bool:

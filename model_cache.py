@@ -402,8 +402,8 @@ def load_models(symbol: str, feature_names: Optional[List[str]] = None) -> Optio
                     )
                     _cache._delete(symbol)
                     return None
-            except Exception:
-                pass  # Non-critical: if date parse fails, proceed
+            except Exception as e:
+                logger.debug(f'Cache TTL date parse skipped: {e}')  # Non-critical: if date parse fails, proceed
 
             # Feature hash check (when caller provides current feature list)
             if feature_names:

@@ -143,8 +143,8 @@ class ModelWatchdog:
             try:
                 mtime = RETRAIN_LOG.stat().st_mtime
                 return datetime.fromtimestamp(mtime, tz=timezone.utc)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f'retrain.log mtime read failed: {e}')
 
         # Source 3: newest model cache file
         if CACHE_DIR.exists():

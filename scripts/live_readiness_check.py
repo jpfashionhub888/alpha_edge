@@ -122,8 +122,8 @@ def check_max_drawdown():
             peak = cb.get('peak_value')
             if peak:
                 print(f'{INFO} Using peak from circuit_breaker.json: ${peak:,.0f}')
-        except Exception:
-            pass
+        except Exception as e:
+            print(f'{WARN} Could not read peak_value from circuit_breaker.json: {e}')
         return check('Max drawdown <= 15%', False, str(e))
 
 

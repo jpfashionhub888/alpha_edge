@@ -344,8 +344,8 @@ class CommandListener:
                 cb = json.load(f)
             if cb.get('triggered'):
                 cb_text = f"\n\n🚨 CIRCUIT BREAKER: {cb.get('trigger_reason', 'Unknown')}"
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f'Circuit breaker status read failed: {e}')
 
         # Trade progress toward 50-trade milestone
         trade_text = ''

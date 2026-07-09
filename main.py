@@ -125,8 +125,8 @@ def get_earnings_calendar(watchlist):
                                     'date': str(ed),
                                     'days_until': diff,
                                 })
-        except Exception:
-            pass  # Non-critical; skip silently
+        except Exception as e:
+            logger.debug(f'Earnings date parse skipped: {e}')  # Non-critical; skip silently
 
     if earnings_soon:
         n = len(earnings_soon)
@@ -417,7 +417,8 @@ def run_daily_scan():
                     logger.warning(f"Cache save failed for {symbol}: {e}")
 
             latest     = df.iloc[-1:]
-            pred       = model.predict(latest[selected])[0]
+            _preds     = model.predict(latest[selected])
+            pred       = _preds[0] if len(_preds) > 0 else 0.5
             regime     = latest['regime'].iloc[0]
             price      = latest['close'].iloc[0]
             sector_mult = sector_analyzer.get_sector_signal(symbol)

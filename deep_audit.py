@@ -84,7 +84,10 @@ ANTIPATTERNS = [
         'Replace with: except Exception as e: logger.warning(...)',
     ),
     (
-        r'starting_capital\s*=\s*(?:balance|capital|current_value|portfolio)',
+        # Excludes `.get(...)` / `[...]` follow-on (e.g. `portfolio.get('starting_capital', 0)`)
+        # since that's reading a persisted value back out of a dict/state object —
+        # exactly the correct pattern — not assigning a live current-balance number.
+        r'starting_capital\s*=\s*(?:balance|capital|current_value|portfolio)\w*(?!\s*[.\[])',
         'P0', 'risk-control',
         'starting_capital derived from current balance — total-loss check dead',
         'Passing current value as starting capital makes (current-start)/start = 0.0 always.',

@@ -112,8 +112,8 @@ class TradeTracker:
                 et  = datetime.fromisoformat(entry_time.replace('Z', '+00:00'))
                 ext = datetime.fromisoformat((exit_time or now).replace('Z', '+00:00'))
                 hold_days = max(0, (ext - et).days)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f'Hold-days calc skipped: {e}')
 
         trade = {
             'id'          : len(self._data['trades']) + 1,
@@ -262,7 +262,7 @@ def get_trade_stats() -> dict:
             with open(TRADES_FILE) as f:
                 data = json.load(f)
             return data.get('summary', {})
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f'Trade summary read failed: {e}')
     return {'total': 0, 'wins': 0, 'losses': 0, 'win_rate': 0,
             'total_pnl': 0, 'profit_factor': None}

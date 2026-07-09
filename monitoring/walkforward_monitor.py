@@ -252,6 +252,6 @@ if __name__ == '__main__':
     try:
         from monitoring.telegram_bot import TelegramBot
         telegram = TelegramBot()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f'Telegram init failed, notifications disabled: {e}')
     print(run_walkforward_report(telegram=telegram))
