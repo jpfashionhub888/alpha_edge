@@ -7,7 +7,7 @@
       "entry_price": 191.21555511474608,
       "market_price": 191.1199951171875,
       "entry_date": "2026-07-09T02:58:38.451022",
-      "highest_price": 197.27499389648438,
+      "highest_price": 198.39999389648438,
       "signal": 0.3852411862489525,
       "cost": 574.6466653442383,
       "reason": "uptrend",
@@ -16,14 +16,14 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 197.27499389648438
+      "current_price": 198.39999389648438
     },
     "SNOW": {
       "shares": 2,
       "entry_price": 265.73280610656735,
       "market_price": 265.6000061035156,
       "entry_date": "2026-07-09T18:25:57.751739",
-      "highest_price": 265.73280610656735,
+      "highest_price": 267.489990234375,
       "signal": 0.39131806301677974,
       "cost": 532.4656122131347,
       "reason": "uptrend",
@@ -32,14 +32,14 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 265.6000061035156
+      "current_price": 267.489990234375
     },
     "AMD": {
       "shares": 1,
       "entry_price": 546.7032076721191,
       "market_price": 546.4299926757812,
       "entry_date": "2026-07-09T18:25:59.013875",
-      "highest_price": 546.7032076721191,
+      "highest_price": 546.719970703125,
       "signal": 0.3879025147262494,
       "cost": 547.7032076721191,
       "reason": "uptrend",
@@ -48,7 +48,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 546.4299926757812
+      "current_price": 546.719970703125
     }
   },
   "trade_history": [
@@ -105,5 +105,5 @@
   "daily_loss_limit": 200.0,
   "last_reset_date": "2026-07-09",
   "_halt_trading": false,
-  "saved_at": "2026-07-09T18:25:59.616809"
+  "saved_at": "2026-07-09T21:52:55.769175"
 }
