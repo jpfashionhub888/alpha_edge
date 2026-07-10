@@ -27,7 +27,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 TRADES_FILE    = Path('logs/closed_trades.json')
-SIGNALS_FILE   = Path('logs/latest_signals.json')
+AUC_FILE       = Path('logs/model_auc.json')
 DRIFT_FILE     = Path('logs/feature_drift_baseline.json')
 
 # Thresholds
@@ -99,13 +99,13 @@ def _check_model_auc() -> tuple[str, bool]:
     Returns (message, is_critical).
     """
     try:
-        with open(SIGNALS_FILE) as f:
+        with open(AUC_FILE) as f:
             signals = json.load(f)
         recent_auc  = signals.get('model_auc')
         training_auc = signals.get('training_auc')
 
         if recent_auc is None or training_auc is None:
-            return '[INFO] No AUC data in signals file — add auc logging to scanner', False
+            return '[INFO] No AUC data yet — accumulates after models are retrained', False
 
         drop = training_auc - recent_auc
         if drop >= AUC_CRIT_DROP:

@@ -117,6 +117,7 @@ class MarketRegimeDetector:
         result = {
             "regime": regime,
             "can_trade": detect_res["tradeable"],
+            "confidence": detect_res.get("confidence", 1.0),
             "spy_return_1m": spy_return_1m,
             "spy_return_3m": spy_return_3m,
             "vix": vix_level,

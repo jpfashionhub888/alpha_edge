@@ -28,6 +28,7 @@ from datetime import datetime, time as dtime
 import pytz
 
 from risk_circuit_breaker import RiskCircuitBreaker
+from risk.position_sizer import PositionSizer, get_trade_stats_for_sizing
 
 warnings.filterwarnings('ignore')
 os.environ['PYTHONWARNINGS'] = 'ignore'
@@ -290,7 +291,10 @@ class AlpacaLiveTrader:
         # ── Watchlist + earnings ──────────────────────────────────
         watchlist        = get_full_watchlist()
         earnings_soon    = get_earnings_calendar(watchlist)
-        earnings_symbols = [e['symbol'] for e in earnings_soon]
+        # Blackout window: block new BUYs only within 3 days of earnings.
+        # earnings_soon itself stays a 7-day window for informational
+        # display — only the actual blocking list is tightened.
+        earnings_symbols = [e['symbol'] for e in earnings_soon if e.get('days_until', 99) <= 3]
 
         sector_analyzer = SectorRotation()
         sector_scores   = sector_analyzer.analyze()
@@ -401,6 +405,7 @@ class AlpacaLiveTrader:
         # ── Signal evaluation + Alpaca execution ──────────────────
         print(f'\n  Evaluating signals...\n')
         buy_count = 0
+        trade_stats = get_trade_stats_for_sizing()
 
         for symbol, data in sorted(
             stock_signals.items(),
@@ -496,10 +501,26 @@ class AlpacaLiveTrader:
             # ── ALL PASSED — execute on Alpaca ────────────────────
             account     = self.broker.get_account()
             portfolio   = account.get('portfolio_value', 10000) if account else 10000
-            dollar_risk = portfolio * RISK_PER_TRADE_PCT
             stop_price  = price - (atr * 1.0) if atr else price * 0.97
             target_price = price + (atr * 2.5) if atr else price * 1.06
-            dollar_amount = min(dollar_risk * (price / abs(price - stop_price)), portfolio * 0.15)
+
+            sizer = PositionSizer(portfolio_value=portfolio, base_risk_pct=RISK_PER_TRADE_PCT)
+            dollar_amount = sizer.calculate(
+                symbol         = symbol,
+                price          = price,
+                atr            = atr if atr else price * 0.03,
+                signal_score   = combined,
+                win_rate       = trade_stats['win_rate'],
+                avg_win        = trade_stats['avg_win'],
+                avg_loss       = trade_stats['avg_loss'],
+                regime_conf    = market_regime.get('confidence', 1.0),
+                open_positions = current_positions,
+                n_trades       = trade_stats['n_trades'],
+            )
+
+            if dollar_amount <= 0:
+                print(f'  {symbol}: SKIP — position sizer returned $0 (below minimum size)')
+                continue
 
             print(
                 f'  ✅ {symbol} BUY | score={combined:.2f} | vol={vol_ratio:.1f}x'

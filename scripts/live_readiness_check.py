@@ -194,18 +194,18 @@ def check_audit():
 def check_model_auc():
     print('\n-- 8. Model AUC (Walk-Forward) -----------------------------')
     try:
-        with open('logs/latest_signals.json') as f:
+        with open('logs/model_auc.json') as f:
             signals = json.load(f)
         auc = signals.get('model_auc')
         if auc is None:
-            print(f'{INFO} model_auc not yet logged in signals — skipping')
+            print(f'{INFO} model_auc not yet logged — skipping')
             results.append({'name': 'Model AUC >= 0.55', 'ok': True,
-                            'detail': 'Not measured yet — add AUC to scanner logs',
+                            'detail': 'Not measured yet — accumulates after models retrain',
                             'critical': False})
             return True
         return check('Model AUC >= 0.55', auc >= 0.55, f'{auc:.3f} (need >= 0.55)')
     except FileNotFoundError:
-        print(f'{INFO} latest_signals.json not found — AUC check skipped')
+        print(f'{INFO} logs/model_auc.json not found — AUC check skipped')
         return True
     except Exception as e:
         return check('Model AUC >= 0.55', False, str(e))

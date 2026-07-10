@@ -73,6 +73,7 @@ jobs:
           git add -f logs/latest_signals.json || true
           git add -f logs/sectors.json || true
           git add -f logs/earnings.json || true
+          git add -f logs/model_auc.json || true
           git add -f docs/index.html || true
           git add -f model_cache/ || true
           git diff --staged --quiet || git commit -m "Auto: Trading state + dashboard update $(date -u '+%Y-%m-%d %H:%M UTC')"
@@ -120,20 +121,3 @@ jobs:
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d "chat_id=${TELEGRAM_CHAT_ID}" \
             -d "text=🚨 AlphaEdge Daily Scan FAILED%0ARun: #${{ github.run_number }}%0ACommit: ${{ github.sha }}%0ACheck: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true
-
-      - name: Walk-Forward Sunday Report
-        if: success()
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          # Only run on Sundays (day of week = 0 in Python/date)
-          python -c "
-          from datetime import datetime
-          import subprocess, sys
-          if datetime.utcnow().weekday() == 6:  # Sunday
-              print('Sunday — running walk-forward validation...')
-              subprocess.run([sys.executable, '-m', 'monitoring.walkforward_monitor'], check=False)
-          else:
-              print('Not Sunday — skipping walk-forward report')
-          " || true

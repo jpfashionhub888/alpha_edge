@@ -1,0 +1,95 @@
+name: AlphaEdge Weekly Maintenance
+
+# Runs Sunday only. This is intentionally a SEPARATE workflow from
+# daily_scan.yml — that job's schedule is weekday-only (markets are
+# closed Sunday), so a day-of-week check inside it could never fire.
+# A previous attempt did exactly that (a Python weekday()==6 check
+# inside the weekday-only daily scan job) and silently never ran.
+
+on:
+  schedule:
+    - cron: '0 14 * * 0'   # Sunday 14:00 UTC
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  weekly_maintenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install yfinance pandas numpy scikit-learn
+          pip install xgboost lightgbm catboost
+          pip install ccxt requests beautifulsoup4 ta
+          pip install plotly dash python-dotenv schedule
+          pip install transformers feedparser flask
+          pip install alpaca-trade-api groq
+
+      - name: Walk-forward validation report
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python -m monitoring.walkforward_monitor
+
+      - name: API key rotation check
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python scripts/check_key_age.py
+
+      - name: Save maintenance state
+        if: always()
+        run: |
+          git config --global user.email "alphaedge-bot@github.com"
+          git config --global user.name "AlphaEdge Bot"
+          mkdir -p logs
+          git add -f logs/key_ages.json || true
+          git add -f logs/feature_drift_baseline.json || true
+          git diff --staged --quiet || git commit -m "Auto: Weekly maintenance state update $(date -u '+%Y-%m-%d %H:%M UTC')"
+
+          push_ok=false
+          for attempt in 1 2 3; do
+            if git push origin main; then
+              push_ok=true
+              break
+            fi
+            echo "Push attempt $attempt failed — pulling and retrying..."
+            git pull --no-edit --strategy-option=ours origin main || true
+            sleep 5
+          done
+
+          if [ "$push_ok" != "true" ]; then
+            echo "::error::Failed to push weekly maintenance state after 3 attempts"
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "text=🚨 AlphaEdge Weekly Maintenance FAILED%0ARun: #${{ github.run_number }}%0ACheck: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true

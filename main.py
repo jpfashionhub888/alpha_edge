@@ -245,7 +245,10 @@ def run_daily_scan():
     print("="*60)
 
     earnings_soon    = get_earnings_calendar(stock_watchlist)
-    earnings_symbols = [e['symbol'] for e in earnings_soon]
+    # Blackout window: block new BUYs only within 3 days of earnings.
+    # earnings_soon itself stays a 7-day window for informational
+    # display/logging — only the actual blocking list is tightened.
+    earnings_symbols = [e['symbol'] for e in earnings_soon if e.get('days_until', 99) <= 3]
 
     sector_analyzer = SectorRotation()
     sector_scores   = sector_analyzer.analyze()
@@ -424,12 +427,24 @@ def run_daily_scan():
             sector_mult = sector_analyzer.get_sector_signal(symbol)
             sector     = sector_analyzer.get_sector_for_stock(symbol)
 
+            # AUC only meaningful when freshly trained this scan — a
+            # cache-hit model never calls .train(), so train_auc/val_auc
+            # would just be the class defaults (0.5), not real measurements.
+            freshly_trained = not (cached and cached.get('feature_hash') == feat_hash)
+            model_auc_info = None
+            if freshly_trained:
+                model_auc_info = {
+                    'train_auc': float(getattr(model, 'train_auc', 0.5)),
+                    'val_auc':   float(getattr(model, 'val_auc', 0.5)),
+                }
+
             stock_signals[symbol] = {
                 'prediction'       : pred,
                 'regime'           : regime,
                 'price'            : price,
                 'sector'           : sector,
                 'sector_multiplier': sector_mult,
+                'model_auc_info'   : model_auc_info,
             }
 
         except Exception as e:
@@ -654,6 +669,22 @@ def run_daily_scan():
     # ======================================================================
     atomic_json_write('logs/latest_signals.json', dashboard_signals)
     atomic_json_write('logs/earnings.json', earnings_soon)
+
+    # AUC tracking for walk-forward monitor / live-readiness check.
+    # Kept as its own file rather than added to latest_signals.json,
+    # since several consumers of that file iterate its top-level keys
+    # assuming every one is a stock symbol.
+    _auc_samples = [
+        v['model_auc_info'] for v in stock_signals.values()
+        if v.get('model_auc_info')
+    ]
+    if _auc_samples:
+        atomic_json_write('logs/model_auc.json', {
+            'training_auc': sum(s['train_auc'] for s in _auc_samples) / len(_auc_samples),
+            'model_auc'   : sum(s['val_auc']   for s in _auc_samples) / len(_auc_samples),
+            'n_symbols_retrained': len(_auc_samples),
+            'updated': datetime.now().isoformat(),
+        })
     atomic_json_write('logs/sectors.json', {
         sector: {
             'score'       : float(d['score']),

@@ -409,7 +409,10 @@ class StockScanner:
         else:
             print("  ✅ No earnings this week")
 
-        self.earnings_symbols = [e['symbol'] for e in earnings_soon]
+        # Blackout window: block new BUYs only within 3 days of earnings.
+        # earnings_soon itself stays a 7-day window for informational
+        # display above — only the actual blocking list is tightened.
+        self.earnings_symbols = [e['symbol'] for e in earnings_soon if e['days_until'] <= 3]
         return earnings_soon
 
     # ---------------------------------------------------------------- #
@@ -739,12 +742,26 @@ class StockScanner:
         sector_mult = self.sector_analyzer.get_sector_signal(symbol)
         sector      = self.sector_analyzer.get_sector_for_stock(symbol)
 
+        # AUC is only meaningful when the model was freshly trained this
+        # scan — a cache-hit model never calls .train() so its train_auc/
+        # val_auc are just the class defaults (0.5), not real measurements.
+        # Reporting those as if they were live AUC would be misleading, so
+        # only surface them on an actual retrain.
+        freshly_trained = not (cached and cached.get('feature_hash') == feat_hash)
+        model_auc_info = None
+        if freshly_trained:
+            model_auc_info = {
+                'train_auc': float(getattr(model, 'train_auc', 0.5)),
+                'val_auc':   float(getattr(model, 'val_auc', 0.5)),
+            }
+
         return {
             'prediction'       : float(pred),
             'regime'           : regime,
             'price'            : float(price),
             'sector'           : sector,
             'sector_multiplier': float(sector_mult),
+            'model_auc_info'   : model_auc_info,
         }
 
     # ---------------------------------------------------------------- #
@@ -968,6 +985,7 @@ class StockScanner:
             'meta_confidence'  : float(meta_confidence),
             'veto_result'      : veto_result,
             'action'           : action,
+            'model_auc_info'   : raw_result.get('model_auc_info'),
         }
 
     # ---------------------------------------------------------------- #
