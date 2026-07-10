@@ -110,7 +110,8 @@ class InsiderTracker:
                                 'accession': accessions[i],
                                 'symbol'   : symbol,
                             })
-                    except Exception:
+                    except Exception as e:
+                        logger.debug(f'Skipped filing record (parse failed): {e}')
                         continue
 
             return trades

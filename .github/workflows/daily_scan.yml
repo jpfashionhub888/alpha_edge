@@ -76,7 +76,29 @@ jobs:
           git add -f docs/index.html || true
           git add -f model_cache/ || true
           git diff --staged --quiet || git commit -m "Auto: Trading state + dashboard update $(date -u '+%Y-%m-%d %H:%M UTC')"
-          git push origin main || true
+
+          # Push with retry: if the remote has moved on since checkout (the
+          # same "fetch first" rejection seen repeatedly on manual pushes),
+          # pull and retry instead of silently giving up. Previously this
+          # was `git push origin main || true` — any failure, for any
+          # reason, was swallowed with no retry and no visible failure,
+          # meaning trading state from that run could silently never reach
+          # GitHub while Telegram had already reported it as done.
+          push_ok=false
+          for attempt in 1 2 3; do
+            if git push origin main; then
+              push_ok=true
+              break
+            fi
+            echo "Push attempt $attempt failed — pulling and retrying..."
+            git pull --no-edit --strategy-option=ours origin main || true
+            sleep 5
+          done
+
+          if [ "$push_ok" != "true" ]; then
+            echo "::error::Failed to push trading state after 3 attempts — state from this run may not be reflected on GitHub"
+            exit 1
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

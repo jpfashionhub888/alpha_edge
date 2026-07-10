@@ -46,6 +46,8 @@ from models.technical_model import TechnicalPredictor
 from multi_timeframe import MultiTimeframeAnalyzer
 from veto_agent import VetoAgent
 
+logger = logging.getLogger(__name__)
+
 # ── Meta-Labeler (Phase B) ────────────────────────────────────────────
 try:
     from models.meta_labeler import MetaLabeler
@@ -54,7 +56,6 @@ except ImportError:
     _META_LABELER_AVAILABLE = False
     logger.warning('MetaLabeler not available — BUY signals unfiltered')
 
-logger = logging.getLogger(__name__)
 
 # ── Strategy settings loader (reads from config/settings.yaml) ───────
 # HyperOpt writes best params here; scanner picks them up automatically.

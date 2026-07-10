@@ -33,7 +33,8 @@ def rotate():
             if file_date < cutoff:
                 log_file.unlink()
                 print(f"Deleted old log: {log_file.name}")
-        except Exception:
+        except Exception as e:
+            print(f"WARNING: could not process {log_file.name}: {e}")
             continue
 
     print(f"Log rotation complete: {datetime.now()}")

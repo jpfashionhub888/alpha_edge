@@ -193,8 +193,6 @@ class TestKellySizing:
 
     def test_kelly_never_exceeds_max_position_pct(self, paper_trader):
         """Kelly fraction × multiplier is always capped at max_position_pct."""
-        from unittest.mock import patch
-
         paper_trader.kelly_position_sizing = True
         paper_trader.kelly_multiplier      = 1.0   # full Kelly
         paper_trader.kelly_reward_risk_ratio = 2.5
