@@ -16,14 +16,14 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 262.6400146484375
+      "current_price": 261.45001220703125
     },
     "AMD": {
       "shares": 1,
       "entry_price": 546.7032076721191,
       "market_price": 546.4299926757812,
       "entry_date": "2026-07-09T18:25:59.013875",
-      "highest_price": 556.7999877929688,
+      "highest_price": 557.8900146484375,
       "signal": 0.3879025147262494,
       "cost": 547.7032076721191,
       "reason": "uptrend",
@@ -32,7 +32,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 556.7999877929688
+      "current_price": 557.8900146484375
     },
     "CRWD": {
       "shares": 1,
@@ -48,7 +48,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 187.4499969482422
+      "current_price": 187.17999267578125
     }
   },
   "trade_history": [
@@ -135,5 +135,5 @@
   "daily_loss_limit": 200.0,
   "last_reset_date": "2026-07-10",
   "_halt_trading": false,
-  "saved_at": "2026-07-10T18:15:06.962210"
+  "saved_at": "2026-07-10T21:35:37.325493"
 }
