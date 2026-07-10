@@ -1,5 +1,5 @@
 {
-  "capital": 8907.856377714486,
+  "capital": 8719.31265576777,
   "starting_capital": 10000.0,
   "positions": {
     "SNOW": {
@@ -16,14 +16,14 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 259.57501220703125
+      "current_price": 262.6400146484375
     },
     "AMD": {
       "shares": 1,
       "entry_price": 546.7032076721191,
       "market_price": 546.4299926757812,
       "entry_date": "2026-07-09T18:25:59.013875",
-      "highest_price": 551.8909912109375,
+      "highest_price": 556.7999877929688,
       "signal": 0.3879025147262494,
       "cost": 547.7032076721191,
       "reason": "uptrend",
@@ -32,7 +32,23 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 551.8909912109375
+      "current_price": 556.7999877929688
+    },
+    "CRWD": {
+      "shares": 1,
+      "entry_price": 187.5437219467163,
+      "market_price": 187.4499969482422,
+      "entry_date": "2026-07-10T18:15:05.240692",
+      "highest_price": 187.5437219467163,
+      "signal": 0.4964156474490167,
+      "cost": 188.5437219467163,
+      "reason": "uptrend",
+      "stop_loss_pct": 0.08,
+      "atr": 9.690891810825892,
+      "partial_exit_done": false,
+      "entry_ml_score": null,
+      "fill_type": "close",
+      "current_price": 187.4499969482422
     }
   },
   "trade_history": [
@@ -97,11 +113,27 @@
       "pnl_pct": -0.017360222720042666,
       "date": "2026-07-10T16:13:04.185041",
       "reason": "trailing_stop"
+    },
+    {
+      "action": "BUY",
+      "symbol": "CRWD",
+      "shares": 1,
+      "price": 187.4499969482422,
+      "fill_price": 187.5437219467163,
+      "fill_type": "close",
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "cost": 188.5437219467163,
+      "date": "2026-07-10T18:15:05.240701",
+      "reason": "uptrend",
+      "atr": 9.690891810825892,
+      "stop_loss_pct": 0.08,
+      "entry_ml_score": null
     }
   ],
   "daily_realized_pnl": -11.974802400260614,
   "daily_loss_limit": 200.0,
   "last_reset_date": "2026-07-10",
   "_halt_trading": false,
-  "saved_at": "2026-07-10T16:13:04.706525"
+  "saved_at": "2026-07-10T18:15:06.962210"
 }
