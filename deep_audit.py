@@ -496,7 +496,6 @@ def run_data_integrity():
     # Trade files schema
     TRADE_FILES = [
         ('paper_trades_stocks_only.json', 10_000),
-        ('paper_trades.json', 10_000),
     ]
     for fname, expected_start in TRADE_FILES:
         fpath = LOGS / fname

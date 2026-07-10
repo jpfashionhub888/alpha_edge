@@ -55,7 +55,7 @@ except Exception as e:
     mtf_weight = 0.15
     watchlist_len = 41
 
-TRADES_FILE   = 'logs/paper_trades.json'
+TRADES_FILE   = 'logs/paper_trades_stocks_only.json'
 SIGNALS_FILE  = 'logs/latest_signals.json'
 SECTORS_FILE  = 'logs/sectors.json'
 EARNINGS_FILE = 'logs/earnings.json'

@@ -206,7 +206,7 @@ class PerformanceAnalytics:
         now = datetime.now().strftime('%Y-%m-%d %H:%M')
 
         # AlphaEdge (always present)
-        alpha_portfolio = self.load_portfolio('logs/paper_trades.json')
+        alpha_portfolio = self.load_portfolio('logs/paper_trades_stocks_only.json')
         alpha_positions = alpha_portfolio.get('positions', {})
         alpha_value     = alpha_portfolio.get('capital', 10000)
         alpha_metrics   = self.calculate_metrics(

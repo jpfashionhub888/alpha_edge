@@ -282,7 +282,6 @@ def check_kpi_consistency():
     from KPI calculations (the == 'SELL' filter bug).
     A green audit should never coexist with this gap."""
     trade_files = [
-        'logs/paper_trades.json',
         'logs/paper_trades_stocks_only.json',
     ]
     issues = []

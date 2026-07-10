@@ -4,7 +4,7 @@
 import json
 import os
 
-TRADES_FILE = 'logs/paper_trades.json'
+TRADES_FILE = 'logs/paper_trades_stocks_only.json'
 
 def analyze():
     if not os.path.exists(TRADES_FILE):
