@@ -591,7 +591,10 @@ def run_daily_scan():
                 logger.warning(f"ATR error for {symbol}: {e} — using price*0.02 fallback")
                 atr = price * 0.02  # 2% of price as a safe fallback
 
-            opened = trader.open_position(symbol, price, combined, reason=regime, atr=atr)
+            opened = trader.open_position(
+                symbol, price, combined, reason=regime, atr=atr,
+                regime_conf=market_regime.get('confidence', 1.0),
+            )
             if opened:
                 telegram.alert_buy_signal(symbol, price, pred, regime, sent_score)
 

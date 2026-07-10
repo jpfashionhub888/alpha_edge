@@ -8,6 +8,7 @@ import os
 import tempfile
 import logging
 from config import settings
+from risk.position_sizer import PositionSizer, get_trade_stats_for_sizing
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +157,7 @@ class PaperTrader:
     #  POSITION SIZING                                                     #
     # ------------------------------------------------------------------ #
 
-    def get_position_size(self, price, signal_strength=1.0, atr=None):
+    def get_position_size(self, price, signal_strength=1.0, atr=None, symbol=None, regime_conf=1.0):
         """
         Position sizing using optional Kelly Criterion.
 
@@ -177,20 +178,55 @@ class PaperTrader:
             scaled by discrete signal-strength tier.
         """
         if getattr(self, 'kelly_position_sizing', False):
-            p = float(signal_strength)
-            b = getattr(self, 'kelly_reward_risk_ratio', 2.5)
-            if p > 0.0:
-                kelly_f = (p * (b + 1.0) - 1.0) / b
-                kelly_f = max(0.0, kelly_f)
+            trade_stats = get_trade_stats_for_sizing()
+            sizer = PositionSizer(
+                portfolio_value=self.capital,
+                base_risk_pct=self.risk_per_trade_pct,
+            )
+            dollar_allocation = sizer.calculate(
+                symbol         = symbol or 'UNKNOWN',
+                price          = price,
+                atr            = atr if atr else price * 0.03,
+                signal_score   = float(signal_strength),
+                win_rate       = trade_stats['win_rate'],
+                avg_win        = trade_stats['avg_win'],
+                avg_loss       = trade_stats['avg_loss'],
+                regime_conf    = regime_conf,
+                open_positions = self.positions,
+                n_trades       = trade_stats['n_trades'],
+            )
+            if price > 0 and dollar_allocation > 0:
+                shares = int(dollar_allocation / price)
+                if shares == 0:
+                    # PositionSizer already judged this trade worth taking
+                    # (it cleared MIN_POSITION_USD internally) — truncating
+                    # to 0 whole shares here would silently discard that
+                    # decision. Round up to 1 share, but only if 1 share
+                    # doesn't itself blow through the max-concentration cap
+                    # — for a stock priced high enough relative to this
+                    # account that even 1 share exceeds that limit, the
+                    # honest answer is this account can't size this trade
+                    # at all yet, not to force an oversized position.
+                    one_share_cost = price
+                    if one_share_cost <= self.capital * self.max_position_pct:
+                        shares = 1
+                        logger.info(
+                            f"PositionSizer [{symbol}]: ${dollar_allocation:.0f} "
+                            f"rounds to 0 shares at ${price:.2f} — using 1 share floor"
+                        )
+                    else:
+                        logger.info(
+                            f"PositionSizer [{symbol}]: ${dollar_allocation:.0f} "
+                            f"rounds to 0 shares at ${price:.2f}, and even 1 share "
+                            f"(${one_share_cost:.0f}) exceeds max_position_pct "
+                            f"({self.max_position_pct:.0%}) — skipping, not forcing"
+                        )
             else:
-                kelly_f = 0.0
-            allocation_fraction = kelly_f * getattr(self, 'kelly_multiplier', 0.5)
-            allocation_fraction = min(allocation_fraction, self.max_position_pct)
-            dollar_allocation = self.capital * allocation_fraction
-            shares = int(dollar_allocation / price)
+                shares = 0
             logger.info(
-                f"Kelly sizing: p={p:.3f} | b={b:.1f} | f*={kelly_f:.3f} | "
-                f"alloc_pct={allocation_fraction:.1%} | shares={shares}"
+                f"PositionSizer (via PaperTrader): symbol={symbol} "
+                f"alloc=${dollar_allocation:.0f} shares={shares} "
+                f"n_trades={trade_stats['n_trades']}"
             )
             return max(shares, 0)
 
@@ -223,7 +259,7 @@ class PaperTrader:
 
     def open_position(self, symbol, price, signal,
                       reason='signal', atr=None, ml_score=None,
-                      next_open_price=None):
+                      next_open_price=None, regime_conf=1.0):
         """
         Open a new long position.
 
@@ -267,7 +303,7 @@ class PaperTrader:
             return False
 
         # FIX Bug 1 & 2: pass atr into get_position_size
-        shares = self.get_position_size(price, signal, atr=atr)
+        shares = self.get_position_size(price, signal, atr=atr, symbol=symbol, regime_conf=regime_conf)
 
         # Guard 4: zero shares
         if shares == 0:
