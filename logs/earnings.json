@@ -2,36 +2,36 @@
   {
     "symbol": "NFLX",
     "date": "2026-07-16",
-    "days_until": 7
+    "days_until": 6
   },
   {
     "symbol": "JPM",
     "date": "2026-07-14",
-    "days_until": 5
+    "days_until": 4
   },
   {
     "symbol": "GS",
     "date": "2026-07-14",
-    "days_until": 5
+    "days_until": 4
   },
   {
     "symbol": "BAC",
     "date": "2026-07-14",
-    "days_until": 5
+    "days_until": 4
   },
   {
     "symbol": "MS",
     "date": "2026-07-15",
-    "days_until": 6
+    "days_until": 5
   },
   {
     "symbol": "JNJ",
     "date": "2026-07-15",
-    "days_until": 6
+    "days_until": 5
   },
   {
     "symbol": "UNH",
     "date": "2026-07-16",
-    "days_until": 7
+    "days_until": 6
   }
 ]
