@@ -228,10 +228,12 @@ class AlpacaLiveTrader:
             from main import (
                 get_full_watchlist,
                 compute_signal,
-                check_volume_confirmation,
-                check_risk_reward,
                 calc_atr,
                 get_earnings_calendar,
+            )
+            from scanner import (
+                check_volume_confirmation,
+                check_risk_reward,
             )
             from model_cache import load_models, save_models
             from sklearn.feature_selection import SelectKBest, mutual_info_classif
