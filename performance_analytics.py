@@ -160,7 +160,7 @@ class PerformanceAnalytics:
             'unrealized_pnl' : unrealized_pnl,
             'avg_win'        : 0,
             'avg_loss'       : 0,
-            'profit_factor'  : 0,
+            'profit_factor'  : 'N/A',
             'sharpe_ratio'   : 0,
             'max_drawdown'   : 0,
             'best_trade'     : None,
@@ -248,7 +248,7 @@ Period: Last {days_back} days | Date: {now}
   Unrealized:    ${m['unrealized_pnl']:+,.2f}
   Trades:        {m['total_trades']} | Win Rate: {m['win_rate']:.1f}%
   Avg Win:       ${m['avg_win']:.2f} | Avg Loss: ${m['avg_loss']:.2f}
-  Profit Factor: {m['profit_factor']:.2f}
+  Profit Factor: {m['profit_factor'] if isinstance(m['profit_factor'], str) else f"{m['profit_factor']:.2f}"}
   Sharpe Ratio:  {m['sharpe_ratio']:.2f}
   Max Drawdown:  {m['max_drawdown']:.2%}
   Best Trade:    {fmt_trade(m['best_trade'])}

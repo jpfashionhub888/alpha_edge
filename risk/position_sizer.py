@@ -191,29 +191,38 @@ class PositionSizer:
         )
         return size
 
+    # ATR-to-percentile conversion: ATR approximates ~1.25σ for roughly
+    # normal returns. A true one-tailed 95th-percentile move is 1.645σ.
+    # Previously this class used raw ATR directly as if it WERE the
+    # 95th-percentile move — under-scaling the risk measure and allowing
+    # larger positions than a genuine 95% VaR cap should.
+    ATR_TO_SIGMA        = 1.25
+    Z_SCORE_95PCT       = 1.645
+
     def _var_size(self, portfolio_value: float, price: float, atr: float) -> float:
         """
         Value-at-Risk cap: position size such that 1-day 95th-pct loss
         does not exceed VAR_DAILY_LIMIT × portfolio.
 
-        We use ATR as a proxy for 1-day 95th-percentile move
-        (ATR ≈ 1.25σ for roughly normally distributed returns).
+        ATR approximates ~1.25σ for roughly normally distributed returns;
+        scaled up to the true 95th-percentile (1.645σ) move before use.
 
-        max_loss_usd = portfolio_value * VAR_DAILY_LIMIT
-        atr_pct      = atr / price
-        units        = max_loss_usd / (price * atr_pct)
-        dollar_size  = units * price = max_loss_usd / atr_pct
+        max_loss_usd  = portfolio_value * VAR_DAILY_LIMIT
+        atr_pct       = atr / price
+        pct_95        = atr_pct * (Z_SCORE_95PCT / ATR_TO_SIGMA)
+        dollar_size   = max_loss_usd / pct_95
         """
         if price <= 0 or atr <= 0:
             return portfolio_value * MAX_POSITION_PCT
 
         atr_pct    = atr / price
+        pct_95     = atr_pct * (self.Z_SCORE_95PCT / self.ATR_TO_SIGMA)
         max_loss   = portfolio_value * VAR_DAILY_LIMIT
-        var_size   = max_loss / atr_pct
+        var_size   = max_loss / pct_95
 
         logger.debug(
-            'VaR: atr_pct=%.3f max_loss=$%.0f → $%.0f',
-            atr_pct, max_loss, var_size
+            'VaR: atr_pct=%.3f pct_95=%.3f max_loss=$%.0f → $%.0f',
+            atr_pct, pct_95, max_loss, var_size
         )
         return var_size
 
