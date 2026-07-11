@@ -9,6 +9,7 @@ import tempfile
 import logging
 from config import settings
 from risk.position_sizer import PositionSizer, get_trade_stats_for_sizing
+from monitoring.trade_tracker import TradeTracker
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,13 @@ class PaperTrader:
         self.kelly_position_sizing = settings.KELLY_POSITION_SIZING
         self.kelly_multiplier      = settings.KELLY_MULTIPLIER
         self.kelly_reward_risk_ratio = settings.KELLY_REWARD_RISK_RATIO
+
+        # Records every closed trade to logs/closed_trades.json — this is
+        # what get_trade_stats_for_sizing() reads to graduate Kelly sizing
+        # from the conservative fallback to real historical win-rate/
+        # avg-win/avg-loss once 10+ trades exist. Without this, n_trades
+        # stays at 0 forever regardless of how many trades actually close.
+        self.trade_tracker = TradeTracker()
 
         self.positions            = {}
         self.trade_history        = []
@@ -463,6 +471,19 @@ class PaperTrader:
         }
         self.trade_history.append(trade)
 
+        try:
+            self.trade_tracker.record(
+                symbol      = symbol,
+                entry_price = entry,
+                exit_price  = fill_price,
+                shares      = shares,
+                reason      = reason,
+                entry_time  = pos.get('entry_date'),
+                exit_time   = trade['date'],
+            )
+        except Exception as e:
+            logger.warning(f'TradeTracker.record failed for {symbol}: {e}')
+
         emoji = "🟢" if pnl > 0 else "🔴"
         print(
             f"   {emoji} SELL {shares:>5} {symbol:<6}"
@@ -570,6 +591,18 @@ class PaperTrader:
                     'date'        : datetime.now().isoformat(),
                     'reason'      : 'partial_exit_5pct',
                 })
+
+                try:
+                    self.trade_tracker.record(
+                        symbol      = symbol,
+                        entry_price = entry,
+                        exit_price  = partial_fill,
+                        shares      = shares_to_sell,
+                        reason      = 'partial_exit_5pct',
+                        entry_time  = pos.get('entry_date'),
+                    )
+                except Exception as e:
+                    logger.warning(f'TradeTracker.record failed for {symbol} (partial): {e}')
 
                 print(
                     f"   📤 PARTIAL EXIT: {symbol} up {pnl_pct:.1%}"
