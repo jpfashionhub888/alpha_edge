@@ -228,10 +228,12 @@ class AlpacaLiveTrader:
             from main import (
                 get_full_watchlist,
                 compute_signal,
-                check_volume_confirmation,
-                check_risk_reward,
                 calc_atr,
                 get_earnings_calendar,
+            )
+            from scanner import (
+                check_volume_confirmation,
+                check_risk_reward,
             )
             from model_cache import load_models, save_models
             from sklearn.feature_selection import SelectKBest, mutual_info_classif
@@ -432,10 +434,17 @@ class AlpacaLiveTrader:
             signal, combined = compute_signal(
                 pred, regime, sent_score, sect_mult,
                 symbol, earnings_symbols,
-                mtf_composite=mtf_comp,
             )
 
             if signal != 'BUY':
+                continue
+
+            # MTF filter — mirrors main.py's working pattern; compute_signal()
+            # never accepted an mtf_composite kwarg (that was a leftover from
+            # an incomplete refactor), so MTF is applied as a separate
+            # post-signal block here instead, same threshold as main.py.
+            if mtf_comp < 0.5:
+                print(f'  {symbol}: SKIP — MTF filter ({mtf_comp:.0%})')
                 continue
 
             # Skip if already in position
