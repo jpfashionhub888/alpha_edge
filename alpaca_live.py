@@ -20,6 +20,7 @@ Scan schedule: once daily at 16:15 ET (15 min after market close)
 """
 
 import os
+from config import settings
 import time
 import logging
 import warnings
@@ -41,7 +42,7 @@ logger = logging.getLogger(__name__)
 # Fix 2.3: Once-daily scan at 16:15 ET (after all daily bars are final)
 DAILY_SCAN_HOUR     = 16      # 4 PM ET
 DAILY_SCAN_MIN      = 15      # 16:15 ET — 15 min after market close
-RISK_PER_TRADE_PCT  = 0.015   # 1.5% of portfolio per trade
+RISK_PER_TRADE_PCT  = settings.MAX_RISK_PER_TRADE   # was hardcoded 0.015, now matches settings.yaml / paper_trader.py
 MAX_POSITIONS       = 5       # max open positions at once
 MARKET_TZ           = pytz.timezone('America/New_York')
 MARKET_OPEN         = dtime(9, 30)
