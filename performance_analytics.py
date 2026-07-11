@@ -128,7 +128,7 @@ class PerformanceAnalytics:
         sharpe  = self._sharpe(returns)
 
         # Max drawdown from all SELL trade P&L sequence
-        max_dd = self._max_drawdown_from_trades(trades)
+        max_dd = self._max_drawdown_from_trades(trades, starting_capital)
 
         return {
             'total_trades'   : total,
@@ -137,6 +137,7 @@ class PerformanceAnalytics:
             'win_rate'       : win_rate,
             'total_pnl'      : total_pnl,
             'total_pct'      : total_pct,
+            'realized_pnl'   : total_wins_ - total_losses_,
             'unrealized_pnl' : unrealized_pnl,
             'avg_win'        : avg_win,
             'avg_loss'       : avg_loss,
@@ -155,6 +156,7 @@ class PerformanceAnalytics:
             'win_rate'       : 0,
             'total_pnl'      : total_pnl,
             'total_pct'      : total_pct,
+            'realized_pnl'   : 0.0,   # no closed trades in this window
             'unrealized_pnl' : unrealized_pnl,
             'avg_win'        : 0,
             'avg_loss'       : 0,
@@ -180,14 +182,19 @@ class PerformanceAnalytics:
         return round((mean / std) * math.sqrt(252), 2)
 
     @staticmethod
-    def _max_drawdown_from_trades(trades):
+    def _max_drawdown_from_trades(trades, starting_capital):
         """
         Compute max drawdown from cumulative P&L sequence of all realized trades
-        (SELL + PARTIAL_SELL).
+        (SELL + PARTIAL_SELL), expressed as a fraction of starting capital.
         Returns a negative fraction (e.g. -0.12 = -12% drawdown).
+
+        Normalized against starting_capital rather than peak cumulative P&L —
+        the latter degenerates to ~0 whenever the first closed trade is a
+        loss (peak never goes positive), and dividing by a near-zero
+        epsilon in that case produces meaningless, wildly inflated results.
         """
         sells = [t for t in trades if t.get('action') in REALIZED_ACTIONS]
-        if not sells:
+        if not sells or starting_capital <= 0:
             return 0.0
         cumulative = 0.0
         peak       = 0.0
@@ -196,7 +203,7 @@ class PerformanceAnalytics:
             cumulative += t.get('pnl', 0)
             if cumulative > peak:
                 peak = cumulative
-            dd = (cumulative - peak) / (abs(peak) + 1e-9)
+            dd = (cumulative - peak) / starting_capital
             if dd < max_dd:
                 max_dd = dd
         return round(max_dd, 4)
@@ -236,7 +243,8 @@ Period: Last {days_back} days | Date: {now}
 
 📊 ALPHAEDGE (US Stocks & Crypto):
   Portfolio:     ${alpha_portfolio.get('capital', 0) + sum(p.get('shares', p.get('units', 0)) * p.get('current_price', p.get('entry_price', 0)) for p in alpha_positions.values()):,.2f}
-  Realized P&L:  {fmt_pnl(m['total_pnl'], m['total_pct'])}
+  Total P&L:     {fmt_pnl(m['total_pnl'], m['total_pct'])}
+  Realized P&L:  ${m['realized_pnl']:+,.2f}
   Unrealized:    ${m['unrealized_pnl']:+,.2f}
   Trades:        {m['total_trades']} | Win Rate: {m['win_rate']:.1f}%
   Avg Win:       ${m['avg_win']:.2f} | Avg Loss: ${m['avg_loss']:.2f}
@@ -268,7 +276,8 @@ Period: Last {days_back} days | Date: {now}
 
 📊 {sys.get('name', 'System')}:
   Portfolio:     {cur}{value:,.2f}
-  Realized P&L:  {fmt_pnl(sm['total_pnl'], sm['total_pct'], cur)}
+  Total P&L:     {fmt_pnl(sm['total_pnl'], sm['total_pct'], cur)}
+  Realized P&L:  {cur}{sm['realized_pnl']:+,.2f}
   Unrealized:    {cur}{sm['unrealized_pnl']:+,.2f}
   Trades:        {sm['total_trades']} | Win Rate: {sm['win_rate']:.1f}%
   Sharpe Ratio:  {sm['sharpe_ratio']:.2f}
