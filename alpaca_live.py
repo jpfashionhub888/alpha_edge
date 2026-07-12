@@ -598,6 +598,23 @@ class AlpacaLiveTrader:
         except Exception as e:
             logger.warning(f'Signal save failed (non-critical): {e}')
 
+        # ── Auto-regenerate dashboard HTML ────────────────────────
+        # Keeps alphaedgetrading.duckdns.org in sync after every scan
+        # without needing a manual deploy or GitHub Actions push.
+        try:
+            import subprocess
+            result = subprocess.run(
+                ['python', 'generate_dashboard.py'],
+                capture_output=True, text=True, timeout=60,
+                cwd=os.path.dirname(os.path.abspath(__file__)) or '.',
+            )
+            if result.returncode == 0:
+                logger.info('Dashboard regenerated successfully')
+            else:
+                logger.warning(f'Dashboard regen failed: {result.stderr[:200]}')
+        except Exception as e:
+            logger.warning(f'Dashboard regen skipped (non-critical): {e}')
+
         self._print_account()
 
     # ── Position monitor ──────────────────────────────────────────────
