@@ -281,6 +281,18 @@ class WalkForwardBacktester:
 
             model.train(X_train, y_train)
 
+            # C2 FIX (backtest): block overfit models from generating fold predictions.
+            # Previously overfit_flagged was set but never checked here, meaning
+            # inflated signals from high train/val AUC gap models were included in
+            # backtest metrics — overstating reported performance.
+            if getattr(model, 'overfit_flagged', False):
+                gap = getattr(model, 'overfit_gap', 0)
+                logger.warning(
+                    "%s fold %d: skipping overfit model (gap=%.2f > 0.20)",
+                    symbol, fold_num, gap,
+                )
+                continue
+
             logger.debug(
                 "%s fold %d/%d trained in %.1fs",
                 symbol, fold_num, total_folds,
@@ -295,8 +307,11 @@ class WalkForwardBacktester:
             fold_results['fold']        = i
             fold_results['stock']       = symbol
 
-            # ── Apply risk management per fold ────────────────────
-            fold_results = self._apply_risk_management(fold_results)
+            # S1 FIX: _apply_risk_management REMOVED from here.
+            # It needs strategy_return column which only exists after
+            # generate_signals() — calling it here silently fell back to
+            # raw market returns, producing misleading backtest metrics.
+            # The call is now placed after generate_signals() below.
 
             try:
                 fold_auc = roc_auc_score(y_test, predictions)
@@ -316,6 +331,11 @@ class WalkForwardBacktester:
 
         stock_results = pd.concat(all_predictions)
         stock_results = self.ensemble.generate_signals(stock_results)
+        # S1 FIX: apply risk management AFTER generate_signals() so that
+        # strategy_return column exists. Previously this ran per-fold before
+        # generate_signals(), silently falling back to raw market returns and
+        # producing stop-loss simulation on unfiltered data.
+        stock_results = self._apply_risk_management(stock_results)
 
         return stock_results
 
