@@ -158,4 +158,4 @@ OPTION C: Railway.app (easiest, $5/month)
 
 
 if __name__ == "__main__":
-    generate_deployment_files()
+    generate_deployment_f

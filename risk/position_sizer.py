@@ -303,33 +303,26 @@ class PositionSizer:
 
 def get_trade_stats_for_sizing(trades_file: str = 'logs/closed_trades.json') -> dict:
     """
-    Load win rate, avg win, avg loss, n_trades from TradeTracker output.
-    Returns safe fallback values if file not found or too few trades.
+    Read closed trades log and compute win-rate / avg-gain stats
+    for Kelly Criterion sizing.  Returns safe defaults on any error.
+    Always includes 'n_trades' so callers can check data sufficiency.
     """
+    defaults = {'win_rate': 0.55, 'avg_win': 0.08, 'avg_loss': 0.04, 'n_trades': 0}
     try:
+        import json
         with open(trades_file) as f:
-            data = json.load(f)
-        s = data.get('summary', {})
-        n = s.get('total', 0)
-        if n < 10:
-            raise ValueError(f'Only {n} trades — insufficient for Kelly')
-        wr       = s.get('win_rate', FALLBACK_WIN_RATE)
-        avg_win  = abs(s.get('avg_win',  FALLBACK_AVG_WIN))
-        avg_loss = abs(s.get('avg_loss', FALLBACK_AVG_LOSS))
+            trades = json.load(f)
+        sells = [t for t in trades if t.get('action') in ('SELL', 'PARTIAL_SELL') and 'pnl' in t]
+        if len(sells) < 10:
+            return {**defaults, 'n_trades': len(sells)}
+        wins   = [t['pnl'] for t in sells if t['pnl'] > 0]
+        losses = [abs(t['pnl']) for t in sells if t['pnl'] <= 0]
         return {
-            'n_trades' : n,
-            'win_rate' : wr,
-            'avg_win'  : avg_win,
-            'avg_loss' : avg_loss,
+            'win_rate': len(wins) / len(sells),
+            'avg_win' : sum(wins)   / len(wins)   if wins   else defaults['avg_win'],
+            'avg_loss': sum(losses) / len(losses) if losses else defaults['avg_loss'],
+            'n_trades': len(sells),
         }
-    except FileNotFoundError:
-        logger.debug('No trade history file — using fallback sizing values')
     except Exception as e:
         logger.warning('Could not load trade stats for sizing: %s', e)
-
-    return {
-        'n_trades' : 0,
-        'win_rate' : FALLBACK_WIN_RATE,
-        'avg_win'  : FALLBACK_AVG_WIN,
-        'avg_loss' : FALLBACK_AVG_LOSS,
-    }
+        return defaults

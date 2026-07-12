@@ -25,8 +25,12 @@ def veto_agent():
             del sys.modules['veto_agent']
         from veto_agent import VetoAgent
         agent = VetoAgent()
-    # Replace the real Groq client with a MagicMock so no network call escapes
+    # Replace the real Groq client with a MagicMock so no network call escapes.
+    # Also force enabled=True — if groq is not installed in this environment,
+    # __init__ sets enabled=False which short-circuits to APPROVE before
+    # touching _client, breaking all fail-closed assertions.
     agent._client = MagicMock()
+    agent.enabled = True
     return agent
 
 

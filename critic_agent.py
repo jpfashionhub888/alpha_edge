@@ -249,8 +249,11 @@ if __name__ == '__main__':
         trade_history    = sample_trades,
         portfolio_value  = 10245.00,
         starting_capital = 10000.00,
-        days_back        = 7,
+        days_back             = 7,
     )
-    print("\n" + "="*50)
-    print(report)
-    print("="*50)
+    if report:
+        print("\n" + "="*50)
+        print(report)
+        print("="*50)
+    else:
+        print("No recent trades to review.")

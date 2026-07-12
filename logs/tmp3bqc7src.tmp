@@ -1,0 +1,11 @@
+{
+  "triggered": false,
+  "trigger_reason": null,
+  "trigger_date": null,
+  "trigger_value": null,
+  "peak_value": null,
+  "daily_start": null,
+  "daily_start_val": null,
+  "weekly_start": null,
+  "weekly_start_val": null
+}

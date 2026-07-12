@@ -229,14 +229,4 @@ class TelegramBot:
             f"\n"
             f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
         )
-        result = self.send_message(text)
-        if result:
-            print("   Test message sent to Telegram!")
-        else:
-            print("   Test message failed")
-        return result
-
-
-if __name__ == "__main__":
-    bot = TelegramBot()
-    bot.test()
+        result = self.send_message(text)

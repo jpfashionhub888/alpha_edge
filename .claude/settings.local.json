@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Expand-Archive *)",
+      "PowerShell($src = \"$env:TEMP\\\\ae_fixes_2026\\\\fixed\"; $dst = \"C:\\\\Users\\\\giris\\\\alpha_edge\"; $files = @\\(\"alpaca_live.py\",\"bybit_live.py\",\"deep_audit.py\",\"diagnose.py\",\"gateio_live.py\",\"requirements.txt\",\"tg_test.py\",\".github\\\\workflows\\\\ci.yml\",\".github\\\\workflows\\\\daily_audit.yml\",\"backtest\\\\walk_forward.py\",\"execution\\\\crypto_broker.py\",\"execution\\\\webhook_server.py\",\"logs\\\\circuit_breaker.json\",\"monitoring\\\\reconciliation.py\",\"tests\\\\test_reconciliation.py\"\\); foreach \\($f in $files\\) { $target = Join-Path $dst $f; New-Item -ItemType Directory -Force -Path \\(Split-Path $target\\) | Out-Null; Copy-Item -Path \\(Join-Path $src $f\\) -Destination $target -Force; Write-Host \"Copied: $f\" })"
+    ]
+  }
+}

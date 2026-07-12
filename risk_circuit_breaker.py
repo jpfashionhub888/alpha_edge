@@ -70,16 +70,23 @@ class RiskCircuitBreaker:
             return {}
 
     def _save_state(self):
-        os.makedirs('logs', exist_ok=True)
-        import tempfile
-        tmp_fd, tmp_path = tempfile.mkstemp(dir='logs', suffix='.tmp')
+        import tempfile, shutil
+        # Derive save dir from the actual target path so tests can redirect
+        # CIRCUIT_BREAKER_FILE to a tmp_path without hitting the real logs/ dir.
+        target = CIRCUIT_BREAKER_FILE
+        target_dir = os.path.dirname(os.path.abspath(target)) or 'logs'
+        os.makedirs(target_dir, exist_ok=True)
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=target_dir, suffix='.tmp')
         try:
             with os.fdopen(tmp_fd, 'w') as f:
                 json.dump(self.state, f, indent=2)
-            os.replace(tmp_path, CIRCUIT_BREAKER_FILE)
+            # shutil.move handles cross-device moves (os.replace raises EXDEV)
+            shutil.move(tmp_path, target)
         except Exception:
-            if os.path.exists(tmp_path):
+            try:
                 os.unlink(tmp_path)
+            except OSError:
+                pass
             raise
 
     def check(self, current_value, starting_capital, telegram=None):
@@ -248,10 +255,3 @@ if __name__ == '__main__':
     triggered = cb.check(current_value=9400.0, starting_capital=10000.0)
     print(f"Trading blocked: {triggered}")
 
-    print("\n--- Partial recovery (+1%) — should NOT reset yet ---")
-    triggered = cb.check(current_value=9494.0, starting_capital=10000.0)
-    print(f"Still blocked: {triggered}")
-
-    print("\n--- Full recovery (+2.1%) — should reset ---")
-    triggered = cb.check(current_value=9588.0, starting_capital=10000.0)
-    print(f"Trading allowed again: {not triggered}")

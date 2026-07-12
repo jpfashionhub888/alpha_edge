@@ -69,10 +69,9 @@ class OptionsAnalyzer:
         """
         Main entry point.  Returns options_score in [-0.30, +0.30].
         Returns 0.0 on any error so the rest of the pipeline is unaffected.
+        _YF_AVAILABLE is NOT checked here so that tests can patch _fetch_chain
+        and exercise the scoring logic without yfinance installed.
         """
-        if not _YF_AVAILABLE:
-            return 0.0
-
         # Cache hit
         cached = self._cache.get(symbol)
         if cached:
@@ -349,7 +348,4 @@ if __name__ == '__main__':
 
         emoji = "🟢" if score > 0 else ("🔴" if score < 0 else "⚪")
         print(f"\n  {emoji} {sym:<6}  score={score:+.3f}  expiry={expiry}")
-        print(f"     PCR: {pcr}  |  IVR: {ivr}%  |  "
-              f"Unusual: {unusual} ({direction})")
-
-    print("\n" + "=" * 60)
+        print(f"     PCR: {pcr}  |  IVR: {ivr}

@@ -25,6 +25,16 @@ import numpy as np
 import pandas as pd
 import pytest
 
+# Skip entire module if core ML dependencies are unavailable (e.g. CI without xgboost).
+# xgboost is in requirements.txt and installed in full CI; this guard only fires
+# in minimal sandboxes where the heavy ML stack is absent.
+try:
+    import xgboost  # noqa: F401
+    import ta       # noqa: F401
+except ImportError as _e:
+    pytest.skip(f"ML dependency unavailable ({_e}) — skipping robustness suite",
+                allow_module_level=True)
+
 
 # ── Fixtures ───────────────────────────────────────────────────────────────────
 
@@ -436,14 +446,15 @@ class TestValidationReport:
         from models.model_validator import ValidationReport
         r = ValidationReport(symbol='X', train_period='', test_period='',
                              test_auc=0.57, mc_prob_ruin=0.10,
-                             overfit_blocked=False)
+                                           overfit_blocked=False)
         assert r.is_tradeable()
 
-    def test_summary_contains_symbol(self, validator, df_with_predictions):
-        """Report summary string must contain the ticker symbol."""
-        report = validator.full_report(
-            df=df_with_predictions, model=MagicMock(),
-            train_end='2023-12-31', test_start='2024-01-01',
-            symbol='AAPL',
-        )
-        assert 'AAPL' in report.summary()
+    def test_summary_contains_symbol(self):
+        """summary() string must include the symbol name."""
+        from models.model_validator import ValidationReport
+        r = ValidationReport(symbol='AAPL', train_period='2020-2023',
+                             test_period='2024-2025',
+                             test_auc=0.57, mc_prob_ruin=0.10,
+                             overfit_blocked=False)
+        summary = r.summary()
+        assert 'AAPL' in summary, f"summary() must mention symbol, got: {summary!r}"

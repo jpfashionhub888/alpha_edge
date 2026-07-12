@@ -1,0 +1,74 @@
+diff --git a/performance_analytics.py b/performance_analytics.py
+index dbe974b..8f641c8 100644
+--- a/performance_analytics.py
++++ b/performance_analytics.py
+@@ -160,7 +160,7 @@ class PerformanceAnalytics:
+             'unrealized_pnl' : unrealized_pnl,
+             'avg_win'        : 0,
+             'avg_loss'       : 0,
+-            'profit_factor'  : 0,
++            'profit_factor'  : 'N/A',
+             'sharpe_ratio'   : 0,
+             'max_drawdown'   : 0,
+             'best_trade'     : None,
+@@ -248,7 +248,7 @@ Period: Last {days_back} days | Date: {now}
+   Unrealized:    ${m['unrealized_pnl']:+,.2f}
+   Trades:        {m['total_trades']} | Win Rate: {m['win_rate']:.1f}%
+   Avg Win:       ${m['avg_win']:.2f} | Avg Loss: ${m['avg_loss']:.2f}
+-  Profit Factor: {m['profit_factor']:.2f}
++  Profit Factor: {m['profit_factor'] if isinstance(m['profit_factor'], str) else f"{m['profit_factor']:.2f}"}
+   Sharpe Ratio:  {m['sharpe_ratio']:.2f}
+   Max Drawdown:  {m['max_drawdown']:.2%}
+   Best Trade:    {fmt_trade(m['best_trade'])}
+diff --git a/risk/position_sizer.py b/risk/position_sizer.py
+index 49472a3..fd70f83 100644
+--- a/risk/position_sizer.py
++++ b/risk/position_sizer.py
+@@ -191,29 +191,38 @@ class PositionSizer:
+         )
+         return size
+ 
++    # ATR-to-percentile conversion: ATR approximates ~1.25σ for roughly
++    # normal returns. A true one-tailed 95th-percentile move is 1.645σ.
++    # Previously this class used raw ATR directly as if it WERE the
++    # 95th-percentile move — under-scaling the risk measure and allowing
++    # larger positions than a genuine 95% VaR cap should.
++    ATR_TO_SIGMA        = 1.25
++    Z_SCORE_95PCT       = 1.645
++
+     def _var_size(self, portfolio_value: float, price: float, atr: float) -> float:
+         """
+         Value-at-Risk cap: position size such that 1-day 95th-pct loss
+         does not exceed VAR_DAILY_LIMIT × portfolio.
+ 
+-        We use ATR as a proxy for 1-day 95th-percentile move
+-        (ATR ≈ 1.25σ for roughly normally distributed returns).
++        ATR approximates ~1.25σ for roughly normally distributed returns;
++        scaled up to the true 95th-percentile (1.645σ) move before use.
+ 
+-        max_loss_usd = portfolio_value * VAR_DAILY_LIMIT
+-        atr_pct      = atr / price
+-        units        = max_loss_usd / (price * atr_pct)
+-        dollar_size  = units * price = max_loss_usd / atr_pct
++        max_loss_usd  = portfolio_value * VAR_DAILY_LIMIT
++        atr_pct       = atr / price
++        pct_95        = atr_pct * (Z_SCORE_95PCT / ATR_TO_SIGMA)
++        dollar_size   = max_loss_usd / pct_95
+         """
+         if price <= 0 or atr <= 0:
+             return portfolio_value * MAX_POSITION_PCT
+ 
+         atr_pct    = atr / price
++        pct_95     = atr_pct * (self.Z_SCORE_95PCT / self.ATR_TO_SIGMA)
+         max_loss   = portfolio_value * VAR_DAILY_LIMIT
+-        var_size   = max_loss / atr_pct
++        var_size   = max_loss / pct_95
+ 
+         logger.debug(
+-            'VaR: atr_pct=%.3f max_loss=$%.0f → $%.0f',
+-            atr_pct, max_loss, var_size
++            'VaR: atr_pct=%.3f pct_95=%.3f max_loss=$%.0f → $%.0f',
++            atr_pct, pct_95, max_loss, var_size
+         )
+         return var_size
+ 

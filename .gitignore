@@ -51,6 +51,4 @@ config/secrets.env
 
 # ── Temp / debug files ────────────────────────────────────────────────
 test_predictor.py
-find_signal_logic.py
-*.diff
-python
+find_si

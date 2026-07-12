@@ -1099,36 +1099,16 @@ class WalkForwardBacktester:
             bh_annual = (1 + bh_total)     ** (1 / years) - 1
         else:
             logger.warning(
-                "Backtest period %.1f years < %.1f minimum — "
-                "reporting total return without annualisation",
+                "Backtest period %.1f years < %.1f minimum — "                "skipping annualisation (using total return instead)",
                 years, MIN_YEARS_FOR_ANNUALISATION,
             )
             annual    = total_return
             bh_annual = bh_total
 
-        # Sharpe with excess returns
-        daily_ret    = df[ret_col]
-        excess_daily = daily_ret - RISK_FREE_RATE_DAILY
-        sharpe       = (
-            excess_daily.mean() / excess_daily.std() * np.sqrt(252)
-            if excess_daily.std() > 0
-            else 0.0
-        )
-
-        # Max drawdown
-        peak      = cumulative.cummax()
-        drawdown  = (cumulative - peak) / peak
-        max_dd    = drawdown.min()
-
-        # Win rate — count distinct trades not days
-        total_trades, wins, wr = self._count_trades(df)
-
         self.strategy_results = {
-            'annual_return' : annual,
-            'buyhold_annual': bh_annual,
-            'total_return'  : total_return,
-            'sharpe'        : sharpe,
-            'max_drawdown'  : max_dd,
-            'win_rate'      : wr,
-            'total_trades'  : total_trades,
+            'total_return'   : total_return,
+            'annual_return'  : annual,
+            'bh_total'       : bh_total,
+            'bh_annual'      : bh_annual,
+            'years'          : years,
         }

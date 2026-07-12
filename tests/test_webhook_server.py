@@ -31,14 +31,24 @@ def _compute_sig(payload_bytes: bytes, secret: str = _TEST_SECRET) -> str:
 
 @pytest.fixture
 def webhook_client():
-    """Flask test client with HMAC secret set in env."""
+    """Flask test client with HMAC secret set in env.
+
+    Also resets the kill switch state so tests from test_operational_resilience.py
+    (which leave the kill switch active on disk) don't bleed into these tests.
+    """
+    import sys
     os.environ['ALPHAEDGE_WEBHOOK_SECRET'] = _TEST_SECRET
     os.environ['WEBHOOK_SECRET']            = _TEST_SECRET
-    import importlib, sys
-    for mod in ['execution.webhook_server']:
-        if mod in sys.modules:
+    # Remove stale module so it re-imports cleanly
+    for mod in list(sys.modules.keys()):
+        if 'webhook_server' in mod:
             del sys.modules[mod]
     from execution.webhook_server import app
+    # Reset kill switch module globals — the module loads disk state at import
+    # time; if a prior test left it active we get 503 on every request.
+    import execution.webhook_server as _ws
+    _ws._kill_switch_active = False
+    _ws._kill_switch_reason = ''
     app.config['TESTING'] = True
     with app.test_client() as client:
         yield client
@@ -193,9 +203,10 @@ class TestActionHandling:
         with patch('execution.webhook_server.process_signal'):
             r = _post(webhook_client, {
                 'secret': secret, 'action': 'SELL',
-                'symbol': 'AAPL', 'price': 160.0,
+                'symbol': 'NVDA', 'price': 500.0,
             })
 
         assert r.status_code == 200
         last = received_signals[-1]
+        assert last['symbol'] == 'NVDA'
         assert last['action'] == 'SELL'

@@ -1,0 +1,81 @@
+diff --git a/alpaca_live.py b/alpaca_live.py
+index 1d89fb1..629ca6f 100644
+--- a/alpaca_live.py
++++ b/alpaca_live.py
+@@ -228,11 +228,13 @@ class AlpacaLiveTrader:
+             from main import (
+                 get_full_watchlist,
+                 compute_signal,
+-                check_volume_confirmation,
+-                check_risk_reward,
+                 calc_atr,
+                 get_earnings_calendar,
+             )
++            from scanner import (
++                check_volume_confirmation,
++                check_risk_reward,
++            )
+             from model_cache import load_models, save_models
+             from sklearn.feature_selection import SelectKBest, mutual_info_classif
+             import pandas as pd
+diff --git a/scanner.py b/scanner.py
+index 0fb8337..7094e37 100644
+--- a/scanner.py
++++ b/scanner.py
+@@ -45,9 +45,56 @@ from models.sentiment_model import SentimentAnalyzer
+ from models.technical_model import TechnicalPredictor
+ from multi_timeframe import MultiTimeframeAnalyzer
+ from veto_agent import VetoAgent
++from config import settings
+ 
+ logger = logging.getLogger(__name__)
+ 
++VOLUME_SPIKE_MIN = settings.VOLUME_SPIKE_MIN
++MIN_RISK_REWARD  = settings.MIN_RISK_REWARD
++
++
++def check_volume_confirmation(stock_data: dict, symbol: str) -> tuple[bool, float]:
++    """
++    Confirm entry with volume spike.
++    Returns (confirmed: bool, ratio: float)
++    Volume must be >= VOLUME_SPIKE_MIN x 20-day average on the signal day.
++
++    Restored here from main.py — a prior refactor (commit 2c61b37) removed
++    this from main.py with the stated intent "moved to scanner.py import"
++    but never actually added it here, leaving alpaca_live.py's import of
++    it permanently broken (ImportError on every scan attempt since).
++    """
++    try:
++        df = stock_data.get(symbol)
++        if df is None or len(df) < 22:
++            return False, 0.0
++        vol_today  = float(df['volume'].iloc[-1])
++        vol_avg_20 = float(df['volume'].iloc[-21:-1].mean())
++        if vol_avg_20 == 0:
++            return False, 0.0
++        ratio = vol_today / vol_avg_20
++        return ratio >= VOLUME_SPIKE_MIN, round(ratio, 2)
++    except Exception:
++        return False, 0.0
++
++
++def check_risk_reward(price: float, atr: float | None) -> tuple[bool, float]:
++    """
++    Validate minimum risk/reward before entry.
++    Uses 1x ATR as stop distance, 2x ATR as minimum target.
++    Returns (passes: bool, rr_ratio: float)
++
++    Restored here alongside check_volume_confirmation — same missing-
++    relocation bug, same fix.
++    """
++    if atr is None or atr <= 0 or price <= 0:
++        return True, 0.0   # can't compute — don't block, just skip check
++    stop_distance   = atr * 1.0    # stop 1 ATR below entry
++    target_distance = atr * 2.0    # minimum target 2 ATR above entry
++    rr_ratio = target_distance / stop_distance  # = 2.0 always with this method
++    passes = rr_ratio >= MIN_RISK_REWARD
++    return passes, round(rr_ratio, 2)
++
+ # ── Meta-Labeler (Phase B) ────────────────────────────────────────────
+ try:
+     from models.meta_labeler import MetaLabeler
