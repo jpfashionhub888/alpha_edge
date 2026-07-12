@@ -16,20 +16,29 @@ import json
 import time
 import logging
 import warnings
+import signal
 import threading
 from datetime import datetime
 
 warnings.filterwarnings('ignore')
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(levelname)s: %(message)s'
-)
+from alpaca_live import AlpacaLiveTrader
 
 logger = logging.getLogger(__name__)
 
-# How often to re-scan markets (in seconds)
-SCAN_INTERVAL = 1800  # 30 minutes
+SCAN_INTERVAL = int(os.getenv('SCAN_INTERVAL_SECONDS', str(30 * 60)))  # 30 min default
+
+# ── Graceful shutdown event (SIGTERM / Ctrl-C) ────────────────────────────────
+_stop_event = threading.Event()
+
+def _handle_signal(signum, frame):
+    """Wake the sleep event immediately so the process exits cleanly."""
+    sig_name = signal.Signals(signum).name
+    logger.info("Signal %s received — shutting down gracefully", sig_name)
+    _stop_event.set()
+
+signal.signal(signal.SIGTERM, _handle_signal)
+signal.signal(signal.SIGINT,  _handle_signal)
 
 
 def run_scanner():
@@ -64,20 +73,20 @@ def run_scanner():
 
 
 def scanner_loop():
-    """Run scanner on a loop in background thread."""
-
-    while True:
+    """Run scanner on a loop. Exits cleanly on SIGTERM (no 30-min block)."""
+    while not _stop_event.is_set():
         try:
             run_scanner()
         except Exception as e:
-            logger.error(f"Scanner error: {e}")
+            logger.error("Scanner error: %s", e)
+
+        if _stop_event.is_set():
+            break
 
         next_scan = SCAN_INTERVAL // 60
-        print(
-            f"\n   ⏰ Next scan in {next_scan} minutes."
-            f" Dashboard is live at http://localhost:8050"
-        )
-        time.sleep(SCAN_INTERVAL)
+        logger.info("Next scan in %d minutes.", next_scan)
+        # wait() wakes immediately when _stop_event.set() is called (SIGTERM)
+        _stop_event.wait(timeout=SCAN_INTERVAL)
 
 
 def start_dashboard():
@@ -95,20 +104,17 @@ def start_dashboard():
 
 
 def main():
-    print("\n" + "🌐" * 25)
-    print("ALPHAEDGE LIVE SYSTEM")
-    print("🌐" * 25)
-    print("\nStarting scanner + dashboard...")
-    print("Dashboard will be at: http://localhost:8050")
-    print("Scanner runs every 30 minutes automatically")
-    print("Press Ctrl+C to stop everything\n")
+    logger.info("="*50)
+    logger.info("ALPHAEDGE LIVE SYSTEM — starting scanner + dashboard")
+    logger.info("Dashboard: http://localhost:8050  |  scan every %d min", SCAN_INTERVAL // 60)
+    logger.info("="*50)
 
     # Run first scan immediately
     try:
         run_scanner()
     except Exception as e:
-        logger.error(f"Initial scan failed: {e}")
-        print("   ⚠️ Initial scan failed but dashboard starting anyway")
+        logger.error("Initial scan failed: %s", e)
+        logger.warning("Initial scan failed — dashboard starting anyway")
 
     # Start scanner in background thread
     scanner_thread = threading.Thread(

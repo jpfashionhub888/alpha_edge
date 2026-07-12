@@ -11,7 +11,7 @@ aiohappyeyeballs==2.6.1
 aiohttp==3.13.5
 aiosignal==1.4.0
 aiosqlite==0.21.0
-alpaca-trade-api==0.26
+alpaca-py>=0.38.0,<1.0
 annotated-doc==0.0.4
 annotated-types==0.7.0
 ansi2html==1.9.2
@@ -25,7 +25,7 @@ bcrypt==5.0.0
 beautifulsoup4==4.13.5
 blinker==1.9.0
 build==1.4.4
-catboost==1.2.10
+catboost>=1.2,<2
 ccxt==4.3.98
 certifi==2026.4.22
 cffi==2.0.0
@@ -101,9 +101,9 @@ langchain-ollama==1.1.0
 langchain-protocol==0.0.13
 langchain-text-splitters==1.1.2
 langsmith==0.7.38
-lightgbm==4.5.0
+lightgbm>=4.5,<5
 linkify-it-py==2.1.0
-loguru==0.7.2
+# loguru removed — never imported anywhere in the codebase (was unused dep)
 lxml==6.1.0
 markdown-it-py==4.0.0
 MarkupSafe==3.0.3
@@ -222,7 +222,7 @@ websockets==16.0
 Werkzeug==3.0.6
 wheel==0.47.0
 win32_setctime==1.2.0; sys_platform == 'win32'
-xgboost==2.1.4
+xgboost>=2.1,<3
 xxhash==3.7.0
 yarl==1.23.0
 yfinance==0.2.66
