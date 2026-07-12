@@ -126,9 +126,13 @@ class PerformanceAnalytics:
         # Uses per-trade returns as a proxy
         returns = [t.get('pnl_pct', 0) for t in sells if 'pnl_pct' in t]
         sharpe  = self._sharpe(returns)
+        sortino = self._sortino(returns)
 
         # Max drawdown from all SELL trade P&L sequence
         max_dd = self._max_drawdown_from_trades(trades, starting_capital)
+
+        # Calmar ratio = annualised return / |max drawdown|
+        calmar = round(total_pct / abs(max_dd), 2) if max_dd < 0 else 'N/A'
 
         return {
             'total_trades'   : total,
@@ -142,7 +146,10 @@ class PerformanceAnalytics:
             'avg_win'        : avg_win,
             'avg_loss'       : avg_loss,
             'profit_factor'  : profit_factor,
-            'sharpe_ratio'   : sharpe,
+            'sharpe_ratio'   : sharpe,   # legacy key (backward compat)
+            'sharpe'         : sharpe,   # canonical key used by tests
+            'sortino'        : sortino,
+            'calmar'         : calmar,
             'max_drawdown'   : max_dd,
             'best_trade'     : best_trade,
             'worst_trade'    : worst_trade,
@@ -161,7 +168,10 @@ class PerformanceAnalytics:
             'avg_win'        : 0,
             'avg_loss'       : 0,
             'profit_factor'  : 'N/A',
-            'sharpe_ratio'   : 0,
+            'sharpe_ratio'   : 0,     # legacy key (backward compat)
+            'sharpe'         : 'N/A',
+            'sortino'        : 'N/A',
+            'calmar'         : 'N/A',
             'max_drawdown'   : 0,
             'best_trade'     : None,
             'worst_trade'    : None,
@@ -180,6 +190,41 @@ class PerformanceAnalytics:
             return 0.0
         # Annualise assuming ~252 trading days / year
         return round((mean / std) * math.sqrt(252), 2)
+
+    @staticmethod
+    def _sortino(returns):
+        """Annualised Sortino ratio — uses downside deviation (losses only).
+        Returns 'N/A' when there are no losing trades (infinite Sortino).
+        """
+        if len(returns) < 2:
+            return 0.0
+        n    = len(returns)
+        mean = sum(returns) / n
+        negatives = [r for r in returns if r < 0]
+        if not negatives:
+            return 'N/A'   # no downside = infinite Sortino
+        downside_var = sum(r ** 2 for r in negatives) / len(negatives)
+        downside_std = math.sqrt(downside_var)
+        if downside_std == 0:
+            return 0.0
+        return round((mean / downside_std) * math.sqrt(252), 2)
+
+    def _build_equity_curve(self, exits, starting_capital):
+        """Build a list of per-trade return fractions sorted by trade date.
+
+        Parameters
+        ----------
+        exits           : list of trade dicts with 'date' and 'pnl' keys
+        starting_capital: float — used to normalise absolute P&L
+
+        Returns
+        -------
+        list of floats: pnl / starting_capital for each exit, oldest first
+        """
+        if not exits or starting_capital <= 0:
+            return []
+        sorted_exits = sorted(exits, key=lambda t: t.get('date', ''))
+        return [t.get('pnl', 0.0) / starting_capital for t in sorted_exits]
 
     @staticmethod
     def _max_drawdown_from_trades(trades, starting_capital):
