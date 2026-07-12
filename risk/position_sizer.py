@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 # ── Hard limits ───────────────────────────────────────────────────────────────
 MAX_POSITION_PCT    = 0.15     # Never exceed 15% of portfolio in one position
-MIN_POSITION_USD    = 100.0    # Minimum meaningful position size
+MIN_POSITION_USD    = 50.0     # Minimum meaningful position size; $50 covers realistic commission+slippage on small accounts
 KELLY_FRACTION      = 0.25     # Quarter-Kelly: institutional standard for live trading
 VAR_DAILY_LIMIT     = 0.02     # 2% of portfolio max 1-day 95th-percentile loss
 CORR_PENALTY_COEFF  = 0.60     # If correlation >= this, reduce size proportionally
