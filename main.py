@@ -311,25 +311,11 @@ def run_daily_scan():
 
     mtf_analyzer = MultiTimeframeAnalyzer()
     mtf_scores   = {}
+    # S5 FIX: MTF loop moved to after stock_data fetch (see below)
+    # so daily_df=stock_data.get(symbol) can be passed, eliminating
+    # 41 redundant yfinance HTTP calls (~60s) per scan.
 
-    if market_regime['can_trade']:
-        print("\n  Checking timeframe alignment...")
-        for symbol in stock_watchlist:
-            try:
-                score = with_retry(
-                    lambda s=symbol: mtf_analyzer.get_mtf_score(s),
-                    retries=2, delay=2, label=f'MTF/{symbol}'
-                )
-                mtf_scores[symbol] = score
-                if score > 0:
-                    print(f"  {symbol}: MTF {score:.0%} BULLISH")
-            except Exception as e:
-                mtf_scores[symbol] = 0.5
-                logger.warning(f"MTF failed for {symbol}: {e}")
-
-        bullish = sum(1 for s in mtf_scores.values() if s > 0)
-        print(f"\n  MTF complete: {bullish}/{len(stock_watchlist)} bullish")
-    else:
+    if not market_regime['can_trade']:
         print("\n  Skipping MTF (CASH MODE active)")
         for symbol in stock_watchlist:
             mtf_scores[symbol] = 0.5
@@ -350,6 +336,24 @@ def run_daily_scan():
     )
     stock_data = with_retry(stock_fetcher.fetch_all, retries=3, delay=10,
                              label='stock_data_fetch')
+
+    # S5 FIX: compute MTF NOW that stock_data is available — reuse daily_df
+    # to skip 41 redundant yfinance HTTP calls that were adding ~60s per scan.
+    if market_regime['can_trade']:
+        print("\n  Checking timeframe alignment (reusing downloaded data)...")
+        for symbol in stock_watchlist:
+            try:
+                score = mtf_analyzer.get_mtf_score(
+                    symbol, daily_df=stock_data.get(symbol)
+                )
+                mtf_scores[symbol] = score
+                if score > 0:
+                    print(f"  {symbol}: MTF {score:.0%} BULLISH")
+            except Exception as e:
+                mtf_scores[symbol] = 0.5
+                logger.warning(f"MTF failed for {symbol}: {e}")
+        bullish = sum(1 for s in mtf_scores.values() if s > 0)
+        print(f"\n  MTF complete: {bullish}/{len(stock_watchlist)} bullish")
 
     print("\n1b. Training 4-model ensemble per stock...")
     engine          = FeatureEngine()
@@ -391,7 +395,8 @@ def run_daily_scan():
 
             # Cache version key includes feature set hash to prevent stale models
             feat_hash = feature_set_hash(selected)
-            cached    = load_models(symbol)
+            # S4 FIX: pass feature_names so the hash check is active on reload
+            cached    = load_models(symbol, feature_names=selected)
 
             if cached and cached.get('feature_hash') == feat_hash:
                 print(f"  {symbol}: Loading from cache (hash={feat_hash})...")
@@ -412,7 +417,16 @@ def run_daily_scan():
                     print(f"  {symbol}: Training models...")
                 model = TechnicalPredictor(use_lstm=True)
                 model.train(X_train[selected], y_train)
+                # C2 FIX: enforce overfit guard — skip this model's signals
+                if getattr(model, 'overfit_flagged', False):
+                    gap = getattr(model, 'overfit_gap', 0)
+                    logger.warning(
+                        f"{symbol}: SKIP — overfit gap {gap:.2f} > 0.20 "
+                        f"(train/val AUC delta too large, signals unreliable)"
+                    )
+                    continue
                 try:
+                    # S4 FIX: pass feature_names so hash is stored and checked on reload
                     save_models(symbol, {
                         'xgboost'         : model.models.get('xgboost'),
                         'lightgbm'        : model.models.get('lightgbm'),
@@ -420,7 +434,7 @@ def run_daily_scan():
                         'catboost'        : model.models.get('catboost'),
                         'selected_features': selected,
                         'feature_hash'    : feat_hash,
-                    })
+                    }, feature_names=selected)
                     print(f"  {symbol}: Models cached (hash={feat_hash})!")
                 except Exception as e:
                     logger.warning(f"Cache save failed for {symbol}: {e}")
@@ -428,6 +442,31 @@ def run_daily_scan():
             latest     = df.iloc[-1:]
             _preds     = model.predict(latest[selected])
             pred       = _preds[0] if len(_preds) > 0 else 0.5
+
+            # C4 FIX: MetaLabeler gate — filters false positives from primary model
+            # load() returns unfitted (pass-through) if no cached meta model exists.
+            try:
+                from models.meta_labeler import MetaLabeler
+                _meta_path = os.path.join('model_cache', f'meta_{symbol}.pkl')
+                _meta      = MetaLabeler.load(_meta_path)
+                _approved, _meta_conf = _meta.should_trade(latest[selected], pred)
+                if not _approved:
+                    logger.info(
+                        f"{symbol}: MetaLabeler filtered "
+                        f"(primary={pred:.3f}, meta_conf={_meta_conf:.3f})"
+                    )
+                    stock_signals[symbol] = {
+                        'prediction': pred, 'regime': latest.iloc[0]['regime'],
+                        'price': latest.iloc[0]['close'],
+                        'sector': sector_analyzer.get_sector_for_stock(symbol),
+                        'sector_multiplier': sector_analyzer.get_sector_signal(symbol),
+                        'signal': 'META_FILTERED', 'combined': 0.0,
+                        'meta_conf': _meta_conf, 'model_auc_info': None,
+                    }
+                    continue
+            except Exception as _me:
+                logger.debug(f"{symbol}: MetaLabeler skipped ({_me})")
+
             regime     = latest['regime'].iloc[0]
             price      = latest['close'].iloc[0]
             sector_mult = sector_analyzer.get_sector_signal(symbol)
@@ -548,6 +587,11 @@ def run_daily_scan():
             f" | ${price:.2f}"
         )
 
+        # S2 FIX: if market is in BEAR/CRASH, dashboard must show MARKET_HOLD
+        # not BUY — the signal loop gates execution but not the dashboard label.
+        if signal == 'BUY' and not market_regime['can_trade']:
+            signal = 'MARKET_HOLD'
+
         # FIX: record ALL signals in dashboard, not just BUY
         dashboard_signals[symbol] = {
             'prediction': float(pred),
@@ -615,7 +659,8 @@ def run_daily_scan():
             regime = data['regime']
             price  = data['price']
             signal = 'HOLD'
-            if regime == 'uptrend' and pred > 0.52:
+            # C3 FIX: use settings.BUY_THRESHOLD for crypto too
+            if regime == 'uptrend' and pred > settings.BUY_THRESHOLD:
                 signal = 'BUY'
             elif regime == 'downtrend':
                 signal = 'AVOID'
