@@ -15,6 +15,22 @@ from dash import Dash, html, dcc, dash_table
 from dash.dependencies import Input, Output
 import plotly.graph_objects as go
 
+# Eastern Time (auto-handles EDT/EST daylight saving)
+try:
+    from zoneinfo import ZoneInfo
+    _ET = ZoneInfo('America/New_York')
+except ImportError:
+    try:
+        import pytz
+        _ET = pytz.timezone('America/New_York')
+    except ImportError:
+        from datetime import timezone, timedelta
+        _ET = timezone(timedelta(hours=-4))  # fallback: EDT
+
+def now_et():
+    """Return current datetime in US/Eastern (handles EDT and EST)."""
+    return datetime.now(tz=_ET)
+
 # ── Settings Load ─────────────────────────────────────────────────────────────
 try:
     from config import settings
@@ -283,7 +299,7 @@ def create_app():
         pnl_c    = C['green'] if pnl >= 0 else C['red']
         wr_c     = C['green'] if wr >= 50 else C['red']
         dd_c     = C['green'] if drawdown >= -2 else (C['yellow'] if drawdown >= -5 else C['red'])
-        now_str  = datetime.now().strftime('%Y-%m-%d  %H:%M:%S ET')
+        now_str  = now_et().strftime('%Y-%m-%d  %H:%M:%S ET')
 
         status_bar = [
             html.Span('PAPER TRADING  |  ALPACA CONNECTED  |  BULL MARKET  |  SCAN: 16:15 ET DAILY',
