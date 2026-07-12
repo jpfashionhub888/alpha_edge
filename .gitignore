@@ -54,6 +54,17 @@ logs/weight_results.json
 logs/threshold_results.json
 logs/alphaedge_daily.log
 logs/weekly_report.log
+
+# ── Runtime state files — VPS-local, NEVER commit these ──────────────
+# Committing these causes git pull on deploy to overwrite live VPS state,
+# which triggers reconciliation halts and shows stale data on dashboard.
+logs/paper_trades_stocks_only.json
+logs/latest_signals.json
+logs/circuit_breaker.json
+logs/reconciliation.log
+logs/closed_trades.json
+logs/alerts.json
+logs/heartbeats/
 catboost_info/
 
 # Secrets — NEVER commit API keys
