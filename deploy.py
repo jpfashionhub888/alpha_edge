@@ -33,7 +33,7 @@ schedule
 transformers
 torch
 feedparser
-alpaca-trade-api
+alpaca-py>=0.38.0,<1.0
 flask
 gunicorn"""
 
