@@ -339,3 +339,84 @@ class AlpacaBroker:
         except Exception as e:
             logger.error(f'get_orders({status}) failed: {e}')
             return []
+
+    def cancel_all_orders(self):
+        """Cancel all open orders."""
+        if not self.connected:
+            return False
+        try:
+            self.client.cancel_orders()
+            logger.info("All open orders cancelled")
+            return True
+        except Exception as e:
+            logger.error("cancel_all_orders failed: %s", e)
+            return False
+
+    # ── Summary ──────────────────────────────────────────────────────────────
+
+    def get_summary(self):
+        """Log account summary."""
+        account   = self.get_account()
+        positions = self.get_positions()
+
+        if account is None:
+            logger.error("Cannot get account summary")
+            return
+
+        logger.info(
+            "=== ALPACA ACCOUNT (%s) === cash=$%.2f | bp=$%.2f | portfolio=$%.2f",
+            self.mode.upper(),
+            account['cash'], account['buying_power'], account['portfolio_value'],
+        )
+        if positions:
+            total_pnl = sum(p['pnl'] for p in positions.values())
+            for symbol, pos in positions.items():
+                pnl_pct = pos['pnl_pct'] * 100
+                emoji   = "🟢" if pos['pnl'] >= 0 else "🔴"
+                logger.info(
+                    "  %s %-6s | %.4f sh | entry=$%.2f | now=$%.2f | PnL=$%+.2f (%+.1f%%)",
+                    emoji, symbol, pos['shares'],
+                    pos['entry_price'], pos['current_price'],
+                    pos['pnl'], pnl_pct,
+                )
+            logger.info("  Total Unrealized PnL: $%+.2f", total_pnl)
+        else:
+            logger.info("  No open positions")
+
+    # ── Internal helpers ──────────────────────────────────────────────────────
+
+    def _get_latest_price(self, symbol: str) -> 'float | None':
+        """
+        Fetch latest ask price via StockHistoricalDataClient.
+        Falls back to latest bar close if quote unavailable.
+        """
+        if self.data_client is None:
+            return None
+        try:
+            quotes = self.data_client.get_stock_latest_quote(
+                StockLatestQuoteRequest(symbol_or_symbols=symbol)
+            )
+            price = float(quotes[symbol].ask_price)
+            if price and price > 0:
+                return price
+        except Exception:
+            pass
+        try:
+            bars = self.data_client.get_stock_latest_bar(
+                StockLatestBarRequest(symbol_or_symbols=symbol)
+            )
+            return float(bars[symbol].close)
+        except Exception as e:
+            logger.warning("_get_latest_price(%s): both quote and bar failed: %s", symbol, e)
+            return None
+
+
+# ── Standalone connection test ────────────────────────────────────────────────
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    logger.info("Testing Alpaca connection (mode=%s)...", 'paper' if _PAPER_MODE else 'LIVE')
+    broker = AlpacaBroker()
+    if broker.connected:
+        broker.get_summary()
+    else:
+        logger.error("Set ALPACA_API_KEY and ALPACA_SECRET_KEY environment variables first")

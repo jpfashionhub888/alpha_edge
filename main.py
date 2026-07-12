@@ -723,6 +723,15 @@ def run_daily_scan():
     # ======================================================================
     atomic_json_write('logs/latest_signals.json', dashboard_signals)
     atomic_json_write('logs/earnings.json', earnings_soon)
+    atomic_json_write('logs/sectors.json', {
+        sector: {
+            'score'       : float(d['score']),
+            'flow'        : d['flow'],
+            'momentum_21d': float(d['momentum_21d']),
+        }
+        for sector, d in sector_scores.items()
+    })
+    print("\n  💾 All data saved for dashboard (atomic)")
 
     # AUC tracking for walk-forward monitor / live-readiness check.
     # Kept as its own file rather than added to latest_signals.json,
@@ -735,8 +744,66 @@ def run_daily_scan():
     if _auc_samples:
         atomic_json_write('logs/model_auc.json', {
             'training_auc': sum(s['train_auc'] for s in _auc_samples) / len(_auc_samples),
-            'updated_at'  : now.isoformat(),
+            'updated_at'  : now,   # FIX: now is already a formatted string
         })
+
+    # ======================================================================
+    # PORTFOLIO SUMMARY
+    # ======================================================================
+    trader.get_summary(current_prices)
+    for symbol, pos in trader.positions.items():
+        pos['current_price'] = current_prices.get(symbol, pos['entry_price'])
+    trader.save_state()
+
+    total_value = trader.capital + sum(
+        pos.get('shares', 0) * current_prices.get(symbol, pos.get('entry_price', 0))
+        for symbol, pos in trader.positions.items()
+    )
+    total_pnl = total_value - trader.starting_capital
+    total_pct = total_pnl / trader.starting_capital
+
+    positions_with_pnl = {}
+    for symbol, pos in trader.positions.items():
+        curr_price  = current_prices.get(symbol, pos.get('entry_price', 0))
+        entry_price = pos.get('entry_price', 0)
+        shares      = pos.get('shares', 0)
+        pnl         = (curr_price - entry_price) * shares
+        pnl_pct     = (curr_price - entry_price) / entry_price if entry_price > 0 else 0
+        positions_with_pnl[symbol] = {
+            **pos,
+            'current_price': curr_price,
+            'pnl'          : pnl,
+            'pnl_pct'      : pnl_pct,
+        }
+
+    telegram.alert_daily_summary(total_value, total_pnl, total_pct,
+                                  positions_with_pnl, dashboard_signals)
+
+    print("\n" + "✅" * 25)
+    print("ALPHA EDGE V4 SCAN COMPLETE")
+    print("✅" * 25)
+    print(f"\nScanned: {len(stock_signals)} stocks + {len(crypto_signals)} crypto")
+    print(f"Earnings this week: {len(earnings_soon)} stocks")
+    print(f"  Models: 5 per stock (XGB+LGB+RF+CatBoost+LSTM)")
+    print("\nTo view dashboard:")
+    print("  python run_dashboard.py")
+    print("  Open http://localhost:8050\n")
+
+    # ======================================================================
+    # WEEKLY PERFORMANCE REPORT + CRITIC REVIEW
+    # ======================================================================
+    analytics = PerformanceAnalytics()
+    if analytics.should_run_today():
+        print("\n  Sending Weekly Performance Report...")
+        analytics.send_report(telegram)
+
+    critic = CriticAgent()
+    critic.run_weekly_review(
+        trade_history    = trader.trade_history,
+        portfolio_value  = total_value,
+        starting_capital = trader.starting_capital,
+        telegram_bot     = telegram,
+    )
 
     logger.info("run_daily_scan() complete — %d signals generated", len(stock_signals))
     return stock_signals
