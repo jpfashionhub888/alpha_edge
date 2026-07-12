@@ -203,10 +203,11 @@ def create_app():
                        'justifyContent': 'space-between', 'alignItems': 'center'},
                 children=[
                     html.Div(style={'display': 'flex', 'alignItems': 'center', 'gap': '14px'}, children=[
-                        html.Div('AE', style={
-                            'backgroundColor': C['orange'], 'color': '#080B10', 'fontFamily': MONO,
-                            'fontWeight': '900', 'fontSize': '14px', 'padding': '5px 9px',
-                            'borderRadius': '3px', 'letterSpacing': '1px',
+                        html.Img(src='/assets/icon-192.png', style={
+                            'height': '48px', 'width': '48px',
+                            'borderRadius': '50%',
+                            'border': f"2px solid {C['orange']}",
+                            'boxShadow': f"0 0 12px {C['orange_d'] if 'orange_d' in C else '#7A3D08'}",
                         }),
                         html.Div([
                             html.Div('ALPHAEDGE TRADING TERMINAL', style={
