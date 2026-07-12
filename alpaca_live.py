@@ -436,6 +436,14 @@ class AlpacaLiveTrader:
                 symbol, earnings_symbols,
             )
 
+            # Always record the final signal verdict back into the dict
+            # so it gets saved to latest_signals.json at end of scan.
+            stock_signals[symbol].update({
+                'signal'   : signal,
+                'combined' : combined,
+                'sentiment': sent_score,
+            })
+
             if signal != 'BUY':
                 continue
 
@@ -557,6 +565,39 @@ class AlpacaLiveTrader:
                     logger.warning(f'Telegram buy alert failed for {symbol}: {e}')
 
         print(f'\n  Scan complete. New entries: {buy_count}')
+
+        # ── Persist signals to disk (atomic write) ────────────────
+        # Stamps every stock with its final signal/combined/sentiment so
+        # the dashboard and GitHub Actions always reflect VPS scan output.
+        try:
+            import tempfile
+            os.makedirs('logs', exist_ok=True)
+            scan_ts = datetime.now().isoformat()
+            signals_out = {
+                sym: {
+                    'prediction': d.get('prediction', 0),
+                    'regime'    : d.get('regime', ''),
+                    'price'     : d.get('price', 0),
+                    'sentiment' : d.get('sentiment', 0.0),
+                    'sector'    : d.get('sector', ''),
+                    'signal'    : d.get('signal', 'HOLD'),
+                    'combined'  : d.get('combined', 0),
+                    'saved_at'  : scan_ts,
+                }
+                for sym, d in sorted(
+                    stock_signals.items(),
+                    key=lambda x: x[1].get('combined', 0), reverse=True
+                )
+            }
+            tmp_fd, tmp_path = tempfile.mkstemp(dir='logs', suffix='.tmp')
+            with os.fdopen(tmp_fd, 'w') as f:
+                import json as _json
+                _json.dump(signals_out, f, indent=2)
+            os.replace(tmp_path, 'logs/latest_signals.json')
+            logger.info(f'Saved {len(signals_out)} signals to logs/latest_signals.json')
+        except Exception as e:
+            logger.warning(f'Signal save failed (non-critical): {e}')
+
         self._print_account()
 
     # ── Position monitor ──────────────────────────────────────────────
