@@ -157,9 +157,8 @@ APPROVE if:
                 decision = 'VETO'
                 reason   = f"Unexpected decision value '{decision}' from model"
 
-            print(f"  Veto Agent [{symbol}]: {decision}")
-            print(f"    Reason: {reason}")
-            print(f"    Confidence: {confidence:.0%}")
+            logger.info("Veto Agent [%s]: %s | reason=%s | confidence=%.0f%%",
+                        symbol, decision, reason, confidence * 100)
 
             return {
                 'decision'  : decision,
