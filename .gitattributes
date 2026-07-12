@@ -1,0 +1,25 @@
+# Force LF line endings for files that must be deployed to Linux
+# This prevents Windows CRLF from breaking systemd service files and shell scripts
+
+# Default: use LF for all text files
+* text=auto eol=lf
+
+# Explicitly force LF for Linux deployment files
+*.service        text eol=lf
+*.timer          text eol=lf
+*.sh             text eol=lf
+*.yml            text eol=lf
+*.yaml           text eol=lf
+*.py             text eol=lf
+*.json           text eol=lf
+*.md             text eol=lf
+*.txt            text eol=lf
+*.env            text eol=lf
+*.gitignore      text eol=lf
+
+# Binary files — no line ending conversion
+*.joblib         binary
+*.pkl            binary
+*.zip            binary
+*.png            binary
+*.jpg            binary
