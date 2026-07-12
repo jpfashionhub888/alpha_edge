@@ -36,10 +36,32 @@ jobs:
           # TestSignalLogic imports main.py which requires the full ML stack at module
           # level (catboost, ccxt, CryptoPredictor, RotatingFileHandler etc). Skip in
           # CI lightweight env; all other test classes run normally.
-          pytest tests/ -x --tb=short -q -k "not TestSignalLogic"
+          set -o pipefail
+          pytest tests/ -x --tb=short -v -k "not TestSignalLogic" 2>&1 | tee /tmp/test_output.txt
         env:
           # Empty keys -> broker/veto agent initialise as disabled, no real HTTP client created
           ALPACA_API_KEY: ""
           ALPACA_SECRET_KEY: ""
           ALPACA_PAPER: "true"
           GROQ_API_KEY: ""
+
+      - name: Post failure as commit comment
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let output = '';
+            try {
+              output = fs.readFileSync('/tmp/test_output.txt', 'utf8');
+              // Keep last 3000 chars (most relevant failure info)
+              if (output.length > 3000) output = '...(truncated)\n' + output.slice(-3000);
+            } catch (e) {
+              output = 'Could not read test output: ' + e.message;
+            }
+            await github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: '## ❌ CI Test Failure (Python 3.11)\n```\n' + output + '\n```'
+            });
