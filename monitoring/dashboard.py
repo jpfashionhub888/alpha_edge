@@ -1,1108 +1,614 @@
 # monitoring/dashboard.py
-
 """
-AlphaEdge Web Dashboard - Upgraded V3 (Institutional Grade)
-Matches the premium styling, custom dark themes, dynamic Kelly positioning calculations,
-and System Risk limits inspection.
+AlphaEdge Bloomberg Terminal Dashboard -- V7
+Bloomberg-style terminal with:
+  - Dark background + orange accents
+  - IBM Plex Mono monospace font
+  - 7-tab navigation (Overview / Positions / Signals / Sectors / Earnings / History / SysConfig)
+  - Live KPI strip (updates every 60s)
 """
 
-import json
-import os
+import json, os
 import pandas as pd
-import numpy as np
 from datetime import datetime
 from dash import Dash, html, dcc, dash_table
 from dash.dependencies import Input, Output
 import plotly.graph_objects as go
 
-# ── Load Live Settings ────────────────────────────────────────────────────────
+# ── Settings Load ─────────────────────────────────────────────────────────────
 try:
     from config import settings
-    kelly_active = getattr(settings, 'KELLY_POSITION_SIZING', True)
-    kelly_mult = getattr(settings, 'KELLY_MULTIPLIER', 0.5)
-    kelly_rr = getattr(settings, 'KELLY_REWARD_RISK_RATIO', 2.5)
-    max_pos_pct = getattr(settings, 'MAX_POSITION_SIZE', 0.15)
-    buy_threshold = getattr(settings, 'BUY_THRESHOLD', 0.63)
-    max_dd_limit = getattr(settings, 'MAX_DRAWDOWN', 0.10)
-    max_daily_loss = getattr(settings, 'MAX_DAILY_LOSS', 0.02)
-    max_positions = getattr(settings, 'MAX_OPEN_POSITIONS', 5)
-    atr_stop_mult = getattr(settings, 'ATR_STOP_MULT', 1.0)
+    kelly_active    = getattr(settings, 'KELLY_POSITION_SIZING', True)
+    kelly_mult      = getattr(settings, 'KELLY_MULTIPLIER', 0.5)
+    kelly_rr        = getattr(settings, 'KELLY_REWARD_RISK_RATIO', 2.5)
+    max_pos_pct     = getattr(settings, 'MAX_POSITION_SIZE', 0.15)
+    buy_threshold   = getattr(settings, 'BUY_THRESHOLD', 0.63)
+    max_dd_limit    = getattr(settings, 'MAX_DRAWDOWN', 0.10)
+    max_daily_loss  = getattr(settings, 'MAX_DAILY_LOSS', 0.02)
+    max_positions   = getattr(settings, 'MAX_OPEN_POSITIONS', 5)
+    atr_stop_mult   = getattr(settings, 'ATR_STOP_MULT', 1.0)
     atr_target_mult = getattr(settings, 'ATR_TARGET_MULT', 2.5)
-    trailing_mult = getattr(settings, 'TRAILING_STOP_MULTIPLIER', 0.8)
-    max_risk_per_trade = getattr(settings, 'MAX_RISK_PER_TRADE', 0.02)
-    max_portfolio_risk = getattr(settings, 'MAX_PORTFOLIO_RISK', 0.06)
-    volume_spike_min = getattr(settings, 'VOLUME_SPIKE_MIN', 1.3)
-    min_risk_reward = getattr(settings, 'MIN_RISK_REWARD', 2.0)
-    mtf_weight = getattr(settings, 'MTF_WEIGHT_IN_SIGNAL', 0.15)
-    watchlist_len = len(getattr(settings, 'STOCK_WATCHLIST', []))
-except Exception as e:
-    # Fallback defaults
-    kelly_active = True
-    kelly_mult = 0.5
-    kelly_rr = 2.5
-    max_pos_pct = 0.15
-    buy_threshold = 0.63
-    max_dd_limit = 0.10
-    max_daily_loss = 0.02
-    max_positions = 5
-    atr_stop_mult = 1.0
-    atr_target_mult = 2.5
-    trailing_mult = 0.8
-    max_risk_per_trade = 0.02
-    max_portfolio_risk = 0.06
-    volume_spike_min = 1.3
-    min_risk_reward = 2.0
-    mtf_weight = 0.15
-    watchlist_len = 41
+    trailing_mult   = getattr(settings, 'TRAILING_STOP_MULTIPLIER', 0.8)
+    max_risk_trade  = getattr(settings, 'MAX_RISK_PER_TRADE', 0.02)
+    max_port_risk   = getattr(settings, 'MAX_PORTFOLIO_RISK', 0.06)
+    vol_spike_min   = getattr(settings, 'VOLUME_SPIKE_MIN', 1.3)
+    min_rr          = getattr(settings, 'MIN_RISK_REWARD', 2.0)
+    mtf_weight      = getattr(settings, 'MTF_WEIGHT_IN_SIGNAL', 0.15)
+    watchlist_len   = len(getattr(settings, 'STOCK_WATCHLIST', []))
+except Exception:
+    kelly_active = True;  kelly_mult = 0.5;  kelly_rr = 2.5
+    max_pos_pct = 0.15;   buy_threshold = 0.63; max_dd_limit = 0.10
+    max_daily_loss = 0.02; max_positions = 5;   atr_stop_mult = 1.0
+    atr_target_mult = 2.5; trailing_mult = 0.8; max_risk_trade = 0.02
+    max_port_risk = 0.06;  vol_spike_min = 1.3; min_rr = 2.0
+    mtf_weight = 0.15;     watchlist_len = 41
 
 TRADES_FILE   = 'logs/paper_trades_stocks_only.json'
 SIGNALS_FILE  = 'logs/latest_signals.json'
 SECTORS_FILE  = 'logs/sectors.json'
 EARNINGS_FILE = 'logs/earnings.json'
 
-COLORS = {
-    'bg'      : '#060814',
-    'card'    : '#0f172a',
-    'card2'   : '#1e293b',
-    'border'  : 'rgba(255, 255, 255, 0.06)',
-    'text'    : '#f8fafc',
-    'text_dim': '#94a3b8',
-    'green'   : '#10b981',
-    'red'     : '#f43f5e',
-    'yellow'  : '#f59e0b',
-    'blue'    : '#3b82f6',
-    'orange'  : '#f97316',
-    'accent'  : '#0ea5e9',
+# ── Bloomberg Colors ──────────────────────────────────────────────────────────
+C = {
+    'bg'     : '#080B10', 'panel'  : '#0D1117', 'card'   : '#10151E',
+    'card2'  : '#151C28', 'border' : '#1A2235', 'border2': '#222D42',
+    'text'   : '#CDD5E0', 'mid'    : '#7A8599', 'dim'    : '#3D4A5C',
+    'orange' : '#F58220', 'green'  : '#00C896', 'red'    : '#FF4757',
+    'yellow' : '#FFD700', 'cyan'   : '#00B4D8', 'purple' : '#B57BFF',
 }
 
-CARD_STYLE = {
-    'backgroundColor': COLORS['card'],
-    'border'         : f"1px solid {COLORS['border']}",
-    'borderRadius'   : '12px',
-    'padding'        : '20px',
-    'marginBottom'   : '16px',
+MONO = "'IBM Plex Mono', 'JetBrains Mono', 'Courier New', monospace"
+SANS = "'Inter', 'Segoe UI', Arial, sans-serif"
+
+TBL_HDR = {
+    'backgroundColor': '#0D1117', 'color': '#F58220', 'fontWeight': '700',
+    'border': '1px solid #1A2235', 'fontSize': '10px', 'letterSpacing': '1.5px',
+    'textTransform': 'uppercase', 'fontFamily': MONO, 'padding': '10px 14px',
+}
+TBL_CELL = {
+    'backgroundColor': '#10151E', 'color': '#CDD5E0',
+    'border': '1px solid #1A2235', 'textAlign': 'center',
+    'padding': '9px 14px', 'fontSize': '12px', 'fontFamily': MONO,
 }
 
-
-def load_portfolio():
-    if not os.path.exists(TRADES_FILE):
-        return {
-            'capital'         : 10000.0,
-            'starting_capital': 10000.0,
-            'positions'       : {},
-            'trade_history'   : [],
-        }
-    with open(TRADES_FILE, 'r') as f:
-        return json.load(f)
-
-
-def load_signals():
-    if not os.path.exists(SIGNALS_FILE):
-        return {}
-    with open(SIGNALS_FILE, 'r') as f:
-        return json.load(f)
-
-
-def load_sectors():
-    if not os.path.exists(SECTORS_FILE):
-        return {}
-    with open(SECTORS_FILE, 'r') as f:
-        return json.load(f)
-
-
-def load_earnings():
-    if not os.path.exists(EARNINGS_FILE):
-        return []
-    with open(EARNINGS_FILE, 'r') as f:
-        return json.load(f)
-
-
-def signal_color(signal):
-    return {
-        'BUY'          : COLORS['green'],
-        'AVOID'        : COLORS['red'],
-        'CAUTION'      : COLORS['yellow'],
-        'EARNINGS_HOLD': COLORS['orange'],
-        'HOLD'         : COLORS['text_dim'],
-    }.get(signal, COLORS['text_dim'])
+BLOOMBERG_CSS = r"""<!DOCTYPE html>
+<html>
+<head>
+    {%metas%}<title>{%title%}</title>{%favicon%}{%css%}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        html,body{background:#080B10}
+        body{scrollbar-width:thin;scrollbar-color:#1A2235 #0D1117}
+        ::-webkit-scrollbar{width:5px;height:5px}
+        ::-webkit-scrollbar-track{background:#0D1117}
+        ::-webkit-scrollbar-thumb{background:#1A2235;border-radius:3px}
+        .dash-tabs{border-bottom:1px solid #1A2235 !important;background:#0D1117 !important}
+        .dash-tab{background:#0D1117 !important;color:#3D4A5C !important;border:none !important;
+            border-bottom:2px solid transparent !important;border-radius:0 !important;
+            padding:11px 22px !important;font-family:'IBM Plex Mono',monospace !important;
+            font-size:10px !important;letter-spacing:2px !important;font-weight:700 !important;
+            text-transform:uppercase !important;cursor:pointer !important;
+            transition:color 0.15s,border-color 0.15s !important}
+        .dash-tab:hover{color:#7A8599 !important}
+        .dash-tab--selected{color:#F58220 !important;border-bottom:2px solid #F58220 !important;background:#0D1117 !important}
+        .dash-tab-content{background:transparent !important;padding:0 !important}
+        .dash-filter input{background:#0D1117 !important;color:#CDD5E0 !important;
+            border-color:#1A2235 !important;font-family:'IBM Plex Mono',monospace !important;font-size:11px !important}
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+        .live-dot{animation:blink 2s ease-in-out infinite}
+    </style>
+</head>
+<body>{%app_entry%}<footer>{%config%}{%scripts%}{%renderer%}</footer>
+</body></html>"""
 
 
-def get_kelly_sizing(prediction):
+def _jload(path, default):
+    if not os.path.exists(path):
+        return default
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+
+def load_portfolio(): return _jload(TRADES_FILE,   {'capital': 10000.0, 'starting_capital': 10000.0, 'positions': {}, 'trade_history': []})
+def load_signals():   return _jload(SIGNALS_FILE,  {})
+def load_sectors():   return _jload(SECTORS_FILE,  {})
+def load_earnings():  return _jload(EARNINGS_FILE, [])
+
+
+def kelly_sizing(pred):
     if not kelly_active:
         return 0.0, 0.0
-    p = float(prediction)
-    b = kelly_rr
-    if p > 0.0:
-        kelly_f = (p * (b + 1.0) - 1.0) / b
-        kelly_f = max(0.0, kelly_f)
-    else:
-        kelly_f = 0.0
-    alloc_fraction = kelly_f * kelly_mult
-    alloc_fraction = min(alloc_fraction, max_pos_pct)
-    return kelly_f, alloc_fraction
+    p = float(pred)
+    f = max(0.0, (p * (kelly_rr + 1) - 1) / kelly_rr)
+    return f, min(f * kelly_mult, max_pos_pct)
+
+
+def bb_panel(title, children, subtitle=''):
+    return html.Div(
+        style={'backgroundColor': C['card'], 'border': f"1px solid {C['border']}",
+               'borderRadius': '3px', 'overflow': 'hidden', 'marginBottom': '12px'},
+        children=[
+            html.Div(
+                style={'backgroundColor': C['panel'], 'borderBottom': f"2px solid {C['orange']}",
+                       'padding': '9px 16px', 'display': 'flex',
+                       'justifyContent': 'space-between', 'alignItems': 'center'},
+                children=[
+                    html.Span(title, style={'color': C['orange'], 'fontSize': '11px', 'fontWeight': '700',
+                                            'letterSpacing': '2px', 'fontFamily': MONO, 'textTransform': 'uppercase'}),
+                    html.Span(subtitle, style={'color': C['dim'], 'fontSize': '10px', 'fontFamily': MONO}),
+                ]
+            ),
+            html.Div(children, style={'padding': '16px'}),
+        ]
+    )
+
+
+def stat_row(k, v, vc=None):
+    return html.Div(
+        style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center',
+               'padding': '7px 0', 'borderBottom': f"1px solid {C['border']}"},
+        children=[
+            html.Span(k, style={'color': C['mid'], 'fontSize': '11px', 'fontFamily': MONO}),
+            html.Span(v, style={'color': vc or C['text'], 'fontSize': '11px', 'fontFamily': MONO, 'fontWeight': '700'}),
+        ]
+    )
+
+
+def _no_data(msg):
+    return html.Div([html.Span(msg, style={'color': C['mid']})],
+                    style={'fontFamily': MONO, 'fontSize': '12px', 'padding': '16px 0'})
 
 
 def create_app():
     app = Dash(
         __name__,
-        title                       = 'AlphaEdge Trading Terminal',
-        update_title                = None,
-        suppress_callback_exceptions= True,
+        title='AlphaEdge | Bloomberg Terminal',
+        update_title=None,
+        suppress_callback_exceptions=True,
     )
+    app.index_string = BLOOMBERG_CSS
 
     app.layout = html.Div(
-        style={
-            'backgroundColor': COLORS['bg'],
-            'minHeight'      : '100vh',
-            'padding'        : '24px',
-            'fontFamily'     : "'Plus Jakarta Sans', Arial, sans-serif",
-            'color'          : COLORS['text'],
-        },
+        style={'backgroundColor': C['bg'], 'minHeight': '100vh', 'fontFamily': SANS},
         children=[
-
-            # Auto refresh every 60s
-            dcc.Interval(
-                id      ='refresh',
-                interval=60 * 1000,
-                n_intervals=0
-            ),
-
+            dcc.Interval(id='tick', interval=60_000, n_intervals=0),
+            # Status bar
+            html.Div(id='status-bar', style={
+                'backgroundColor': '#050709', 'borderBottom': f"1px solid {C['border']}",
+                'height': '28px', 'display': 'flex', 'justifyContent': 'space-between',
+                'alignItems': 'center', 'padding': '0 24px',
+            }),
             # Header
             html.Div(
-                style={
-                    'backgroundColor': COLORS['card'],
-                    'border'         : f"1px solid {COLORS['border']}",
-                    'borderRadius'   : '16px',
-                    'padding'        : '24px 32px',
-                    'marginBottom'   : '24px',
-                    'display'        : 'flex',
-                    'justifyContent' : 'space-between',
-                    'alignItems'     : 'center',
-                },
+                style={'backgroundColor': C['panel'], 'borderBottom': f"3px solid {C['orange']}",
+                       'padding': '14px 24px', 'display': 'flex',
+                       'justifyContent': 'space-between', 'alignItems': 'center'},
                 children=[
-                    html.Div([
-                        html.H1(
-                            "AlphaEdge Trading Terminal",
-                            style={
-                                'color'       : COLORS['text'],
-                                'fontSize'    : '26px',
-                                'margin'      : '0',
-                                'fontWeight'  : '800',
-                                'letterSpacing': '-0.5px',
-                            }
-                        ),
-                        html.P(
-                            "Institutional AIUS Market Scanning System",
-                            style={
-                                'color'    : COLORS['text_dim'],
-                                'margin'   : '4px 0 0 0',
-                                'fontSize' : '13px',
-                            }
-                        ),
+                    html.Div(style={'display': 'flex', 'alignItems': 'center', 'gap': '14px'}, children=[
+                        html.Div('AE', style={
+                            'backgroundColor': C['orange'], 'color': '#080B10', 'fontFamily': MONO,
+                            'fontWeight': '900', 'fontSize': '14px', 'padding': '5px 9px',
+                            'borderRadius': '3px', 'letterSpacing': '1px',
+                        }),
+                        html.Div([
+                            html.Div('ALPHAEDGE TRADING TERMINAL', style={
+                                'color': C['text'], 'fontFamily': MONO, 'fontWeight': '700',
+                                'fontSize': '15px', 'letterSpacing': '4px',
+                            }),
+                            html.Div('INSTITUTIONAL AI MARKET SCANNING SYSTEM  --  V7', style={
+                                'color': C['dim'], 'fontFamily': MONO, 'fontSize': '9px',
+                                'letterSpacing': '2px', 'marginTop': '3px',
+                            }),
+                        ]),
                     ]),
-                    html.Div([
-                        html.P(
-                            id='last-updated',
-                            style={
-                                'color'    : COLORS['text_dim'],
-                                'fontSize' : '12px',
-                                'margin'   : '0',
-                                'fontFamily': "'JetBrains Mono', monospace",
-                                'textAlign': 'right',
-                            }
-                        ),
-                        html.Div(
-                            style={
-                                'display'       : 'flex',
-                                'alignItems'    : 'center',
-                                'gap'           : '8px',
-                                'marginTop'     : '6px',
-                                'justifyContent': 'flex-end',
-                            },
-                            children=[
-                                html.Div(
-                                    style={
-                                        'width'          : '8px',
-                                        'height'         : '8px',
-                                        'borderRadius'   : '50%',
-                                        'backgroundColor': COLORS['green'],
-                                        'boxShadow'      : f"0 0 6px {COLORS['green']}",
-                                    }
-                                ),
-                                html.Span(
-                                    "LIVE SCAN ACTIVE",
-                                    style={
-                                        'color'    : COLORS['green'],
-                                        'fontSize' : '11px',
-                                        'fontWeight': '700',
-                                        'letterSpacing': '0.5px',
-                                    }
-                                ),
-                            ]
-                        ),
-                    ]),
+                    html.Div(id='header-status', style={'display': 'flex', 'alignItems': 'center', 'gap': '28px'}),
                 ]
             ),
-
-            # Summary Cards Row
-            html.Div(
-                id='summary-cards',
-                style={
-                    'display'      : 'grid',
-                    'gridTemplateColumns': 'repeat(6, 1fr)',
-                    'gap'          : '16px',
-                    'marginBottom' : '24px',
-                }
-            ),
-
-            # Charts Row
-            html.Div(
-                style={
-                    'display'             : 'grid',
-                    'gridTemplateColumns' : '2fr 1fr',
-                    'gap'                 : '16px',
-                    'marginBottom'        : '24px',
-                },
-                children=[
-                    # Portfolio Chart
-                    html.Div(
-                        style=CARD_STYLE,
-                        children=[
-                            html.H3(
-                                "Equity Growth Curve",
-                                style={
-                                    'color'       : COLORS['text'],
-                                    'fontSize'    : '14px',
-                                    'fontWeight'  : '800',
-                                    'marginTop'   : '0',
-                                    'marginBottom': '16px',
-                                    'letterSpacing': '0.5px',
-                                }
-                            ),
-                            dcc.Graph(
-                                id    ='portfolio-chart',
-                                config={'displayModeBar': False},
-                            ),
-                        ]
-                    ),
-                    # Allocation Chart
-                    html.Div(
-                        style=CARD_STYLE,
-                        children=[
-                            html.H3(
-                                "Capital Allocation",
-                                style={
-                                    'color'       : COLORS['text'],
-                                    'fontSize'    : '14px',
-                                    'fontWeight'  : '800',
-                                    'marginTop'   : '0',
-                                    'marginBottom': '16px',
-                                    'letterSpacing': '0.5px',
-                                }
-                            ),
-                            dcc.Graph(
-                                id    ='allocation-chart',
-                                config={'displayModeBar': False},
-                            ),
-                        ]
-                    ),
-                ]
-            ),
-
-            # Sector Rotation + Earnings Row
-            html.Div(
-                style={
-                    'display'            : 'grid',
-                    'gridTemplateColumns': '1fr 1fr',
-                    'gap'                : '16px',
-                    'marginBottom'       : '24px',
-                },
-                children=[
-                    # Sector Rotation
-                    html.Div(
-                        style=CARD_STYLE,
-                        children=[
-                            html.H3(
-                                "Sector Strength & Flows",
-                                style={
-                                    'color'       : COLORS['text'],
-                                    'fontSize'    : '14px',
-                                    'fontWeight'  : '800',
-                                    'marginTop'   : '0',
-                                    'marginBottom': '16px',
-                                    'letterSpacing': '0.5px',
-                                }
-                            ),
-                            html.Div(id='sector-table'),
-                        ]
-                    ),
-                    # Earnings Calendar
-                    html.Div(
-                        style=CARD_STYLE,
-                        children=[
-                            html.H3(
-                                "Earnings Safety Calendar",
-                                style={
-                                    'color'       : COLORS['text'],
-                                    'fontSize'    : '14px',
-                                    'fontWeight'  : '800',
-                                    'marginTop'   : '0',
-                                    'marginBottom': '16px',
-                                    'letterSpacing': '0.5px',
-                                }
-                            ),
-                            html.Div(id='earnings-table'),
-                        ]
-                    ),
-                ]
-            ),
-
-            # Open Positions
-            html.Div(
-                style=CARD_STYLE,
-                children=[
-                    html.H3(
-                        "Active Open Positions",
-                        style={
-                            'color'       : COLORS['text'],
-                            'fontSize'    : '14px',
-                            'fontWeight'  : '800',
-                            'marginTop'   : '0',
-                            'marginBottom': '16px',
-                            'letterSpacing': '0.5px',
-                        }
-                    ),
-                    html.Div(id='positions-table'),
-                ]
-            ),
-
-            # Live Signals
-            html.Div(
-                style=CARD_STYLE,
-                children=[
-                    html.H3(
-                        "AI Scan Signals & Kelly Allocations",
-                        style={
-                            'color'       : COLORS['text'],
-                            'fontSize'    : '14px',
-                            'fontWeight'  : '800',
-                            'marginTop'   : '0',
-                            'marginBottom': '16px',
-                            'letterSpacing': '0.5px',
-                        }
-                    ),
-                    html.Div(id='signals-table'),
-                ]
-            ),
-
-            # System Config Panel
-            html.Div(
-                style=CARD_STYLE,
-                children=[
-                    html.H3(
-                        "Live System Configuration & Risk Limits",
-                        style={
-                            'color'       : COLORS['text'],
-                            'fontSize'    : '14px',
-                            'fontWeight'  : '800',
-                            'marginTop'   : '0',
-                            'marginBottom': '16px',
-                            'letterSpacing': '0.5px',
-                        }
-                    ),
-                    html.Div(
-                        style={
-                            'display': 'grid',
-                            'gridTemplateColumns': '1fr 1fr',
-                            'gap': '32px',
-                            'fontSize': '13px',
-                        },
-                        children=[
-                            html.Div([
-                                html.H4("Signal Generation & Sizing", style={'color': COLORS['accent'], 'fontWeight': '700', 'marginBottom': '10px'}),
-                                html.P(f"Watchlist Size: {watchlist_len} Tickers", style={'margin': '6px 0'}),
-                                html.P(f"Buy Signal Score Threshold: {buy_threshold}", style={'margin': '6px 0'}),
-                                html.P(f"Minimum Volume Spike Ratio: {volume_spike_min}x", style={'margin': '6px 0'}),
-                                html.P(f"Minimum Risk-Reward Target: {min_risk_reward:.1f} R:R", style={'margin': '6px 0'}),
-                                html.P(f"Kelly Position Sizing: {'ENABLED' if kelly_active else 'DISABLED'}", style={'color': COLORS['green'] if kelly_active else COLORS['red'], 'fontWeight': '700', 'margin': '6px 0'}),
-                                html.P(f"Fractional Kelly Multiplier: {kelly_mult} (Half-Kelly)", style={'margin': '6px 0'}),
-                                html.P(f"Kelly Calibrated R/R Ratio: {kelly_rr:.1f}x", style={'margin': '6px 0'}),
-                            ]),
-                            html.Div([
-                                html.H4("Portfolio Risk Rules & Stops", style={'color': COLORS['accent'], 'fontWeight': '700', 'marginBottom': '10px'}),
-                                html.P(f"Max Concurrent Positions Limit: {max_positions}", style={'margin': '6px 0'}),
-                                html.P(f"Max Position Cap (Capital %): {max_pos_pct*100:.1f}%", style={'margin': '6px 0'}),
-                                html.P(f"Max Volatility Risk Per Trade: {max_risk_per_trade*100:.1f}%", style={'margin': '6px 0'}),
-                                html.P(f"Max Portfolio Risk Limit: {max_portfolio_risk*100:.1f}%", style={'margin': '6px 0'}),
-                                html.P(f"Max Daily Realized Loss Limit: {max_daily_loss*100:.1f}%", style={'margin': '6px 0'}),
-                                html.P(f"Max Portfolio Drawdown Limit: {max_dd_limit*100:.1f}%", style={'margin': '6px 0'}),
-                                html.P(f"ATR Stop Loss Multiplier: {atr_stop_mult}x ATR", style={'margin': '6px 0'}),
-                                html.P(f"ATR Take Profit Multiplier: {atr_target_mult}x ATR", style={'margin': '6px 0'}),
-                            ]),
-                        ]
-                    ),
-                ]
-            ),
-
-            # Trade History
-            html.Div(
-                style=CARD_STYLE,
-                children=[
-                    html.H3(
-                        "Trade Execution History",
-                        style={
-                            'color'       : COLORS['text'],
-                            'fontSize'    : '14px',
-                            'fontWeight'  : '800',
-                            'marginTop'   : '0',
-                            'marginBottom': '16px',
-                            'letterSpacing': '0.5px',
-                        }
-                    ),
-                    html.Div(id='history-table'),
-                ]
-            ),
-
+            # KPI strip
+            html.Div(id='kpi-strip', style={
+                'backgroundColor': '#090C13', 'borderBottom': f"1px solid {C['border']}",
+                'display': 'flex', 'overflowX': 'auto',
+            }),
+            # Tabs
+            html.Div(style={'backgroundColor': C['panel'], 'padding': '0 24px'}, children=[
+                dcc.Tabs(
+                    id='tabs', value='overview',
+                    colors={'border': C['border'], 'primary': C['orange'], 'background': C['panel']},
+                    children=[
+                        dcc.Tab(label='OVERVIEW',   value='overview'),
+                        dcc.Tab(label='POSITIONS',  value='positions'),
+                        dcc.Tab(label='SIGNALS',    value='signals'),
+                        dcc.Tab(label='SECTORS',    value='sectors'),
+                        dcc.Tab(label='EARNINGS',   value='earnings'),
+                        dcc.Tab(label='HISTORY',    value='history'),
+                        dcc.Tab(label='SYS CONFIG', value='sysconfig'),
+                    ],
+                )
+            ]),
+            html.Div(id='tab-content', style={'padding': '20px 24px', 'minHeight': '600px'}),
             # Footer
             html.Div(
-                style={
-                    'textAlign' : 'center',
-                    'padding'   : '24px',
-                    'color'     : COLORS['text_dim'],
-                    'fontSize'  : '11px',
-                    'borderTop' : f"1px solid {COLORS['border']}",
-                    'marginTop' : '24px',
-                },
+                style={'backgroundColor': '#050709', 'borderTop': f"1px solid {C['border']}",
+                       'padding': '8px 24px', 'display': 'flex', 'justifyContent': 'space-between',
+                       'fontSize': '9px', 'fontFamily': MONO, 'color': C['dim'], 'letterSpacing': '0.5px'},
                 children=[
-                    html.P(
-                        "AlphaEdge V6 Terminal | "
-                        "Ensemble Learning Engine (XGB+LGB+RF+CatBoost+LSTM) | "
-                        "ATR Volatility Stops | "
-                        "Kelly Sizing Integration | "
-                        "Automated Execution"
-                    ),
+                    html.Span('ALPHAEDGE V7  |  XGB + LightGBM + CatBoost + RF + LSTM  |  Kelly Sizing  |  ATR Stops  |  Alpaca Paper'),
+                    html.Span('FOR RESEARCH PURPOSES ONLY  |  NOT FINANCIAL ADVICE'),
                 ]
             ),
         ]
     )
 
+    # ── HEADER + KPI CALLBACK ─────────────────────────────────────────────────
     @app.callback(
-        [
-            Output('summary-cards',    'children'),
-            Output('portfolio-chart',  'figure'),
-            Output('allocation-chart', 'figure'),
-            Output('sector-table',     'children'),
-            Output('earnings-table',   'children'),
-            Output('positions-table',  'children'),
-            Output('signals-table',    'children'),
-            Output('history-table',    'children'),
-            Output('last-updated',     'children'),
-        ],
-        [Input('refresh', 'n_intervals')]
+        [Output('status-bar', 'children'), Output('header-status', 'children'), Output('kpi-strip', 'children')],
+        [Input('tick', 'n_intervals')]
     )
-    def update_dashboard(n):
+    def update_header(n):
+        p        = load_portfolio()
+        capital  = p.get('capital', 10000)
+        starting = p.get('starting_capital', 10000)
+        positions = p.get('positions', {})
+        history  = p.get('trade_history', [])
+        pos_val  = sum(pos.get('shares', 0) * pos.get('current_price', pos.get('entry_price', 0)) for pos in positions.values())
+        total    = capital + pos_val
+        pnl      = total - starting
+        pnl_pct  = pnl / starting * 100 if starting > 0 else 0
+        sells    = [t for t in history if t.get('action') in {'SELL', 'PARTIAL_SELL'}]
+        wins     = sum(1 for t in sells if t.get('pnl', 0) > 0)
+        losses   = sum(1 for t in sells if t.get('pnl', 0) <= 0)
+        closed   = wins + losses
+        wr       = wins / closed * 100 if closed > 0 else 0
+        realized = sum(t.get('pnl', 0) for t in sells)
+        drawdown = min(0, pnl / starting * 100) if starting > 0 else 0
+        pnl_c    = C['green'] if pnl >= 0 else C['red']
+        wr_c     = C['green'] if wr >= 50 else C['red']
+        dd_c     = C['green'] if drawdown >= -2 else (C['yellow'] if drawdown >= -5 else C['red'])
+        now_str  = datetime.now().strftime('%Y-%m-%d  %H:%M:%S ET')
 
-        portfolio = load_portfolio()
+        status_bar = [
+            html.Span('PAPER TRADING  |  ALPACA CONNECTED  |  BULL MARKET  |  SCAN: 16:15 ET DAILY',
+                      style={'color': C['green'], 'fontSize': '9px', 'fontFamily': MONO, 'letterSpacing': '1px'}),
+            html.Span(now_str, style={'color': C['mid'], 'fontSize': '9px', 'fontFamily': MONO}),
+        ]
+
+        header_status = [
+            html.Div([
+                html.Div('NEXT SCAN', style={'color': C['dim'], 'fontSize': '9px', 'fontFamily': MONO, 'letterSpacing': '1px', 'marginBottom': '3px'}),
+                html.Div('16:15 ET',  style={'color': C['orange'], 'fontSize': '14px', 'fontFamily': MONO, 'fontWeight': '700'}),
+            ]),
+            html.Div(style={'width': '1px', 'height': '32px', 'backgroundColor': C['border']}),
+            html.Div([
+                html.Div(className='live-dot', style={
+                    'width': '9px', 'height': '9px', 'borderRadius': '50%',
+                    'backgroundColor': C['green'], 'boxShadow': f"0 0 8px {C['green']}", 'margin': '0 auto 4px',
+                }),
+                html.Div('LIVE', style={'color': C['green'], 'fontSize': '9px', 'fontFamily': MONO, 'fontWeight': '700', 'letterSpacing': '1px'}),
+            ], style={'textAlign': 'center'}),
+        ]
+
+        def kpi(label, value, color, sub=''):
+            return html.Div(
+                style={'padding': '10px 22px', 'borderRight': f"1px solid {C['border']}", 'minWidth': '140px', 'flexShrink': '0'},
+                children=[
+                    html.Div(label, style={'color': C['dim'], 'fontSize': '8px', 'fontFamily': MONO, 'letterSpacing': '2px', 'textTransform': 'uppercase', 'marginBottom': '4px'}),
+                    html.Div(value, style={'color': color, 'fontSize': '19px', 'fontFamily': MONO, 'fontWeight': '700', 'letterSpacing': '-0.5px'}),
+                    html.Div(sub,   style={'color': C['dim'], 'fontSize': '9px', 'fontFamily': MONO, 'marginTop': '2px'}),
+                ]
+            )
+
+        kpi_strip = [
+            kpi('NET LIQUIDATION', f'${total:,.2f}',     C['text'],    f'Started ${starting:,.0f}'),
+            kpi('CASH AVAILABLE',  f'${capital:,.2f}',   C['cyan'],    f'{capital/total*100:.1f}% of port' if total > 0 else ''),
+            kpi('TOTAL P&L',       f'${pnl:+,.2f}',      pnl_c,        f'{pnl_pct:+.2f}% overall'),
+            kpi('REALIZED P&L',    f'${realized:+,.2f}', pnl_c,        f'{closed} closed trades'),
+            kpi('POSITIONS',       f'{len(positions)}/{max_positions}', C['yellow'], f'${pos_val:,.2f} invested'),
+            kpi('WIN RATE',        f'{wr:.1f}%',          wr_c,         f'{wins}W / {losses}L'),
+            kpi('DRAWDOWN',        f'{drawdown:.2f}%',    dd_c,         'Peak-to-trough'),
+        ]
+        return status_bar, header_status, kpi_strip
+
+    # ── TAB CONTENT CALLBACK ─────────────────────────────────────────────────
+    @app.callback(
+        Output('tab-content', 'children'),
+        [Input('tabs', 'value'), Input('tick', 'n_intervals')]
+    )
+    def render_tab(tab, n):
+        p         = load_portfolio()
         signals   = load_signals()
         sectors   = load_sectors()
         earnings  = load_earnings()
+        capital   = p.get('capital', 10000)
+        starting  = p.get('starting_capital', 10000)
+        positions = p.get('positions', {})
+        history   = p.get('trade_history', [])
+        pos_val   = sum(pos.get('shares', 0) * pos.get('current_price', pos.get('entry_price', 0)) for pos in positions.values())
+        total     = capital + pos_val
+        pnl       = total - starting
+        sells     = [t for t in history if t.get('action') in {'SELL', 'PARTIAL_SELL'}]
+        wins      = sum(1 for t in sells if t.get('pnl', 0) > 0)
+        losses    = sum(1 for t in sells if t.get('pnl', 0) <= 0)
+        closed    = wins + losses
+        wr        = wins / closed * 100 if closed > 0 else 0
+        realized  = sum(t.get('pnl', 0) for t in sells)
+        pnl_c     = C['green'] if pnl >= 0 else C['red']
 
-        capital   = portfolio.get('capital', 10000)
-        starting  = portfolio.get('starting_capital', 10000)
-        positions = portfolio.get('positions', {})
-        history   = portfolio.get('trade_history', [])
+        # ── OVERVIEW ──────────────────────────────────────────────────────
+        if tab == 'overview':
+            vals = [starting]; dates = ['START']
+            for t in history:
+                if t.get('action') in {'SELL', 'PARTIAL_SELL'}:
+                    vals.append(vals[-1] + t.get('pnl', 0))
+                    dates.append(t.get('date', '')[:10])
+            vals.append(total); dates.append('NOW')
+            lc = C['green'] if vals[-1] >= vals[0] else C['red']
+            fc = 'rgba(0,200,150,0.06)' if vals[-1] >= vals[0] else 'rgba(255,71,87,0.06)'
+            eq = go.Figure()
+            eq.add_trace(go.Scatter(x=dates, y=vals, mode='lines+markers',
+                line=dict(color=lc, width=2.5, shape='spline'),
+                marker=dict(size=5, color=lc, line=dict(color=C['card'], width=1)),
+                fill='tozeroy', fillcolor=fc))
+            eq.add_hline(y=starting, line_dash='dash', line_color=C['dim'], opacity=0.5)
+            eq.update_layout(
+                plot_bgcolor=C['card'], paper_bgcolor=C['card'],
+                font=dict(color=C['mid'], size=10, family=MONO),
+                xaxis=dict(gridcolor=C['border'], showgrid=True, tickfont=dict(size=9), zeroline=False),
+                yaxis=dict(gridcolor=C['border'], showgrid=True, tickprefix='$', tickfont=dict(size=9), zeroline=False),
+                margin=dict(l=65, r=16, t=14, b=30), height=270, showlegend=False)
 
-        # Calculate totals
-        position_value = sum(
-            pos.get('shares', 0) * pos.get(
-                'current_price', pos.get('entry_price', 0)
-            )
-            for pos in positions.values()
-        )
-        total_value = capital + position_value
-        total_pnl   = total_value - starting
-        total_pct   = (total_pnl / starting) * 100 if starting > 0 else 0
+            al_l = ['Cash'] + list(positions.keys())
+            al_v = [capital] + [p_.get('shares', 0) * p_.get('current_price', p_.get('entry_price', 0)) for p_ in positions.values()]
+            al_c = [C['border2'], C['orange'], C['green'], C['cyan'], C['purple'], C['yellow']]
+            alloc = go.Figure(go.Pie(labels=al_l, values=al_v,
+                marker=dict(colors=al_c[:len(al_l)], line=dict(color=C['card'], width=2)),
+                hole=0.65, textfont=dict(color=C['text'], size=10, family=MONO), textinfo='label+percent'))
+            alloc.update_layout(plot_bgcolor=C['card'], paper_bgcolor=C['card'],
+                font=dict(color=C['text']), margin=dict(l=10, r=10, t=10, b=10), height=270, showlegend=False)
 
-        # SELL + PARTIAL_SELL both count as realized exits
-        _realized  = {'SELL', 'PARTIAL_SELL'}
-        sells      = [t for t in history if t.get('action') in _realized]
-        wins       = len([t for t in sells if t.get('pnl', 0) > 0])
-        losses     = len([t for t in sells if t.get('pnl', 0) <= 0])
-        total_closed = wins + losses
-        win_rate   = wins / total_closed * 100 if total_closed > 0 else 0
-        total_realized_pnl = sum(t.get('pnl', 0) for t in sells)
+            gp = sum(t.get('pnl', 0) for t in sells if t.get('pnl', 0) > 0)
+            gl = sum(t.get('pnl', 0) for t in sells if t.get('pnl', 0) <= 0)
+            pf = abs(gp / gl) if gl != 0 else 0
+            aw = gp / wins    if wins > 0 else 0
+            al_ = gl / losses if losses > 0 else 0
+            exp = (wr / 100 * aw) + ((1 - wr / 100) * al_)
+            pf_c = C['green'] if pf >= 1.5 else (C['yellow'] if pf >= 1 else C['red'])
 
-        # ── Summary Cards ──────────────────────────────────────
-        def make_card(label, value, color, subtitle=None):
-            return html.Div(
-                style={
-                    'backgroundColor': COLORS['card'],
-                    'border'         : f"1px solid {COLORS['border']}",
-                    'borderRadius'   : '12px',
-                    'padding'        : '16px',
-                    'borderTop'      : f"3px solid {color}",
-                },
-                children=[
-                    html.P(
-                        label,
-                        style={
-                            'color'        : COLORS['text_dim'],
-                            'fontSize'     : '10px',
-                            'margin'       : '0 0 6px 0',
-                            'letterSpacing': '1px',
-                            'fontWeight'   : '700',
-                            'textTransform': 'uppercase',
-                        }
-                    ),
-                    html.H2(
-                        value,
-                        style={
-                            'color'     : color,
-                            'margin'    : '0',
-                            'fontSize'  : '20px',
-                            'fontWeight': '800',
-                            'fontFamily': "'JetBrains Mono', monospace",
-                        }
-                    ),
-                    html.P(
-                        subtitle or '',
-                        style={
-                            'color'   : COLORS['text_dim'],
-                            'fontSize': '11px',
-                            'margin'  : '4px 0 0 0',
-                        }
-                    ),
-                ]
-            )
+            return html.Div([
+                html.Div(style={'display': 'grid', 'gridTemplateColumns': '2fr 1fr', 'gap': '12px', 'marginBottom': '12px'}, children=[
+                    bb_panel('EQUITY GROWTH CURVE', dcc.Graph(figure=eq,    config={'displayModeBar': False}), f'NAV: ${total:,.2f}'),
+                    bb_panel('CAPITAL ALLOCATION',  dcc.Graph(figure=alloc, config={'displayModeBar': False})),
+                ]),
+                bb_panel('PERFORMANCE ANALYTICS', html.Div(
+                    style={'display': 'grid', 'gridTemplateColumns': '1fr 1fr 1fr', 'gap': '32px'},
+                    children=[
+                        html.Div([
+                            stat_row('Net Liquidation',  f'${total:,.2f}'),
+                            stat_row('Starting Capital', f'${starting:,.2f}'),
+                            stat_row('Total P&L',        f'${pnl:+,.2f}',    pnl_c),
+                            stat_row('Total Return',     f'{pnl/starting*100:+.2f}%' if starting else 'N/A', pnl_c),
+                            stat_row('Cash Available',   f'${capital:,.2f}'),
+                        ]),
+                        html.Div([
+                            stat_row('Realized P&L',  f'${realized:+,.2f}', pnl_c),
+                            stat_row('Win Rate',      f'{wr:.1f}%',          C['green'] if wr >= 50 else C['red']),
+                            stat_row('Profit Factor', f'{pf:.2f}' if closed > 0 else 'N/A', pf_c),
+                            stat_row('Avg Win',       f'${aw:+.2f}',         C['green']),
+                            stat_row('Avg Loss',      f'${al_:+.2f}',        C['red']),
+                        ]),
+                        html.Div([
+                            stat_row('Total Trades',     str(len(history))),
+                            stat_row('Closed Trades',    str(closed)),
+                            stat_row('Open Positions',   f'{len(positions)}/{max_positions}'),
+                            stat_row('Expectancy/Trade', f'${exp:+.2f}',      C['green'] if exp >= 0 else C['red']),
+                            stat_row('Sharpe Ratio',     'N/A (need 20+ trades)', C['dim']),
+                        ]),
+                    ]
+                )),
+            ])
 
-        pnl_color = COLORS['green'] if total_pnl >= 0 else COLORS['red']
-        wr_color  = COLORS['green'] if win_rate >= 50 else COLORS['red']
-
-        cards = [
-            make_card(
-                "Total Net Liq",
-                f"${total_value:,.2f}",
-                COLORS['text'],
-                f"Started: ${starting:,.2f}"
-            ),
-            make_card(
-                "Cash Available",
-                f"${capital:,.2f}",
-                COLORS['blue'],
-                f"{capital/total_value*100:.1f}% cash" if total_value > 0 else ""
-            ),
-            make_card(
-                "Total P&L",
-                f"${total_pnl:+,.2f}",
-                pnl_color,
-                f"{total_pct:+.2f}% overall"
-            ),
-            make_card(
-                "Realized P&L",
-                f"${total_realized_pnl:+,.2f}",
-                pnl_color,
-                f"{total_closed} closed trades"
-            ),
-            make_card(
-                "Active Slots",
-                f"{len(positions)} / {max_positions}",
-                COLORS['yellow'],
-                f"Invested: ${position_value:,.2f}"
-            ),
-            make_card(
-                "Trade Win Rate",
-                f"{win_rate:.1f}%",
-                wr_color,
-                f"{wins} Wins / {losses} Losses"
-            ),
-        ]
-
-        # ── Portfolio Chart ────────────────────────────────────
-        values = [starting]
-        dates  = ['Start']
-
-        for trade in history:
-            if trade.get('action') in {'SELL', 'PARTIAL_SELL'}:
-                values.append(values[-1] + trade.get('pnl', 0))
-                dates.append(trade.get('date', '')[:10])
-
-        values.append(total_value)
-        dates.append('Now')
-
-        line_color = COLORS['green'] if values[-1] >= values[0] else COLORS['red']
-        fill_color = 'rgba(16,185,129,0.04)' if values[-1] >= values[0] else 'rgba(244,63,94,0.04)'
-
-        portfolio_fig = go.Figure()
-        portfolio_fig.add_trace(go.Scatter(
-            x         = dates,
-            y         = values,
-            mode      = 'lines+markers',
-            line      = dict(color=line_color, width=2.5, shape='spline'),
-            marker    = dict(size=5, color=line_color),
-            fill      = 'tozeroy',
-            fillcolor = fill_color,
-            name      = 'Net Asset Value',
-        ))
-        portfolio_fig.add_hline(
-            y         = starting,
-            line_dash = 'dash',
-            line_color= COLORS['text_dim'],
-            opacity   = 0.4,
-        )
-        portfolio_fig.update_layout(
-            plot_bgcolor = COLORS['card'],
-            paper_bgcolor= COLORS['card'],
-            font         = dict(color=COLORS['text'], size=10, family="JetBrains Mono"),
-            xaxis        = dict(
-                gridcolor = 'rgba(255,255,255,0.03)',
-                showgrid  = True,
-            ),
-            yaxis        = dict(
-                gridcolor  = 'rgba(255,255,255,0.03)',
-                showgrid   = True,
-                tickprefix = '$',
-            ),
-            margin       = dict(l=55, r=15, t=10, b=35),
-            height       = 240,
-            showlegend   = False,
-        )
-
-        # ── Allocation Chart ───────────────────────────────────
-        alloc_labels = ['Cash']
-        alloc_values = [capital]
-        alloc_colors = ['#1e293b']
-
-        pie_colors = [
-            COLORS['accent'], COLORS['green'],
-            COLORS['yellow'], COLORS['orange'],
-            '#a855f7', '#06b6d4',
-        ]
-
-        for i, (sym, pos) in enumerate(positions.items()):
-            val = pos.get('shares', 0) * pos.get(
-                'current_price', pos.get('entry_price', 0)
-            )
-            alloc_labels.append(sym)
-            alloc_values.append(val)
-            alloc_colors.append(pie_colors[i % len(pie_colors)])
-
-        alloc_fig = go.Figure(data=[go.Pie(
-            labels      = alloc_labels,
-            values      = alloc_values,
-            marker      = dict(
-                colors = alloc_colors,
-                line   = dict(color=COLORS['card'], width=2),
-            ),
-            hole        = 0.6,
-            textfont    = dict(color=COLORS['text'], size=10, family="Plus Jakarta Sans"),
-            textinfo    = 'label+percent',
-        )])
-        alloc_fig.update_layout(
-            plot_bgcolor = COLORS['card'],
-            paper_bgcolor= COLORS['card'],
-            font         = dict(color=COLORS['text']),
-            margin       = dict(l=10, r=10, t=10, b=10),
-            height       = 240,
-            showlegend   = False,
-        )
-
-        # ── Sector Rotation Table ──────────────────────────────
-        if sectors:
-            sector_rows = []
-            for name, data in sectors.items():
-                flow  = data.get('flow', 'NEUTRAL')
-                score = data.get('score', 0)
-                mom   = data.get('momentum_21d', 0)
-                color = (
-                    COLORS['green']    if flow == 'INFLOW'
-                    else COLORS['red'] if flow == 'OUTFLOW'
-                    else COLORS['text_dim']
-                )
-                sector_rows.append(
-                    html.Div(
-                        style={
-                            'display'        : 'flex',
-                            'justifyContent' : 'space-between',
-                            'alignItems'     : 'center',
-                            'padding'        : '8px 16px',
-                            'marginBottom'   : '6px',
-                            'backgroundColor': COLORS['card'],
-                            'border'         : f"1px solid {COLORS['border']}",
-                            'borderRadius'   : '8px',
-                            'borderLeft'     : f"4px solid {color}",
-                        },
-                        children=[
-                            html.Span(
-                                name,
-                                style={
-                                    'color'   : COLORS['text'],
-                                    'fontSize': '12px',
-                                    'fontWeight': '700',
-                                }
-                            ),
-                            html.Span(
-                                f"{mom:+.2f}%",
-                                style={
-                                    'color'   : COLORS['green'] if mom >= 0 else COLORS['red'],
-                                    'fontSize': '12px',
-                                    'fontFamily': "'JetBrains Mono', monospace",
-                                }
-                            ),
-                            html.Span(
-                                flow,
-                                style={
-                                    'color'       : color,
-                                    'fontSize'    : '10px',
-                                    'fontWeight'  : '800',
-                                    'letterSpacing': '0.5px',
-                                }
-                            ),
-                        ]
-                    )
-                )
-            sector_display = html.Div(sector_rows)
-        else:
-            sector_display = html.P(
-                "No sector data yet. Run scanner first.",
-                style={'color': COLORS['text_dim']}
-            )
-
-        # ── Earnings Calendar ──────────────────────────────────
-        if earnings:
-            earn_rows = []
-            for e in earnings:
-                days  = e.get('days_until', 0)
-                color = (
-                    COLORS['red']    if days == 0
-                    else COLORS['yellow'] if days <= 2
-                    else COLORS['text_dim']
-                )
-                label = (
-                    "TODAY!" if days == 0
-                    else "TOMORROW" if days == 1
-                    else f"In {days} days"
-                )
-                earn_rows.append(
-                    html.Div(
-                        style={
-                            'display'        : 'flex',
-                            'justifyContent' : 'space-between',
-                            'padding'        : '8px 16px',
-                            'marginBottom'   : '6px',
-                            'backgroundColor': COLORS['card'],
-                            'border'         : f"1px solid {COLORS['border']}",
-                            'borderRadius'   : '8px',
-                            'borderLeft'     : f"4px solid {color}",
-                        },
-                        children=[
-                            html.Span(
-                                e.get('symbol', ''),
-                                style={
-                                    'color'     : COLORS['text'],
-                                    'fontWeight': '700',
-                                    'fontSize'  : '12px',
-                                }
-                            ),
-                            html.Span(
-                                e.get('date', ''),
-                                style={
-                                    'color'   : COLORS['text_dim'],
-                                    'fontSize': '11px',
-                                    'fontFamily': "'JetBrains Mono', monospace",
-                                }
-                            ),
-                            html.Span(
-                                label,
-                                style={
-                                    'color'     : color,
-                                    'fontSize'  : '11px',
-                                    'fontWeight': '700',
-                                }
-                            ),
-                        ]
-                    )
-                )
-            earnings_display = html.Div(earn_rows)
-        else:
-            earnings_display = html.P(
-                "No earnings this week.",
-                style={'color': COLORS['text_dim']}
-            )
-
-        # ── Open Positions Table ───────────────────────────────
-        if positions:
-            pos_rows = []
+        # ── POSITIONS ─────────────────────────────────────────────────────
+        elif tab == 'positions':
+            if not positions:
+                return bb_panel('ACTIVE POSITIONS', _no_data('NO OPEN POSITIONS -- WATCHING 41 STOCKS'))
+            rows = []
             for sym, pos in positions.items():
-                shares  = pos.get('shares', 0)
-                entry   = pos.get('entry_price', 0)
-                current = pos.get('current_price', entry)
-                pnl     = (current - entry) * shares
-                pnl_pct = (current - entry) / entry * 100 if entry > 0 else 0
-                cost    = pos.get('cost', shares * entry)
-                
-                # Kelly target size reference
-                entry_kelly_alloc = get_kelly_sizing(pos.get('signal', 0.5))[1]
-                
-                pos_rows.append({
-                    'Symbol'       : sym,
-                    'Shares'       : shares,
-                    'Entry Price'  : f"${entry:.2f}",
-                    'Current Price': f"${current:.2f}",
-                    'Cost'         : f"${cost:.2f}",
-                    'Kelly Size'   : f"{entry_kelly_alloc * 100:.1f}%",
-                    'P&L'          : f"${pnl:+.2f}",
-                    'P&L %'        : f"{pnl_pct:+.2f}%",
-                    'Entry Date'   : pos.get('entry_date', '')[:10],
-                    'Reason'       : pos.get('reason', ''),
-                })
+                shares = pos.get('shares', 0); entry = pos.get('entry_price', 0)
+                curr   = pos.get('current_price', entry)
+                p_pnl  = (curr - entry) * shares
+                p_pct  = (curr - entry) / entry * 100 if entry > 0 else 0
+                sl     = entry * (1 - pos.get('stop_loss_pct', 0.08))
+                _, af  = kelly_sizing(pos.get('signal', 0.5))
+                rows.append({'SYMBOL': sym, 'SHARES': shares, 'ENTRY': f'${entry:.2f}', 'CURRENT': f'${curr:.2f}',
+                    'STOP LOSS': f'${sl:.2f}', 'ATR': f'${pos.get("atr",0):.2f}',
+                    'COST': f'${pos.get("cost", shares*entry):.2f}', 'KELLY SZ': f'{af*100:.1f}%',
+                    'P&L $': f'${p_pnl:+.2f}', 'P&L %': f'{p_pct:+.2f}%',
+                    'ENTRY DATE': pos.get('entry_date', '')[:10], 'REASON': pos.get('reason', '').upper()})
+            df = pd.DataFrame(rows)
+            return bb_panel(f'ACTIVE POSITIONS  --  {len(positions)}/{max_positions} SLOTS  |  ${pos_val:,.2f} INVESTED',
+                dash_table.DataTable(data=df.to_dict('records'), columns=[{'name': c, 'id': c} for c in df.columns],
+                    style_header=TBL_HDR, style_cell=TBL_CELL,
+                    style_data_conditional=[
+                        {'if': {'filter_query': '{P&L $} contains "+"', 'column_id': 'P&L $'}, 'color': C['green'], 'fontWeight': 'bold'},
+                        {'if': {'filter_query': '{P&L $} contains "-"', 'column_id': 'P&L $'}, 'color': C['red'],   'fontWeight': 'bold'},
+                        {'if': {'filter_query': '{P&L %} contains "+"', 'column_id': 'P&L %'}, 'color': C['green']},
+                        {'if': {'filter_query': '{P&L %} contains "-"', 'column_id': 'P&L %'}, 'color': C['red']},
+                    ], sort_action='native', page_size=20))
 
-            pos_df = pd.DataFrame(pos_rows)
-            positions_display = dash_table.DataTable(
-                data    = pos_df.to_dict('records'),
-                columns = [{'name': c, 'id': c} for c in pos_df.columns],
-                style_header={
-                    'backgroundColor': COLORS['card'],
-                    'color'          : COLORS['text_dim'],
-                    'fontWeight'     : '800',
-                    'border'         : f"1px solid {COLORS['border']}",
-                    'fontSize'       : '10px',
-                    'letterSpacing'  : '1px',
-                },
-                style_cell={
-                    'backgroundColor': COLORS['card'],
-                    'color'          : COLORS['text'],
-                    'border'         : f"1px solid {COLORS['border']}",
-                    'textAlign'      : 'center',
-                    'padding'        : '12px',
-                    'fontSize'       : '12px',
-                    'fontFamily'     : "'JetBrains Mono', monospace",
-                },
-                style_data_conditional=[
-                    {
-                        'if'             : {'filter_query': '{P&L} contains "+"'},
-                        'color'          : COLORS['green'],
-                        'column_id'      : 'P&L',
-                        'fontWeight'     : 'bold',
-                    },
-                    {
-                        'if'             : {'filter_query': '{P&L} contains "-"'},
-                        'color'          : COLORS['red'],
-                        'column_id'      : 'P&L',
-                        'fontWeight'     : 'bold',
-                    },
-                    {
-                        'if'             : {'filter_query': '{P&L %} contains "+"'},
-                        'color'          : COLORS['green'],
-                        'column_id'      : 'P&L %',
-                    },
-                    {
-                        'if'             : {'filter_query': '{P&L %} contains "-"'},
-                        'color'          : COLORS['red'],
-                        'column_id'      : 'P&L %',
-                    },
-                ],
-            )
-        else:
-            positions_display = html.P(
-                "No open positions.",
-                style={'color': COLORS['text_dim'], 'padding': '12px'}
-            )
+        # ── SIGNALS ───────────────────────────────────────────────────────
+        elif tab == 'signals':
+            if not signals:
+                return bb_panel('AI SCAN SIGNALS', _no_data('NO SIGNAL DATA -- SCANNER RUNS AT 16:15 ET DAILY'))
+            rows = []
+            for sym, d in sorted(signals.items(), key=lambda x: x[1].get('combined', x[1].get('prediction', 0)), reverse=True):
+                sig = d.get('signal', 'HOLD'); pred = d.get('prediction', 0)
+                comb = d.get('combined', 0);   _, af = kelly_sizing(pred)
+                rows.append({'SYMBOL': sym, 'SIGNAL': sig, 'AI SCORE': f'{pred*100:.1f}%',
+                    'COMBINED': f'{comb:.3f}', 'REGIME': d.get('regime', '').upper(),
+                    'SENTIMENT': f'{d.get("sentiment", 0):+.3f}', 'SECTOR': d.get('sector', ''),
+                    'KELLY %': f'{af*100:.1f}%', 'TARGET $': f'${total * af:,.0f}', 'PRICE': f'${d.get("price", 0):.2f}'})
+            df = pd.DataFrame(rows)
+            buy_ct   = sum(1 for r in rows if r['SIGNAL'] == 'BUY')
+            avoid_ct = sum(1 for r in rows if r['SIGNAL'] in ('AVOID', 'VETOED'))
+            return bb_panel(f'AI SCAN SIGNALS  --  {len(signals)} STOCKS  |  {buy_ct} BUY  |  {avoid_ct} AVOID',
+                dash_table.DataTable(data=df.to_dict('records'), columns=[{'name': c, 'id': c} for c in df.columns],
+                    style_header=TBL_HDR, style_cell=TBL_CELL,
+                    style_data_conditional=[
+                        {'if': {'filter_query': '{SIGNAL} = "BUY"',          'column_id': 'SIGNAL'}, 'color': C['green'],  'fontWeight': 'bold', 'backgroundColor': '#001F14'},
+                        {'if': {'filter_query': '{SIGNAL} = "AVOID"',         'column_id': 'SIGNAL'}, 'color': C['red'],    'fontWeight': 'bold'},
+                        {'if': {'filter_query': '{SIGNAL} = "VETOED"',        'column_id': 'SIGNAL'}, 'color': C['red'],    'fontWeight': 'bold'},
+                        {'if': {'filter_query': '{SIGNAL} = "CAUTION"',       'column_id': 'SIGNAL'}, 'color': C['yellow'], 'fontWeight': 'bold'},
+                        {'if': {'filter_query': '{SIGNAL} = "EARNINGS_HOLD"', 'column_id': 'SIGNAL'}, 'color': C['orange'], 'fontWeight': 'bold'},
+                        {'if': {'filter_query': '{REGIME} = "UPTREND"',       'column_id': 'REGIME'}, 'color': C['green']},
+                        {'if': {'filter_query': '{REGIME} = "DOWNTREND"',     'column_id': 'REGIME'}, 'color': C['red']},
+                        {'if': {'filter_query': '{REGIME} = "VOLATILE"',      'column_id': 'REGIME'}, 'color': C['yellow']},
+                        {'if': {'filter_query': '{SENTIMENT} contains "+"',   'column_id': 'SENTIMENT'}, 'color': C['green']},
+                        {'if': {'filter_query': '{SENTIMENT} contains "-"',   'column_id': 'SENTIMENT'}, 'color': C['red']},
+                    ], sort_action='native', filter_action='native', page_size=25))
 
-        # ── Signals Table ──────────────────────────────────────
-        if signals:
-            sig_rows = []
-            for sym, data in sorted(
-                signals.items(),
-                key    = lambda x: x[1].get('prediction', 0),
-                reverse= True
-            ):
-                sig = data.get('signal', 'HOLD')
-                pred = data.get('prediction', 0)
-                
-                # Calculate Kelly Sizing
-                kelly_f, alloc_frac = get_kelly_sizing(pred)
-                target_allocation_dollars = total_value * alloc_frac
-                
-                sig_rows.append({
-                    'Symbol'        : sym,
-                    'Signal'        : sig,
-                    'AI Score'      : f"{pred * 100:.1f}%",
-                    'Regime'        : data.get('regime', ''),
-                    'Sentiment'     : f"{data.get('sentiment', 0):+.2f}",
-                    'Kelly Fraction': f"{kelly_f * 100:.1f}%",
-                    'Target Size'   : f"{alloc_frac * 100:.1f}%",
-                    'Target Alloc'  : f"${target_allocation_dollars:,.2f}",
-                    'Price'         : f"${data.get('price', 0):.2f}",
-                })
+        # ── SECTORS ───────────────────────────────────────────────────────
+        elif tab == 'sectors':
+            if not sectors:
+                return bb_panel('SECTOR ROTATION', _no_data('NO SECTOR DATA -- RUNS WITH NEXT SCAN'))
+            def sector_item(name, d):
+                flow = d.get('flow', 'NEUTRAL'); score = d.get('score', 0); mom = d.get('momentum_21d', 0)
+                sc   = C['green'] if flow == 'INFLOW' else (C['red'] if flow == 'OUTFLOW' else C['mid'])
+                dot  = 'UP' if flow == 'INFLOW' else ('DN' if flow == 'OUTFLOW' else '--')
+                bar  = min(abs(score) * 500, 100); bc = C['green'] if score >= 0 else C['red']
+                return html.Div(style={'marginBottom': '14px'}, children=[
+                    html.Div(style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center', 'marginBottom': '5px'}, children=[
+                        html.Div([
+                            html.Span(dot + '  ', style={'color': sc, 'fontSize': '9px', 'fontFamily': MONO, 'fontWeight': '700'}),
+                            html.Span(name.upper(), style={'color': C['text'], 'fontSize': '12px', 'fontFamily': MONO, 'fontWeight': '700', 'letterSpacing': '1px'}),
+                        ]),
+                        html.Div([
+                            html.Span(f'{mom:+.2f}%', style={'color': C['green'] if mom >= 0 else C['red'], 'fontSize': '12px', 'fontFamily': MONO, 'marginRight': '10px'}),
+                            html.Span(flow, style={'color': sc, 'fontSize': '9px', 'fontFamily': MONO, 'fontWeight': '700',
+                                                    'letterSpacing': '1.5px', 'backgroundColor': f'{sc}18', 'padding': '2px 8px', 'borderRadius': '2px'}),
+                        ]),
+                    ]),
+                    html.Div(style={'height': '3px', 'backgroundColor': C['border'], 'borderRadius': '2px'}, children=[
+                        html.Div(style={'height': '3px', 'width': f'{bar:.0f}%', 'backgroundColor': bc, 'borderRadius': '2px'})
+                    ]),
+                ])
+            items = [sector_item(k, v) for k, v in sectors.items()]; mid = len(items) // 2
+            return bb_panel('SECTOR ROTATION & FUND FLOWS  --  21-DAY MOMENTUM',
+                html.Div(style={'display': 'grid', 'gridTemplateColumns': '1fr 1fr', 'gap': '24px'},
+                         children=[html.Div(items[:mid]), html.Div(items[mid:])]))
 
-            sig_df = pd.DataFrame(sig_rows)
-            signals_display = dash_table.DataTable(
-                data    = sig_df.to_dict('records'),
-                columns = [{'name': c, 'id': c} for c in sig_df.columns],
-                style_header={
-                    'backgroundColor': COLORS['card'],
-                    'color'          : COLORS['text_dim'],
-                    'fontWeight'     : '800',
-                    'border'         : f"1px solid {COLORS['border']}",
-                    'fontSize'       : '10px',
-                    'letterSpacing'  : '1px',
-                },
-                style_cell={
-                    'backgroundColor': COLORS['card'],
-                    'color'          : COLORS['text'],
-                    'border'         : f"1px solid {COLORS['border']}",
-                    'textAlign'      : 'center',
-                    'padding'        : '12px',
-                    'fontSize'       : '12px',
-                    'fontFamily'     : "'JetBrains Mono', monospace",
-                },
-                style_data_conditional=[
-                    {
-                        'if'       : {
-                            'filter_query': '{Signal} = "BUY"',
-                            'column_id'   : 'Signal',
-                        },
-                        'color'    : COLORS['green'],
-                        'fontWeight': 'bold',
-                    },
-                    {
-                        'if'       : {
-                            'filter_query': '{Signal} = "AVOID"',
-                            'column_id'   : 'Signal',
-                        },
-                        'color'    : COLORS['red'],
-                        'fontWeight': 'bold',
-                    },
-                    {
-                        'if'       : {
-                            'filter_query': '{Signal} = "CAUTION"',
-                            'column_id'   : 'Signal',
-                        },
-                        'color'    : COLORS['yellow'],
-                        'fontWeight': 'bold',
-                    },
-                    {
-                        'if'       : {
-                            'filter_query': '{Signal} = "EARNINGS_HOLD"',
-                            'column_id'   : 'Signal',
-                        },
-                        'color'    : COLORS['orange'],
-                        'fontWeight': 'bold',
-                    },
-                ],
-                page_size   = 20,
-                sort_action = 'native',
-            )
-        else:
-            signals_display = html.P(
-                "No signals yet. Run scanner first.",
-                style={'color': COLORS['text_dim'], 'padding': '12px'}
-            )
+        # ── EARNINGS ──────────────────────────────────────────────────────
+        elif tab == 'earnings':
+            if not earnings:
+                return bb_panel('EARNINGS SAFETY CALENDAR', _no_data('NO EARNINGS THIS WEEK -- ALL CLEAR TO TRADE'))
+            rows = []
+            for e in sorted(earnings, key=lambda x: x.get('days_until', 99)):
+                days = e.get('days_until', 0)
+                risk = 'AVOID NOW' if days <= 1 else ('CAUTION' if days <= 3 else 'MONITOR')
+                rows.append({'SYMBOL': e.get('symbol', ''), 'DATE': e.get('date', ''),
+                    'DAYS UNTIL': days, 'TIME': e.get('time', 'TBD'),
+                    'RISK LEVEL': risk, 'EPS EST': str(e.get('eps_estimate', 'N/A'))})
+            df = pd.DataFrame(rows)
+            return bb_panel('EARNINGS RISK CALENDAR  --  AVOID POSITIONS WITHIN 2 DAYS',
+                dash_table.DataTable(data=df.to_dict('records'), columns=[{'name': c, 'id': c} for c in df.columns],
+                    style_header=TBL_HDR, style_cell=TBL_CELL,
+                    style_data_conditional=[
+                        {'if': {'filter_query': '{DAYS UNTIL} <= 1',                            'column_id': 'RISK LEVEL'}, 'color': C['red'],    'fontWeight': 'bold'},
+                        {'if': {'filter_query': '{DAYS UNTIL} > 1 && {DAYS UNTIL} <= 3',        'column_id': 'RISK LEVEL'}, 'color': C['yellow'], 'fontWeight': 'bold'},
+                        {'if': {'filter_query': '{DAYS UNTIL} > 3',                             'column_id': 'RISK LEVEL'}, 'color': C['green']},
+                    ], sort_action='native', page_size=20))
 
-        # ── Trade History Table ────────────────────────────────
-        if history:
-            hist_rows = []
-            for trade in reversed(history[-30:]):
-                pnl = trade.get('pnl', 0)
-                hist_rows.append({
-                    'Date'  : trade.get('date', '')[:16],
-                    'Action': trade.get('action', ''),
-                    'Symbol': trade.get('symbol', ''),
-                    'Shares': trade.get('shares', 0),
-                    'Price' : f"${trade.get('price', 0):.2f}",
-                    'P&L'   : (
-                        f"${pnl:+.2f}"
-                        if trade.get('action') in ['SELL', 'PARTIAL_SELL']
-                        else '-'
-                    ),
-                    'Reason': trade.get('reason', ''),
-                })
+        # ── HISTORY ───────────────────────────────────────────────────────
+        elif tab == 'history':
+            if not history:
+                return bb_panel('TRADE EXECUTION HISTORY', _no_data('NO TRADES EXECUTED YET -- SYSTEM LIVE & WATCHING'))
+            rows = []
+            for t in reversed(history[-50:]):
+                p_ = t.get('pnl', None)
+                rows.append({'DATE': t.get('date', '')[:16], 'ACTION': t.get('action', ''),
+                    'SYMBOL': t.get('symbol', ''), 'SHARES': t.get('shares', 0),
+                    'FILL PRICE': f'${t.get("fill_price", t.get("price", 0)):.2f}',
+                    'P&L': f'${p_:+.2f}' if p_ is not None else '--',
+                    'P&L %': f'{t.get("pnl_pct",0)*100:+.2f}%' if 'pnl_pct' in t else '--',
+                    'REASON': t.get('reason', '').upper(),
+                    'SLIPPAGE': f'{t.get("slippage_pct",0)*100:.3f}%', 'COMM': f'${t.get("commission",1.0):.2f}'})
+            df = pd.DataFrame(rows)
+            return bb_panel(f'TRADE EXECUTION LOG  --  LAST {len(rows)} TRADES',
+                dash_table.DataTable(data=df.to_dict('records'), columns=[{'name': c, 'id': c} for c in df.columns],
+                    style_header=TBL_HDR, style_cell=TBL_CELL,
+                    style_data_conditional=[
+                        {'if': {'filter_query': '{ACTION} = "BUY"',          'column_id': 'ACTION'}, 'color': C['green'],  'fontWeight': 'bold'},
+                        {'if': {'filter_query': '{ACTION} = "SELL"',         'column_id': 'ACTION'}, 'color': C['red'],    'fontWeight': 'bold'},
+                        {'if': {'filter_query': '{ACTION} = "PARTIAL_SELL"', 'column_id': 'ACTION'}, 'color': C['orange'], 'fontWeight': 'bold'},
+                        {'if': {'filter_query': '{P&L} contains "+"', 'column_id': 'P&L'}, 'color': C['green'], 'fontWeight': 'bold'},
+                        {'if': {'filter_query': '{P&L} contains "-"', 'column_id': 'P&L'}, 'color': C['red'],   'fontWeight': 'bold'},
+                    ], sort_action='native', page_size=20))
 
-            hist_df = pd.DataFrame(hist_rows)
-            history_display = dash_table.DataTable(
-                data    = hist_df.to_dict('records'),
-                columns = [{'name': c, 'id': c} for c in hist_df.columns],
-                style_header={
-                    'backgroundColor': COLORS['card'],
-                    'color'          : COLORS['text_dim'],
-                    'fontWeight'     : '800',
-                    'border'         : f"1px solid {COLORS['border']}",
-                    'fontSize'       : '10px',
-                    'letterSpacing'  : '1px',
-                },
-                style_cell={
-                    'backgroundColor': COLORS['card'],
-                    'color'          : COLORS['text'],
-                    'border'         : f"1px solid {COLORS['border']}",
-                    'textAlign'      : 'center',
-                    'padding'        : '12px',
-                    'fontSize'       : '12px',
-                    'fontFamily'     : "'JetBrains Mono', monospace",
-                },
-                style_data_conditional=[
-                    {
-                        'if'       : {
-                            'filter_query': '{Action} = "BUY"',
-                            'column_id'   : 'Action',
-                        },
-                        'color'    : COLORS['green'],
-                        'fontWeight': 'bold',
-                    },
-                    {
-                        'if'       : {
-                            'filter_query': '{Action} = "SELL"',
-                            'column_id'   : 'Action',
-                        },
-                        'color'    : COLORS['red'],
-                        'fontWeight': 'bold',
-                    },
-                    {
-                        'if'       : {
-                            'filter_query': '{P&L} contains "+"',
-                            'column_id'   : 'P&L',
-                        },
-                        'color'    : COLORS['green'],
-                        'fontWeight': 'bold',
-                    },
-                    {
-                        'if'       : {
-                            'filter_query': '{P&L} contains "-"',
-                            'column_id'   : 'P&L',
-                        },
-                        'color'    : COLORS['red'],
-                        'fontWeight': 'bold',
-                    },
-                ],
-                page_size   = 15,
-                sort_action = 'native',
-            )
-        else:
-            history_display = html.P(
-                "No trades yet.",
-                style={'color': COLORS['text_dim'], 'padding': '12px'}
-            )
+        # ── SYS CONFIG ────────────────────────────────────────────────────
+        elif tab == 'sysconfig':
+            def cfg(k, v, hi=False):
+                return stat_row(k, v, C['orange'] if hi else C['text'])
+            return html.Div([html.Div(
+                style={'display': 'grid', 'gridTemplateColumns': '1fr 1fr', 'gap': '12px'},
+                children=[
+                    bb_panel('SIGNAL GENERATION & SIZING', html.Div([
+                        cfg('Watchlist Size',       f'{watchlist_len} Tickers'),
+                        cfg('BUY Score Threshold',  str(buy_threshold),         hi=True),
+                        cfg('Min Volume Spike',     f'{vol_spike_min}x'),
+                        cfg('Min Risk-Reward',      f'{min_rr:.1f} R:R'),
+                        cfg('MTF Weight',           f'{mtf_weight*100:.0f}%'),
+                        cfg('Kelly Sizing',         'ENABLED' if kelly_active else 'DISABLED', hi=True),
+                        cfg('Kelly Multiplier',     f'{kelly_mult} (Half-Kelly)'),
+                        cfg('Kelly R/R Ratio',      f'{kelly_rr:.1f}x'),
+                        cfg('Max Position Cap',     f'{max_pos_pct*100:.0f}%'),
+                    ])),
+                    bb_panel('PORTFOLIO RISK & STOPS', html.Div([
+                        cfg('Max Positions',    str(max_positions),           hi=True),
+                        cfg('Max Risk/Trade',   f'{max_risk_trade*100:.1f}%'),
+                        cfg('Max Port Risk',    f'{max_port_risk*100:.1f}%'),
+                        cfg('Daily Loss Limit', f'{max_daily_loss*100:.1f}%', hi=True),
+                        cfg('Max Drawdown',     f'{max_dd_limit*100:.1f}%',   hi=True),
+                        cfg('ATR Stop Mult',    f'{atr_stop_mult}x ATR'),
+                        cfg('ATR Target Mult',  f'{atr_target_mult}x ATR'),
+                        cfg('Trailing Stop',    f'{trailing_mult}x'),
+                        cfg('Scan Schedule',    '16:15 ET Daily'),
+                    ])),
+                    bb_panel('ML ENGINE', html.Div([
+                        cfg('Active Models',   'XGBoost + LightGBM + CatBoost + RF + LSTM', hi=True),
+                        cfg('Feature Set',     'Alpha158  (167 features)'),
+                        cfg('Regime Model',    '4-Class HMM  (Up / Down / Side / Vol)'),
+                        cfg('Sentiment NLP',   'FinBERT  (ProsusAI/finbert)'),
+                        cfg('MTF Analysis',    '3-Timeframe Composite Score'),
+                        cfg('Veto Agent',      'Groq / Llama3 LLM'),
+                        cfg('Sector Model',    '11-Sector ETF Momentum'),
+                        cfg('Earnings Guard',  'Calendar-Based Hold Filter'),
+                    ])),
+                    bb_panel('SYSTEM HEALTH', html.Div([
+                        cfg('Service Status',    'ACTIVE  (systemd managed)', hi=True),
+                        cfg('Mode',              'PAPER TRADING'),
+                        cfg('Broker',            'Alpaca Markets  (paper-api)'),
+                        cfg('Data Source',       'Yahoo Finance  (yfinance)'),
+                        cfg('News Source',       'Alpaca News API'),
+                        cfg('Dashboard Refresh', 'Every 60 seconds'),
+                        cfg('Heartbeat',         'Every 60s  ->  logs/heartbeats/'),
+                        cfg('Log Directory',     '/root/alpha_edge/logs/'),
+                    ])),
+                ]
+            )])
 
-        # Timestamp
-        now       = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        timestamp = f"Last updated: {now} | Auto-refresh: 60s"
-
-        return (
-            cards,
-            portfolio_fig,
-            alloc_fig,
-            sector_display,
-            earnings_display,
-            positions_display,
-            signals_display,
-            history_display,
-            timestamp,
-        )
+        return html.Div('Select a tab.', style={'color': C['dim']})
 
     return app
 
 
 if __name__ == '__main__':
-    print("\nStarting AlphaEdge Dashboard Server...")
-    print("Open browser: http://localhost:8050")
+    print('\n' + '=' * 60)
+    print('  ALPHAEDGE BLOOMBERG TERMINAL  |  V7')
+    print('=' * 60)
+    print('  http://localhost:8050\n')
     app = create_app()
     app.run(debug=False, host='0.0.0.0', port=8050)
