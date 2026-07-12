@@ -25,12 +25,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-# Skip entire module if core ML dependencies are unavailable (e.g. CI without xgboost).
-# xgboost is in requirements.txt and installed in full CI; this guard only fires
-# in minimal sandboxes where the heavy ML stack is absent.
+# Skip entire module if any core ML dependency is missing.
+# All four are in requirements.txt; this guard only fires in minimal sandboxes
+# (local dev without the full stack). In CI all four are installed.
 try:
-    import xgboost  # noqa: F401
-    import ta       # noqa: F401
+    import xgboost   # noqa: F401
+    import lightgbm  # noqa: F401
+    import catboost  # noqa: F401
+    import ta        # noqa: F401
 except ImportError as _e:
     pytest.skip(f"ML dependency unavailable ({_e}) — skipping robustness suite",
                 allow_module_level=True)
