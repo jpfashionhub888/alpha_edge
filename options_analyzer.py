@@ -348,4 +348,7 @@ if __name__ == '__main__':
 
         emoji = "🟢" if score > 0 else ("🔴" if score < 0 else "⚪")
         print(f"\n  {emoji} {sym:<6}  score={score:+.3f}  expiry={expiry}")
-        print(f"     PCR: {pcr}  |  IVR: {ivr}
+        print(f"     PCR: {pcr}  |  IVR: {ivr}%  |  "
+              f"Unusual: {unusual} ({direction})")
+
+    print("\n" + "=" * 60)
