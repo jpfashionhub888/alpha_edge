@@ -7,76 +7,49 @@ secrets.env
 saved_models/
 *.zip
 config/secrets.env
+cache/
+alpha_edge/
 
-# Allow logs json files
-logs/*.log
-logs/*.csv
-
-# Allow model cache
+# ── Model cache — binary files, regenerated each run ─────────────────
 !model_cache/
 !model_cache/*
-# Model cache — binary files, regenerated on each run
 model_cache/*.joblib
-cache/
+catboost_info/
 
-# Logs — auto-generated, not needed in git
-logs/backtest_*.json
-logs/stock_selection_*.json
-logs/weight_results.json
-logs/threshold_results.json
-logs/alphaedge_daily.log
-logs/weekly_report.log
-venv/
-__pycache__/
-*.pyc
-*.pyo
-.env
-secrets.env
-saved_models/
-*.zip
-config/secrets.env
-
-# Allow logs json files
+# ── Log files — auto-generated, not needed in git ────────────────────
 logs/*.log
 logs/*.csv
-
-# Allow model cache
-!model_cache/
-!model_cache/*
-# Model cache — binary files, regenerated on each run
-model_cache/*.joblib
-cache/
-
-# Logs — auto-generated, not needed in git
 logs/backtest_*.json
+logs/backtest/
 logs/stock_selection_*.json
 logs/weight_results.json
 logs/threshold_results.json
 logs/alphaedge_daily.log
 logs/weekly_report.log
 
-# ── Runtime state files — VPS-local, NEVER commit these ──────────────
-# Committing these causes git pull on deploy to overwrite live VPS state,
-# which triggers reconciliation halts and shows stale data on dashboard.
+# ── Runtime state files — VPS-local only, NEVER commit ───────────────
+# These are written by the live bot on the VPS every scan/trade.
+# Committing them causes git pull to overwrite live VPS state with
+# stale repo data → shows fake/broken data on the dashboard.
 logs/paper_trades_stocks_only.json
+logs/paper_trades.json
 logs/latest_signals.json
+logs/sectors.json
+logs/earnings.json
+logs/scan_info.json
+logs/webhook_signals.json
 logs/circuit_breaker.json
 logs/reconciliation.log
 logs/closed_trades.json
 logs/alerts.json
 logs/heartbeats/
-catboost_info/
 
-# Secrets — NEVER commit API keys
+# ── Secrets — NEVER commit API keys ──────────────────────────────────
 config/secrets.env
 .env
 
-# Temp/debug files
+# ── Temp / debug files ────────────────────────────────────────────────
 test_predictor.py
 find_signal_logic.py
 *.diff
 python
-
-# CatBoost training artifacts
-catboost_info/
-alpha_edge/
