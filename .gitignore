@@ -42,6 +42,7 @@ logs/circuit_breaker.json
 logs/reconciliation.log
 logs/closed_trades.json
 logs/alerts.json
+logs/managed_positions.json
 logs/heartbeats/
 
 # ── Secrets — NEVER commit API keys ──────────────────────────────────

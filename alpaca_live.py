@@ -104,6 +104,23 @@ class AlpacaLiveTrader:
         # symbol -> {entry, stop, target, shares, dollar_value}
         self.managed_positions: dict[str, dict] = {}
 
+        # BUG 4 FIX: Restore stop/target levels that survived a bot restart.
+        # Without this, managed_positions is always empty after systemd restarts
+        # and the position monitor never fires stops/targets for existing positions.
+        try:
+            import json as _json
+            _mp_file = 'logs/managed_positions.json'
+            if os.path.exists(_mp_file):
+                with open(_mp_file) as _f:
+                    self.managed_positions = _json.load(_f)
+                if self.managed_positions:
+                    logger.info(
+                        f'Restored {len(self.managed_positions)} managed positions '
+                        f'from disk: {list(self.managed_positions.keys())}'
+                    )
+        except Exception as _e:
+            logger.warning(f'Could not restore managed_positions from disk: {_e}')
+
         # Price monitor thread
         self._monitor_running = False
 
@@ -111,7 +128,7 @@ class AlpacaLiveTrader:
 
     def start(self):
         print('\n' + '🚀' * 25)
-        print(f'ALPHAEDGE ALPACA STOCKS  —  {datetime.now().strftime("%Y-%m-%d %H:%M")}')
+        print(f'ALPHAEDGE ALPACA STOCKS  —  {datetime.now(MARKET_TZ).strftime("%Y-%m-%d %H:%M ET")}')
         print(f'Mode: {self.mode}  |  Scan interval: 16:15 ET daily')
         print(f'Max positions: {MAX_POSITIONS}  |  Risk per trade: {RISK_PER_TRADE_PCT*100:.1f}%')
         print('🚀' * 25)
@@ -207,7 +224,7 @@ class AlpacaLiveTrader:
         Run main.py signal scanner and route BUY signals to Alpaca.
         Intercepts signals before they hit PaperTrader.
         """
-        now = datetime.now().strftime('%Y-%m-%d %H:%M')
+        now = datetime.now(MARKET_TZ).strftime('%Y-%m-%d %H:%M ET')
         print(f'\n{"="*60}')
         print(f'SCAN  —  {now}  |  Mode: {self.mode}')
         print(f'{"="*60}')
@@ -556,6 +573,7 @@ class AlpacaLiveTrader:
                     'open_time'   : time.time(),
                     'score'       : combined,
                 }
+                self._save_managed_positions()  # BUG 4 FIX: persist to disk
                 try:
                     self.telegram.alert_buy_signal(
                         symbol, price, combined,
@@ -566,13 +584,13 @@ class AlpacaLiveTrader:
 
         print(f'\n  Scan complete. New entries: {buy_count}')
 
-        # ── Persist signals to disk (atomic write) ────────────────
+        # ── Persist signals to disk (atomic write) ─────────────────
         # Stamps every stock with its final signal/combined/sentiment so
-        # the dashboard and GitHub Actions always reflect VPS scan output.
+        # the dashboard SIGNALS tab always reflects the latest VPS scan.
         try:
             import tempfile
             os.makedirs('logs', exist_ok=True)
-            scan_ts = datetime.now().isoformat()
+            scan_ts = datetime.now(MARKET_TZ).isoformat()
             signals_out = {
                 sym: {
                     'prediction': d.get('prediction', 0),
@@ -598,22 +616,37 @@ class AlpacaLiveTrader:
         except Exception as e:
             logger.warning(f'Signal save failed (non-critical): {e}')
 
-        # ── Auto-regenerate dashboard HTML ────────────────────────
-        # Keeps alphaedgetrading.duckdns.org in sync after every scan
-        # without needing a manual deploy or GitHub Actions push.
+        # ── Persist sector scores (BUG 1 FIX) ────────────────────
+        # sector_scores returned by sector_analyzer.analyze() above.
+        # Dashboard SECTORS tab reads logs/sectors.json — save it now.
         try:
-            import subprocess
-            result = subprocess.run(
-                ['python', 'generate_dashboard.py'],
-                capture_output=True, text=True, timeout=60,
-                cwd=os.path.dirname(os.path.abspath(__file__)) or '.',
-            )
-            if result.returncode == 0:
-                logger.info('Dashboard regenerated successfully')
-            else:
-                logger.warning(f'Dashboard regen failed: {result.stderr[:200]}')
+            import tempfile as _tf
+            tmp_fd, tmp_path = _tf.mkstemp(dir='logs', suffix='.tmp')
+            with os.fdopen(tmp_fd, 'w') as f:
+                import json as _json
+                _json.dump(sector_scores, f, indent=2)
+            os.replace(tmp_path, 'logs/sectors.json')
+            logger.info(f'Saved {len(sector_scores)} sectors to logs/sectors.json')
         except Exception as e:
-            logger.warning(f'Dashboard regen skipped (non-critical): {e}')
+            logger.warning(f'Sectors save failed (non-critical): {e}')
+
+        # ── Persist earnings calendar (BUG 2 FIX) ─────────────────
+        # earnings_soon fetched by get_earnings_calendar() above.
+        # Dashboard EARNINGS tab reads logs/earnings.json — save it now.
+        try:
+            import tempfile as _tf
+            tmp_fd, tmp_path = _tf.mkstemp(dir='logs', suffix='.tmp')
+            with os.fdopen(tmp_fd, 'w') as f:
+                import json as _json
+                _json.dump(earnings_soon, f, indent=2)
+            os.replace(tmp_path, 'logs/earnings.json')
+            logger.info(f'Saved {len(earnings_soon)} earnings events to logs/earnings.json')
+        except Exception as e:
+            logger.warning(f'Earnings save failed (non-critical): {e}')
+
+        # BUG 5 FIX: generate_dashboard.py removed — dashboard is now a live
+        # Dash app reading logs/*.json directly. Static HTML not needed.
+        # (Removed ~60s subprocess call that ran after every scan.)
 
         self._print_account()
 
@@ -670,8 +703,58 @@ class AlpacaLiveTrader:
                 logger.warning(f'Telegram alert failed for {symbol}: {e}')
 
             del self.managed_positions[symbol]
+            # BUG 3 FIX: Write exit to local JSON so HISTORY/POSITIONS tabs update
+            self._record_exit_to_json(symbol, current_price, entry, shares, reason)
+            # BUG 4 FIX: Persist managed_positions with this entry removed
+            self._save_managed_positions()
 
     # ── Utilities ─────────────────────────────────────────────────────
+
+    def _save_managed_positions(self):
+        """BUG 4 FIX: Persist stop/target levels to disk so they survive restarts."""
+        try:
+            import json as _json, tempfile as _tf
+            os.makedirs('logs', exist_ok=True)
+            tmp_fd, tmp_path = _tf.mkstemp(dir='logs', suffix='.tmp')
+            with os.fdopen(tmp_fd, 'w') as f:
+                _json.dump(self.managed_positions, f, indent=2)
+            os.replace(tmp_path, 'logs/managed_positions.json')
+        except Exception as e:
+            logger.warning(f'Could not save managed_positions: {e}')
+
+    def _record_exit_to_json(self, symbol, exit_price, entry_price, shares, reason):
+        """BUG 3 FIX: Write stop/target exit to paper_trades JSON for dashboard."""
+        try:
+            import json as _json, tempfile as _tf
+            trade_file = 'logs/paper_trades_stocks_only.json'
+            if not os.path.exists(trade_file):
+                return
+            with open(trade_file) as f:
+                state = _json.load(f)
+            pnl     = round((exit_price - entry_price) * shares, 2)
+            pnl_pct = round((exit_price - entry_price) / entry_price, 4) if entry_price > 0 else 0
+            state.setdefault('positions', {}).pop(symbol, None)
+            state['capital'] = round(state.get('capital', 0) + exit_price * shares, 2)
+            state.setdefault('trade_history', []).append({
+                'action'      : 'SELL',
+                'symbol'      : symbol,
+                'shares'      : shares,
+                'price'       : exit_price,
+                'fill_price'  : exit_price,
+                'pnl'         : pnl,
+                'pnl_pct'     : pnl_pct,
+                'reason'      : reason,
+                'date'        : datetime.now(MARKET_TZ).isoformat(),
+                'commission'  : 0.0,
+                'slippage_pct': 0.0,
+            })
+            tmp_fd, tmp_path = _tf.mkstemp(dir='logs', suffix='.tmp')
+            with os.fdopen(tmp_fd, 'w') as f:
+                _json.dump(state, f, indent=2)
+            os.replace(tmp_path, trade_file)
+            logger.info(f'{symbol}: exit recorded to JSON (reason={reason}, pnl=${pnl:+.2f})')
+        except Exception as e:
+            logger.warning(f'Could not record exit to JSON for {symbol}: {e}')
 
     def _sync_positions(self):
         """Load existing Alpaca positions on startup."""
