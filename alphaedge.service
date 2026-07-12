@@ -6,8 +6,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=alphaedge
-Group=alphaedge
+User=root
+Group=root
 WorkingDirectory=/root/alpha_edge
 
 # Load secrets from env file (never hardcode secrets in this file)

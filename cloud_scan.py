@@ -26,10 +26,47 @@ def main():
     day = now.strftime('%A')
 
     if day == 'Saturday':
-        print("Saturday - Market closed.")
+        print("Saturday - Market closed. Skipping scan.")
         return
 
-    # Sunday allowed for Critic Agent Report
+    if day == 'Sunday':
+        # Sunday: run only the Critic Agent weekly review, not the full ML scan.
+        # Markets are closed — no new daily bars — so the full pipeline on Sunday
+        # produces stale or meaningless signals from Friday's data.
+        print(f"\nAlphaEdge Sunday Critic Review - {now}")
+        try:
+            from execution.paper_trader import PaperTrader
+            from monitoring.telegram_bot import TelegramBot
+            from critic_agent import CriticAgent
+            from performance_analytics import PerformanceAnalytics
+
+            trader   = PaperTrader(starting_capital=10000.0)
+            trader.load_state()
+            telegram = TelegramBot()
+
+            total_value = trader.capital + sum(
+                pos.get('shares', 0) * pos.get('current_price', pos.get('entry_price', 0))
+                for pos in trader.positions.values()
+            )
+
+            analytics = PerformanceAnalytics()
+            if analytics.should_run_today():
+                analytics.send_report(telegram)
+
+            critic = CriticAgent()
+            critic.run_weekly_review(
+                trade_history    = trader.trade_history,
+                portfolio_value  = total_value,
+                starting_capital = trader.starting_capital,
+                telegram_bot     = telegram,
+            )
+            print("\nSunday critic review complete.")
+        except Exception as e:
+            logger.error(f"Sunday critic review failed: {e}")
+            print(f"\nSunday critic review failed: {e}")
+            sys.exit(1)
+        return
+
     print(f"\nAlphaEdge Cloud Scan - {now}")
     try:
         from main import run_daily_scan

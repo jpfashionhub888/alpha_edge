@@ -246,7 +246,7 @@ def generate_dashboard():
                     'sideways': '#f59e0b', 'volatile': '#a855f7'}.get(dominant_regime, '#6b7280')
 
     # Equity curve (P0-6 fix: include PARTIAL_SELL in curve so it reflects actual exits)
-    REALIZED_ACTIONS = {'SELL', 'PARTIAL_SELL'}
+    # Uses module-level REALIZED_ACTIONS = {'SELL', 'PARTIAL_SELL'}
     chart_vals   = [starting]
     chart_labels = ['Start']
     running = starting
