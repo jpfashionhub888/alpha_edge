@@ -86,13 +86,12 @@ class RegimeDetector:
             ma_diff.clip(-0.1, 0.1) / 0.1 * 50 + 50
         )
 
-        logger.info("Regime detection complete")
-
-        # Print regime distribution
+        # S6 FIX: was print() — replaced with logger.debug() to stop flooding console
+        # (was emitting ~200 lines per scan: 40 stocks × 5 regime lines each).
+        # Set LOG_LEVEL=DEBUG to re-enable detailed regime breakdown.
         regime_counts = df['regime'].value_counts()
-        print("   Regime distribution:")
-        for regime, count in regime_counts.items():
-            pct = count / len(df) * 100
-            print(f"      {regime}: {count} days ({pct:.1f}%)")
+        dominant = regime_counts.index[0] if len(regime_counts) else 'unknown'
+        logger.debug("Regime distribution: %s", regime_counts.to_dict())
+        logger.info("Regime detection complete — dominant: %s", dominant)
 
         return df

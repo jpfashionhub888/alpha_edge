@@ -162,9 +162,6 @@ class WalkForwardBacktester:
         for i, split_date in enumerate(split_dates):
             fold_num = i + 1
 
-        for i, split_date in enumerate(split_dates):
-            fold_num = i + 1
-
             # ── Slice RAW data per fold ───────────────────────────
             test_end = split_date + pd.Timedelta(
                 days=self.retrain_every

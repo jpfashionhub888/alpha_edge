@@ -28,11 +28,20 @@ class VetoAgent:
         self.api_key = os.getenv('GROQ_API_KEY', '')
         self.enabled = bool(self.api_key)
         self.model   = 'llama-3.3-70b-versatile'
+        self._client = None  # S3 FIX: created once in __init__, not per-call
 
         if not self.enabled:
             print("  Veto Agent: GROQ_API_KEY not found — will APPROVE all (review disabled)")
         else:
-            print("  Veto Agent: Groq/Llama3 connected ✅")
+            # S3 FIX: instantiate Groq client once here (was created on every review_signal() call,
+            # causing up to 100s sequential overhead when 10+ BUY signals queued per scan).
+            try:
+                from groq import Groq
+                self._client = Groq(api_key=self.api_key)
+                print("  Veto Agent: Groq/Llama3 connected ✅")
+            except ImportError:
+                logger.error("groq package not installed. Run: pip install groq")
+                self.enabled = False
 
     def review_signal(self,
                       symbol,
@@ -60,18 +69,14 @@ class VetoAgent:
             }
 
         try:
-            # Lazy import — won't cause ImportError at startup if groq missing
-            try:
-                from groq import Groq
-            except ImportError:
-                logger.error("groq package not installed. Run: pip install groq")
+            # S3 FIX: use pre-created self._client (was creating Groq() per call)
+            if self._client is None:
                 return {
                     'decision' : 'VETO',
-                    'reason'   : 'groq package not installed — cannot review signal',
+                    'reason'   : 'Groq client not initialised (groq package missing?)',
                     'confidence': 0.0,
                 }
-
-            client          = Groq(api_key=self.api_key)
+            client          = self._client
             positions_text  = ', '.join(current_positions.keys()) if current_positions else 'None'
             vix_text        = f"{vix:.1f}" if vix is not None else "Unknown"
             n_positions     = len(current_positions)

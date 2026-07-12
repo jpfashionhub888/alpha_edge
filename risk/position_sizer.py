@@ -239,6 +239,8 @@ class PositionSizer:
             return 1.0
 
         # High-correlation peer groups (same sector/theme)
+        # S8 FIX: Added 12 missing watchlist symbols that previously returned
+        # corr_mult=1.0 regardless of portfolio concentration.
         PEER_GROUPS = {
             # Big Tech
             'AAPL':  {'MSFT', 'GOOGL', 'META', 'AMZN'},
@@ -259,11 +261,25 @@ class PositionSizer:
             'XOM':   {'CVX', 'COP', 'SLB'},
             'CVX':   {'XOM', 'COP'},
             # Healthcare
-            'JNJ':   {'PFE', 'ABBV', 'MRK'},
+            'JNJ':   {'PFE', 'ABBV', 'MRK', 'LLY'},
             'PFE':   {'JNJ', 'ABBV', 'MRK'},
+            'LLY':   {'JNJ', 'PFE', 'ABBV', 'MRK'},    # S8: large-cap pharma
             # ETFs (instant full correlation)
             'SPY':   {'QQQ', 'IVV', 'VOO'},
             'QQQ':   {'SPY', 'IVV', 'TQQQ'},
+            # High-beta / speculative tech — S8: previously missing, no penalty
+            'TSLA':  {'RIVN', 'PLTR', 'HOOD'},          # high-beta consumer/growth
+            'PLTR':  {'TSLA', 'CRWD', 'SNOW', 'DDOG'},  # AI/data analytics
+            'RIVN':  {'TSLA'},                           # EV
+            'HOOD':  {'SOFI', 'TSLA'},                   # retail/meme-adjacent
+            'MARA':  {'COIN', 'RIOT'},                   # crypto proxy
+            'SOFI':  {'HOOD', 'UPST'},                   # fintech
+            # Cloud SaaS — S8: all missing
+            'DDOG':  {'CRWD', 'NET', 'SNOW', 'PLTR'},
+            'CRWD':  {'DDOG', 'NET', 'PLTR', 'S'},
+            'NET':   {'DDOG', 'CRWD', 'SNOW'},
+            'SNOW':  {'DDOG', 'NET', 'PLTR', 'CRM'},
+            'CRM':   {'SNOW', 'NOW', 'ORCL'},            # CRM/enterprise
         }
 
         peers = PEER_GROUPS.get(symbol, set())

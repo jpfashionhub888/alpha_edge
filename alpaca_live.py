@@ -238,6 +238,7 @@ class AlpacaLiveTrader:
             from models.sentiment_model import SentimentAnalyzer
             from models.regime_detector import RegimeDetector
             from models.sector_rotation import SectorRotation
+            from models.meta_labeler    import MetaLabeler
             from market_regime          import MarketRegimeDetector            
             from multi_timeframe        import MultiTimeframeAnalyzer
             from correlation_filter     import CorrelationFilter
@@ -378,6 +379,14 @@ class AlpacaLiveTrader:
                 else:
                     model = TechnicalPredictor(use_lstm=False)
                     model.train(X_train[selected], y_train)
+                    # C2 FIX: block overfit models from generating signals
+                    if getattr(model, 'overfit_flagged', False):
+                        gap = getattr(model, 'overfit_gap', 0)
+                        logger.warning(
+                            f'{symbol}: SKIP — overfit gap {gap:.2f} > 0.20 '
+                            f'(train/val AUC delta too large, signals unreliable)'
+                        )
+                        continue
                     try:
                         save_models(symbol, {
                             'xgboost'          : model.models.get('xgboost'),
@@ -392,6 +401,31 @@ class AlpacaLiveTrader:
                 latest = df.iloc[-1:]
                 _preds = model.predict(latest[selected])
                 pred   = _preds[0] if len(_preds) > 0 else 0.5  # guard: empty array → neutral
+
+                # C4 FIX: MetaLabeler gate — filters false positives from primary model.
+                # load() returns unfitted instance (pass-through) if no cached model.
+                try:
+                    _meta_path = os.path.join('model_cache', f'meta_{symbol}.pkl')
+                    _meta      = MetaLabeler.load(_meta_path)
+                    _approved, _meta_conf = _meta.should_trade(latest[selected], pred)
+                    if not _approved:
+                        logger.info(
+                            f'{symbol}: MetaLabeler filtered '
+                            f'(primary={pred:.3f}, meta_conf={_meta_conf:.3f})'
+                        )
+                        # Record in signals so dashboard shows META_FILTERED
+                        stock_signals[symbol] = {
+                            'prediction': pred, 'regime': df.iloc[-1]['regime'],
+                            'price': df.iloc[-1]['close'],
+                            'sector': sector_analyzer.get_sector_for_stock(symbol),
+                            'sector_multiplier': sector_analyzer.get_sector_signal(symbol),
+                            'signal': 'META_FILTERED', 'combined': 0.0,
+                            'meta_conf': _meta_conf,
+                        }
+                        continue
+                except Exception as _me:
+                    logger.debug(f'{symbol}: MetaLabeler skipped ({_me})')
+
                 regime      = latest['regime'].iloc[0]
                 price       = latest['close'].iloc[0]
                 sector_mult = sector_analyzer.get_sector_signal(symbol)
@@ -441,9 +475,19 @@ class AlpacaLiveTrader:
             sect_mult  = data['sector_multiplier']
             sent_score = sentiments.get(symbol, {}).get('sentiment_score', 0.0)
 
+            # S2 FIX: skip full scoring for symbols blocked by market-wide regime.
+            # Aligns dashboard signal output with execution reality.
+            if not market_regime.get('can_trade', True):
+                stock_signals[symbol].update({'signal': 'MARKET_HOLD', 'combined': 0.0})
+                continue
+
             # MTF
             try:
-                mtf_comp = mtf_analyzer.get_mtf_score(symbol)
+                # S5 FIX: reuse already-downloaded stock_data (eliminates 41 redundant
+                # yfinance HTTP calls that were adding ~60s per scan).
+                mtf_comp = mtf_analyzer.get_mtf_score(
+                    symbol, daily_df=stock_data.get(symbol)
+                )
             except Exception as e:
                 logger.warning(f'{symbol}: MTF error, using neutral: {e}')
                 mtf_comp = 0.0

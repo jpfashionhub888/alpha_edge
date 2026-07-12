@@ -20,6 +20,7 @@ import tempfile
 import time
 import pandas as pd
 from datetime import datetime
+from config import settings
 
 warnings.filterwarnings('ignore')
 os.environ['PYTHONWARNINGS'] = 'ignore'
@@ -179,11 +180,16 @@ def compute_signal(pred, regime, sent_score, sect_mult,
     )
     combined = max(0.0, min(1.0, combined))
 
+    # C3 FIX: use settings.BUY_THRESHOLD (0.63) not hardcoded 0.55/0.52.
+    # bybit_live.py / gateio_live.py already use settings — now main.py matches.
+    _buy_thr = settings.BUY_THRESHOLD          # e.g. 0.63 from settings.yaml
+    _buy_thr_pred = _buy_thr - 0.11           # secondary pred-only gate
+
     signal = 'HOLD'
 
-    if regime == 'uptrend' and combined > 0.55:
+    if regime == 'uptrend' and combined > _buy_thr:
         signal = 'BUY'
-    elif regime == 'uptrend' and pred > 0.52:
+    elif regime == 'uptrend' and pred > _buy_thr_pred:
         signal = 'BUY'
     elif regime == 'downtrend':
         signal = 'AVOID'

@@ -68,26 +68,26 @@ class TelegramBot:
             print("Telegram not enabled, skipping.")
             return False
 
-        try:
-            url = f"{self.base_url}/sendMessage"
-            payload = {
-                'chat_id': self.chat_id,
-                'text': text,
-            }
-            response = requests.post(
-                url, json=payload, timeout=10
-            )
-            print(f"   Telegram status: {response.status_code}")
-            if response.status_code == 200:
-                print("   Telegram sent successfully!")
-                return True
-            else:
-                print(f"   Telegram error: {response.text}")
-                return False
+        url     = f"{self.base_url}/sendMessage"
+        payload = {'chat_id': self.chat_id, 'text': text}
 
-        except Exception as e:
-            print(f"   Telegram exception: {e}")
-            return False
+        # S7 FIX: retry up to 3× with 2s backoff (was single attempt — critical
+        # alerts like circuit-breaker triggers could be silently dropped on transient errors)
+        for attempt in range(1, 4):
+            try:
+                response = requests.post(url, json=payload, timeout=10)
+                if response.status_code == 200:
+                    return True
+                logger.warning(
+                    f"Telegram attempt {attempt}/3 failed: HTTP {response.status_code}"
+                )
+            except Exception as e:
+                logger.warning(f"Telegram attempt {attempt}/3 exception: {e}")
+            if attempt < 3:
+                import time as _t; _t.sleep(2)
+
+        logger.error("Telegram send_message failed after 3 attempts")
+        return False
 
     def alert_buy_signal(self, symbol, price,
                          prediction, regime, sentiment):
