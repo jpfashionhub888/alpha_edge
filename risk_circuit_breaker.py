@@ -116,23 +116,22 @@ class RiskCircuitBreaker:
         if self.state.get('triggered'):
             trigger_value = self.state.get('trigger_value', starting_capital)
             trigger_date  = self.state.get('trigger_date', '')
-
-            print(f"\n  ⚠️  CIRCUIT BREAKER ACTIVE!")
-            print(f"  Triggered: {trigger_date}")
-            print(f"  Reason:    {self.state.get('trigger_reason')}")
-
             # Recovery check: current value must be >= trigger_value * (1 + threshold)
             recovery_target = trigger_value * (1 + RECOVERY_THRESHOLD)
             recovery_pct    = (current_value - trigger_value) / trigger_value if trigger_value else 0
 
-            print(f"  Recovery:  {recovery_pct:+.2%} (need +{RECOVERY_THRESHOLD:.0%} to auto-reset)")
+            logger.warning(
+                "CIRCUIT BREAKER ACTIVE! | triggered=%s | reason=%s | recovery=%+.2f%% (need +%.0f%% to auto-reset)",
+                trigger_date, self.state.get('trigger_reason'),
+                recovery_pct * 100, RECOVERY_THRESHOLD * 100,
+            )
 
             if current_value >= recovery_target:
-                print("  ✅ Portfolio recovered — auto-resetting circuit breaker")
+                logger.info("Portfolio recovered -- auto-resetting circuit breaker")
                 self.reset()
                 return False
             else:
-                print("  Status: No new trades until recovery threshold met")
+                logger.warning("Circuit breaker holding -- no new trades until recovery threshold met")
                 return True
 
         # ----------------------------------------------------------------
@@ -146,11 +145,10 @@ class RiskCircuitBreaker:
         total_loss   = (current_value - starting_capital) / starting_capital
         drawdown     = (current_value - peak) / peak if peak > 0 else 0
 
-        print(f"\n  Risk Check:")
-        print(f"  Daily P&L:    {daily_loss:+.2%}")
-        print(f"  Weekly P&L:   {weekly_loss:+.2%}")
-        print(f"  Total P&L:    {total_loss:+.2%}")
-        print(f"  Drawdown:     {drawdown:+.2%} (from peak ${peak:,.2f})")
+        logger.info(
+                "Risk check | daily=%+.2f%% weekly=%+.2f%% total=%+.2f%% drawdown=%+.2f%% (peak=$%.2f)",
+                daily_loss*100, weekly_loss*100, total_loss*100, drawdown*100, peak,
+            )
 
         # Daily loss limit
         if daily_loss <= -DAILY_LOSS_LIMIT:
@@ -172,15 +170,15 @@ class RiskCircuitBreaker:
 
         # Weekly warning (no trigger, just alert)
         if weekly_loss <= -WEEKLY_LOSS_LIMIT:
-            print(f"  ⚠️  WARNING: Weekly loss {weekly_loss:.2%} approaching circuit breaker!")
+            logger.warning("Weekly loss %.2f%% approaching circuit breaker!", weekly_loss * 100)
             if telegram:
                 telegram.send_message(
-                    f"⚠️ ALPHAEDGE WARNING\n"
+                    f"WARNING: ALPHAEDGE\n"
                     f"Weekly loss: {weekly_loss:.2%}\n"
-                    f"Monitoring closely — circuit breaker NOT triggered yet."
+                    f"Monitoring closely -- circuit breaker NOT triggered yet."
                 )
 
-        print(f"  ✅ Risk check passed — Trading allowed")
+        logger.info("Risk check passed -- trading allowed")
         return False
 
     def _trigger(self, reason, current_value, telegram=None):
@@ -190,9 +188,10 @@ class RiskCircuitBreaker:
         self.state['trigger_value'] = current_value
         self._save_state()
 
-        print(f"\n  🚨 CIRCUIT BREAKER TRIGGERED!")
-        print(f"  Reason: {reason}")
-        print(f"  All new trades STOPPED until portfolio recovers +{RECOVERY_THRESHOLD:.0%}")
+        logger.critical(
+                "CIRCUIT BREAKER TRIGGERED! reason=%s | all new trades STOPPED until +%.0f%% recovery",
+                reason, RECOVERY_THRESHOLD * 100,
+            )
 
         if telegram:
             telegram.send_message(
@@ -213,9 +212,9 @@ class RiskCircuitBreaker:
         self._save_state()
 
         if manual:
-            print("  Circuit breaker manually reset ✅")
+            logger.info("Circuit breaker manually reset")
         else:
-            print("  Circuit breaker auto-reset (portfolio recovered) ✅")
+            logger.info("Circuit breaker auto-reset (portfolio recovered)")
 
     def is_triggered(self):
         return self.state.get('triggered', False)

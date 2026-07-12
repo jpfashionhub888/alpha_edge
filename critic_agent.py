@@ -30,9 +30,9 @@ class CriticAgent:
 
         # No top-level import of groq here — lazy import inside methods
         if not self.enabled:
-            print("  Critic Agent: GROQ_API_KEY not found")
+            logger.warning("Critic Agent: GROQ_API_KEY not found — weekly review disabled")
         else:
-            print("  Critic Agent: Groq/Llama3 connected ✅")
+            logger.info("Critic Agent: enabled (Groq/Llama3)")
 
     def _parse_date(self, date_str):
         """Parse ISO date string. Returns None on failure."""
@@ -210,21 +210,21 @@ AlphaEdge Critic Agent"""
     def run_weekly_review(self, trade_history, portfolio_value,
                           starting_capital, telegram_bot):
         if not self.should_run_today():
-            print("  Critic Agent: Not Sunday, skipping review")
+            logger.debug("Critic Agent: not Sunday, skipping weekly review")
             return False
 
-        print("\n  SUNDAY REVIEW — Running Critic Agent...")
+        logger.info("SUNDAY REVIEW — Running Critic Agent...")
         report = self.generate_report(
             trade_history    = trade_history,
             portfolio_value  = portfolio_value,
             starting_capital = starting_capital,
             days_back        = 7,
         )
-        print(report)
+        logger.info("Critic report:\n%s", report)
 
         if telegram_bot and report:
             telegram_bot.send_message(report)
-            print("  Critic report sent to Telegram! ✅")
+            logger.info("Critic report sent to Telegram")
 
         return True
 

@@ -31,14 +31,14 @@ class VetoAgent:
         self._client = None  # S3 FIX: created once in __init__, not per-call
 
         if not self.enabled:
-            print("  Veto Agent: GROQ_API_KEY not found — will APPROVE all (review disabled)")
+            logger.warning("Veto Agent: GROQ_API_KEY not found — all signals will APPROVE (review disabled)")
         else:
             # S3 FIX: instantiate Groq client once here (was created on every review_signal() call,
             # causing up to 100s sequential overhead when 10+ BUY signals queued per scan).
             try:
                 from groq import Groq
                 self._client = Groq(api_key=self.api_key)
-                print("  Veto Agent: Groq/Llama3 connected ✅")
+                logger.info("Veto Agent: Groq/Llama3 connected")
             except ImportError:
                 logger.error("groq package not installed. Run: pip install groq")
                 self.enabled = False

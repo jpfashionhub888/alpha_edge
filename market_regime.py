@@ -60,7 +60,7 @@ class MarketRegimeDetector:
         runs the detect logic, and returns a dict compatible with older callers.
         """
         import yfinance as yf
-        print("\n   Analyzing market regime...")
+        logger.info("Analyzing market regime...")
 
         spy_df = None
         try:
@@ -131,13 +131,11 @@ class MarketRegimeDetector:
             'CRASH'  : 'MARKET CRASH',
         }.get(regime, 'UNKNOWN')
 
-        print(f"   Market Regime: {regime_emoji}")
-        print(f"   SPY 1-Month:   {spy_return_1m:+.2%}")
-        print(f"   SPY 3-Month:   {spy_return_3m:+.2%}")
-        print(f"   VIX Level:     {vix_level:.1f}")
-        print(f"   Can Trade:     {result['can_trade']}")
-        print(f"   Reason:        {result['reason']}")
-        print(f"   Action:        {result['recommendation']}")
+        logger.info(
+            "Market Regime: %s | SPY 1m=%+.2f%% 3m=%+.2f%% | VIX=%.1f | can_trade=%s | %s | Action: %s",
+            regime_emoji, spy_return_1m*100, spy_return_3m*100,
+            vix_level, result['can_trade'], result['reason'], result['recommendation'],
+        )
 
         return result
 

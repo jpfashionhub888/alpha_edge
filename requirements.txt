@@ -163,7 +163,7 @@ pyparsing==3.3.2
 pypdfium2==5.7.1
 PyPika==0.51.1
 pyproject_hooks==1.2.0
-pytest==9.0.3
+# pytest==9.0.3 duplicate removed — see pytest>=8.0 at top of file
 python-dateutil==2.9.0.post0
 python-docx==1.2.0
 python-dotenv==1.0.1
