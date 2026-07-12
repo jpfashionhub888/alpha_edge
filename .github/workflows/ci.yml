@@ -1,4 +1,4 @@
-﻿name: CI
+name: CI
 
 on:
   push:
@@ -25,13 +25,12 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          # Install prod deps excluding heavy GPU packages not needed for tests
           grep -v "^torch\|^transformers\|^catboost\|^onnxruntime\|^chromadb\|^lancedb\|^crewai" requirements.txt > requirements_ci.txt
           pip install -r requirements_ci.txt
 
       - name: Run tests
         run: |
-          pytest tests/ -x --tb=short -q --cov=. --cov-report=term-missing
+          pytest tests/ -x --tb=short -q
         env:
           ALPACA_API_KEY: dummy_key
           ALPACA_SECRET_KEY: dummy_secret
