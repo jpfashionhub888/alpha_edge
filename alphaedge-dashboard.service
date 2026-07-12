@@ -1,0 +1,26 @@
+[Unit]
+Description=AlphaEdge Live Dashboard (Dash/Plotly on port 8050)
+Documentation=https://github.com/jpfashionhub888/alpha_edge
+After=network-online.target alphaedge.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/root/alpha_edge
+EnvironmentFile=-/root/alpha_edge/config/secrets.env
+
+ExecStart=/root/alpha_edge/venv/bin/python run_dashboard.py
+
+Restart=on-failure
+RestartSec=15
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=alphaedge-dashboard
+
+[Install]
+WantedBy=multi-user.target
