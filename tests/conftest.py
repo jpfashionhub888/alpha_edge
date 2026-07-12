@@ -116,31 +116,36 @@ def short_ohlcv_df():
 @pytest.fixture
 def bear_market_df():
     """
-    AAPL data from the 2022 bear market (rate-hike selloff).
-    2022-01-01 to 2022-12-31 — AAPL fell ~27% that year.
+    AAPL data ending in the 2022 bear market (rate-hike selloff).
+    Slice includes 2020-2022 to provide sufficient rolling-window warmup:
+    alpha158 uses rolling(252), so we need 252+ rows before the period
+    of interest. The feature-engine test only cares about bear-regime
+    characteristics at the END of this slice (2022 data).
     """
     df = _load_real_ohlcv('AAPL')
-    return df['2022-01-01':'2022-12-31']
+    return df['2020-01-01':'2022-12-31']
 
 
 @pytest.fixture
 def bull_market_df():
     """
-    NVDA data from the 2023 AI bull run.
-    2023-01-01 to 2023-12-31 — NVDA rose ~238% that year.
+    NVDA data ending in the 2023 AI bull run.
+    Slice includes 2021-2023 to provide sufficient rolling-window warmup:
+    alpha158 uses rolling(252), so we need 252+ rows before 2023 begins.
     """
     df = _load_real_ohlcv('NVDA')
-    return df['2023-01-01':'2023-12-31']
+    return df['2021-01-01':'2023-12-31']
 
 
 @pytest.fixture
 def volatile_period_df():
     """
-    SPY data during COVID crash + recovery (2020-03 to 2020-12).
-    Useful for testing circuit breaker and drawdown logic.
+    SPY data ending in the COVID crash + recovery (2020).
+    Slice includes 2018-2020 to provide sufficient rolling-window warmup:
+    alpha158 uses rolling(252), so we need 252+ rows before Mar 2020.
     """
     df = _load_real_ohlcv('SPY')
-    return df['2020-03-01':'2020-12-31']
+    return df['2018-01-01':'2020-12-31']
 
 
 # ── Fixture metadata helper ───────────────────────────────────────────────────
