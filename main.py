@@ -685,6 +685,12 @@ def run_daily_scan():
             }
 
             if signal == 'BUY':
+                # Apply the same circuit-breaker gate as stocks — a portfolio
+                # halt must stop crypto too, not just equities.
+                if not market_regime['can_trade']:
+                    dashboard_signals[symbol]['signal'] = 'MARKET_HOLD'
+                    print(f"    {symbol}: crypto BUY blocked by circuit breaker (CASH MODE)")
+                    continue
                 opened = trader.open_position(symbol, price, pred, reason=regime)
                 if opened:
                     telegram.alert_buy_signal(symbol, price, pred, regime, 0.0)
