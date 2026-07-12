@@ -78,6 +78,18 @@ BLOOMBERG_CSS = r"""<!DOCTYPE html>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- PWA: AlphaEdge logo on mobile home screen & browser tab -->
+    <link rel="manifest" href="/assets/manifest.json">
+    <meta name="theme-color" content="#F58220">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AlphaEdge">
+    <link rel="apple-touch-icon" href="/assets/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/icon-512.png">
+
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
         html,body{background:#080B10}
