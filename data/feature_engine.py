@@ -426,16 +426,11 @@ class FeatureEngine:
             .shift(-forward_period)
         )
 
-        df['target'] = (
-        df['future_return'] > 0
-        ).astype(int)
+        # Drop rows where future_return is NaN (the last forward_period rows
+        # have no forward data). Without this, NaN > 0 evaluates to False,
+        # so those rows get target=0 regardless of actual future price movement.
+        df = df[df['future_return'].notna()]
 
-        # CRITICAL: Drop future_return
-        # It must NEVER be a model feature
-        df = df.drop(columns=['future_return'])
+        df['target'] = (df['future_return'] > 0).astype(int)
 
-        return df
-
-    def get_feature_names(self) -> list:
-        """Return list of feature column names."""
-        return self.feature_names
+        # CRITICAL:

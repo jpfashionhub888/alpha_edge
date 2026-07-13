@@ -28,6 +28,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pytest
+
 logger = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────
@@ -339,8 +341,6 @@ class CrashRecoveryTest:
             return None
 
 
-# ── Entry point ───────────────────────────────────────────────────────
-
-if __name__ == '__main__':
-    test = CrashRecoveryTest()
-    sys.exit(test.run_all())
+# ── Pytest entry point ───────────────────────────────────────────────
+# CrashRecoveryTest uses systemctl and requires the production VPS.
+# This wrapper makes it
