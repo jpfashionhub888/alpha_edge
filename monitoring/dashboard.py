@@ -102,9 +102,9 @@ BLOOMBERG_CSS = r"""<!DOCTYPE html>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="AlphaEdge">
-    <link rel="apple-touch-icon" href="/assets/icon-192.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="/assets/icon-512.png">
+    <link rel="apple-touch-icon" href="/assets/icon-v2-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-v2-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/icon-v2-512.png">
 
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
