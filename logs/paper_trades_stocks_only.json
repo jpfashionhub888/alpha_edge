@@ -1,0 +1,11 @@
+{
+  "capital": 10000.0,
+  "starting_capital": 10000.0,
+  "positions": {},
+  "trade_history": [],
+  "daily_realized_pnl": 0.0,
+  "daily_loss_limit": 200.0,
+  "last_reset_date": "2026-07-13",
+  "_halt_trading": false,
+  "saved_at": "2026-07-13T00:48:25.228608"
+}
