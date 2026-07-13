@@ -180,26 +180,28 @@ class Portfolio:
         self.initial_capital = initial_capital
         self.cash            = initial_capital
         self.positions: Dict[str, Position] = {}
+        self._last_prices: Dict[str, float] = {}
         self.equity_curve: List[Tuple[datetime, float]] = []
         self.trades: List[Dict] = []
 
     @property
     def total_value(self) -> float:
         return self.cash + sum(
-            pos.shares * pos.entry_price for pos in self.positions.values()
+            pos.shares * self._last_prices.get(sym, pos.entry_price)
+            for sym, pos in self.positions.items()
         )
 
     def update_market(self, event: MarketEvent) -> None:
         """Update current price of any open position (for equity curve)."""
+        self._last_prices[event.symbol] = event.close
         if event.symbol in self.positions:
-            pos = self.positions[event.symbol]
-            pos.bars_open += 1
-            # Equity snapshot with mark-to-market
-            mtm_equity = self.cash + sum(
-                (event.close if sym == event.symbol else p.entry_price) * p.shares
-                for sym, p in self.positions.items()
-            )
-            self.equity_curve.append((event.date, mtm_equity))
+            self.positions[event.symbol].bars_open += 1
+        # Equity snapshot every bar regardless of whether this symbol is held
+        mtm_equity = self.cash + sum(
+            p.shares * self._last_prices.get(sym, p.entry_price)
+            for sym, p in self.positions.items()
+        )
+        self.equity_curve.append((event.date, mtm_equity))
 
     def process_fill(self, fill: FillEvent) -> None:
         """Apply fill to portfolio."""
@@ -221,7 +223,7 @@ class Portfolio:
             pos      = self.positions.pop(fill.symbol)
             proceeds = fill.fill_price * fill.quantity - fill.commission - fill.slippage
             self.cash += proceeds
-            pnl      = proceeds - (pos.entry_price * pos.shares + fill.commission + fill.slippage)
+            pnl      = proceeds - pos.entry_price * pos.shares
             pnl_pct  = pnl / (pos.entry_price * pos.shares)
             self.trades.append({
                 'symbol'     : fill.symbol,
@@ -627,9 +629,12 @@ class EventDrivenBacktest:
         if not portfolio.positions or not events:
             return
         last_prices = {e.symbol: e.close for e in events}
+        fm = self.fill_model
         for sym, pos in list(portfolio.positions.items()):
-            price = last_prices.get(sym, pos.entry_price)
-            proceeds = price * pos.shares
+            price      = last_prices.get(sym, pos.entry_price)
+            commission = max(pos.shares * fm.commission_per_share, fm.min_commission)
+            slippage   = price * pos.shares * fm.slippage_pct
+            proceeds   = price * pos.shares - commission - slippage
             portfolio.cash += proceeds
             portfolio.trades.append({
                 'symbol'     : sym,
@@ -641,7 +646,7 @@ class EventDrivenBacktest:
                 'pnl'        : round(proceeds - pos.entry_price * pos.shares, 4),
                 'pnl_pct'   : round((price - pos.entry_price) / pos.entry_price, 4),
                 'bars_open'  : pos.bars_open,
-                'commission' : 0.0,
-                'slippage'   : 0.0,
+                'commission' : round(commission, 4),
+                'slippage'   : round(slippage, 4),
             })
         portfolio.positions.clear()

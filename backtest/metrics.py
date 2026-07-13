@@ -79,8 +79,8 @@ def compute_metrics(
     excess    = returns - daily_rfr
 
     sharpe = float(
-        excess.mean() / returns.std() * math.sqrt(TRADING_DAYS)
-    ) if returns.std() > 0 else 0.0
+        excess.mean() / excess.std() * math.sqrt(TRADING_DAYS)
+    ) if excess.std() > 0 else 0.0
 
     downside     = returns[returns < 0]
     down_std     = float(downside.std()) if len(downside) > 1 else 0.0

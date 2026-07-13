@@ -226,7 +226,7 @@ class HeartbeatWatchdog:
                 f"Last ping: {last_ping}\n"
                 f"Cycles completed: {cycle_count}\n"
                 f"Action: Check server immediately\n"
-                f"SSH: ssh root@67.205.185.84\n"
+                f"SSH: ssh root@{os.getenv('VPS_HOST', '67.205.185.84')}\n"
                 f"Status: systemctl status {service}.service"
             )
             try:

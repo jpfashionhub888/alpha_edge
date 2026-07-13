@@ -377,62 +377,63 @@ def load_models(symbol: str, feature_names: Optional[List[str]] = None) -> Optio
     """
     meta_path, model_path = _cache._paths(symbol)
 
-    # ── Check metadata first ──────────────────────────────────────────
-    if meta_path.exists():
-        try:
-            with open(meta_path, "r") as f:
-                meta = json.load(f)
+    with _cache._lock:
+        # ── Check metadata first ──────────────────────────────────────────
+        if meta_path.exists():
+            try:
+                with open(meta_path, "r") as f:
+                    meta = json.load(f)
 
-            # Version check — reject caches from incompatible training runs
-            if meta.get("cache_version") != CACHE_VERSION:
-                logger.info(
-                    f"[{symbol}] Cache version mismatch "
-                    f"({meta.get('cache_version')} vs {CACHE_VERSION}), forcing retrain"
-                )
+                # Version check — reject caches from incompatible training runs
+                if meta.get("cache_version") != CACHE_VERSION:
+                    logger.info(
+                        f"[{symbol}] Cache version mismatch "
+                        f"({meta.get('cache_version')} vs {CACHE_VERSION}), forcing retrain"
+                    )
+                    _cache._delete(symbol)
+                    return None
+
+                # TTL check — reject caches older than allowed window
+                try:
+                    trained_at = datetime.fromisoformat(meta["trained_at"])
+                    age_days = (datetime.utcnow() - trained_at).days
+                    if age_days > _cache.ttl_days:
+                        logger.info(
+                            f"[{symbol}] Cache expired ({age_days}d > {_cache.ttl_days}d), retraining"
+                        )
+                        _cache._delete(symbol)
+                        return None
+                except Exception as e:
+                    logger.debug(f'Cache TTL date parse skipped: {e}')  # Non-critical: if date parse fails, proceed
+
+                # Feature hash check (when caller provides current feature list)
+                if feature_names:
+                    current_hash = ModelCache._hash_features(feature_names)
+                    cached_hash  = meta.get("feature_hash", "")
+                    if cached_hash and cached_hash != current_hash:
+                        logger.warning(
+                            f"[{symbol}] Feature set changed since training — "
+                            f"cached={cached_hash[:8]} current={current_hash[:8]} — forcing retrain"
+                        )
+                        _cache._delete(symbol)
+                        return None
+
+            except (json.JSONDecodeError, OSError) as e:
+                logger.warning(f"[{symbol}] Corrupt metadata ({e}), invalidating")
                 _cache._delete(symbol)
                 return None
 
-            # TTL check — reject caches older than allowed window
-            try:
-                trained_at = datetime.fromisoformat(meta["trained_at"])
-                age_days = (datetime.utcnow() - trained_at).days
-                if age_days > _cache.ttl_days:
-                    logger.info(
-                        f"[{symbol}] Cache expired ({age_days}d > {_cache.ttl_days}d), retraining"
-                    )
-                    _cache._delete(symbol)
-                    return None
-            except Exception as e:
-                logger.debug(f'Cache TTL date parse skipped: {e}')  # Non-critical: if date parse fails, proceed
-
-            # Feature hash check (when caller provides current feature list)
-            if feature_names:
-                current_hash = ModelCache._hash_features(feature_names)
-                cached_hash  = meta.get("feature_hash", "")
-                if cached_hash and cached_hash != current_hash:
-                    logger.warning(
-                        f"[{symbol}] Feature set changed since training — "
-                        f"cached={cached_hash[:8]} current={current_hash[:8]} — forcing retrain"
-                    )
-                    _cache._delete(symbol)
-                    return None
-
-        except (json.JSONDecodeError, OSError) as e:
-            logger.warning(f"[{symbol}] Corrupt metadata ({e}), invalidating")
-            _cache._delete(symbol)
+        if not model_path.exists():
             return None
 
-    if not model_path.exists():
-        return None
-
-    try:
-        import pickle
-        with open(model_path, "rb") as f:
-            return pickle.load(f)
-    except Exception as e:
-        logger.warning(f"[{symbol}] load_models failed: {e}")
-        _cache._delete(symbol)
-        return None
+        try:
+            import pickle
+            with open(model_path, "rb") as f:
+                return pickle.load(f)
+        except Exception as e:
+            logger.warning(f"[{symbol}] load_models failed: {e}")
+            _cache._delete(symbol)
+            return None
 
 
 def save_models(symbol: str, models: Any, trained_through: str = None,

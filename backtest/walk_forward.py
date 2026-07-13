@@ -1074,9 +1074,6 @@ class WalkForwardBacktester:
         else:
             active = df
 
-        cumulative = (1 + df[ret_col]).cumprod()
-        buyhold    = (1 + df['returns']).cumprod()
- 
         # Calculate returns on ALL days
         # active is used for trade counting only
         # not for gating the entire calculation
@@ -1105,10 +1102,28 @@ class WalkForwardBacktester:
             annual    = total_return
             bh_annual = bh_total
 
+        # Sharpe ratio (annualised)
+        daily_std = df[ret_col].std()
+        sharpe = (
+            df[ret_col].mean() / daily_std * np.sqrt(252)
+            if daily_std > 0
+            else 0.0
+        )
+
+        # Max drawdown
+        peak      = cumulative.cummax()
+        drawdown  = (cumulative - peak) / peak
+        max_dd    = drawdown.min()
+
+        # Win rate — count distinct trades not days
+        total_trades, wins, wr = self._count_trades(df)
+
         self.strategy_results = {
-            'total_return'   : total_return,
-            'annual_return'  : annual,
-            'bh_total'       : bh_total,
-            'bh_annual'      : bh_annual,
-            'years'          : years,
+            'annual_return' : annual,
+            'buyhold_annual': bh_annual,
+            'total_return'  : total_return,
+            'sharpe'        : sharpe,
+            'max_drawdown'  : max_dd,
+            'win_rate'      : wr,
+            'total_trades'  : total_trades,
         }
