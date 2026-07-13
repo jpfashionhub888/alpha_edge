@@ -399,8 +399,8 @@ class AlpacaBroker:
             price = float(quotes[symbol].ask_price)
             if price and price > 0:
                 return price
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("_get_latest_price(%s): quote failed, trying bar: %s", symbol, e)
         try:
             bars = self.data_client.get_stock_latest_bar(
                 StockLatestBarRequest(symbol_or_symbols=symbol)
