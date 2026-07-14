@@ -457,8 +457,8 @@
     <span class="chip chip-paper">PAPER</span>
     <span class="chip chip-v5">V6</span>
     <span class="regime-chip"
-          style="color:#6b7280;border-color:#6b728033;background:#6b728012">
-      — UNKNOWN
+          style="color:#10b981;border-color:#10b98133;background:#10b98112">
+      ↑ UPTREND
     </span>
   </div>
   <div class="header-right">
@@ -472,7 +472,7 @@
     <span class="ts" style="color:var(--border2)">|</span>
     <span class="ts">🕐 <span id="etClock">...</span></span>
     <span class="ts" style="color:var(--border2)">|</span>
-    <span class="ts">Updated 2026-07-13 17:58 ET</span>
+    <span class="ts">Updated 2026-07-14 11:17 ET</span>
     <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">☀ Light</button>
   </div>
 </header>
@@ -538,7 +538,7 @@
   </button>
   <button class="tab-btn"        onclick="showTab('signals')"   id="t-signals">
     Signals
-    <span class="tab-count ">0</span>
+    <span class="tab-count ">23</span>
   </button>
   <button class="tab-btn"        onclick="showTab('sectors')"   id="t-sectors">Sectors</button>
   <button class="tab-btn"        onclick="showTab('earnings')"  id="t-earnings">
@@ -567,13 +567,13 @@
         <span class="pill-num">0</span> BUY
       </div>
       <div class="sig-pill pill-hold">
-        <span class="pill-num">0</span> HOLD
+        <span class="pill-num">9</span> HOLD
       </div>
       <div class="sig-pill pill-caution">
-        <span class="pill-num">0</span> CAUTION
+        <span class="pill-num">4</span> CAUTION
       </div>
       <div class="sig-pill pill-avoid">
-        <span class="pill-num">0</span> AVOID
+        <span class="pill-num">8</span> AVOID
       </div>
     </div>
 
@@ -730,16 +730,16 @@
         <button class="filter-btn f-caution" onclick="toggleSigFilter('CAUTION')" id="fb-CAUTION">CAUTION</button>
         <button class="filter-btn"           onclick="toggleSigFilter('HOLD')"    id="fb-HOLD">HOLD</button>
         <button class="filter-btn"           onclick="clearSigFilters()">Clear</button>
-        <span class="ts" id="sigCount">0 shown</span>
+        <span class="ts" id="sigCount">23 shown</span>
       </div>
       <div class="panel">
         <div class="panel-header">
           <span class="panel-title">AI Signal Scanner</span>
           <div style="display:flex;gap:8px">
             <span class="badge badge-buy">0 BUY</span>
-            <span class="badge badge-hold">0 HOLD</span>
-            <span class="badge badge-caution">0 CAUTION</span>
-            <span class="badge badge-avoid">0 AVOID</span>
+            <span class="badge badge-hold">9 HOLD</span>
+            <span class="badge badge-caution">4 CAUTION</span>
+            <span class="badge badge-avoid">8 AVOID</span>
           </div>
         </div>
         <div style="overflow-x:auto">
@@ -774,7 +774,628 @@
                 <th>Filter Layers (9)</th>
               </tr>
             </thead>
-            <tbody id="sigBody"></tbody>
+            <tbody id="sigBody">
+        <tr class="trow row-avoid" data-pred="0.8296117406529161" data-sent="0.16902052771507037"
+            data-price="111.54000091552734" data-sig="AVOID" data-sym="WMT"
+            data-kellyf="0.7614564369140826" data-kellyalloc="0.15" data-kellyval="1500.0">
+          <td class="px-5 py-4">
+            <div class="sym">WMT</div>
+            <div class="sub">Staples</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-avoid">AVOID</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:82%;background:#10b981"></div></div>
+              <span class="bar-lbl mono" style="color:#10b981">82%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↓ downtrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#10b981">+0.17</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">76.1%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,500.00</td>
+          <td class="px-5 py-4 tc mono fw">$111.54</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow " data-pred="0.7657690673936295" data-sent="-0.04026986966021808"
+            data-price="267.239990234375" data-sig="CAUTION" data-sym="JNJ"
+            data-kellyf="0.6720766943510814" data-kellyalloc="0.15" data-kellyval="1500.0">
+          <td class="px-5 py-4">
+            <div class="sym">JNJ</div>
+            <div class="sub">Healthcare</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-caution">CAUTION</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:76%;background:#10b981"></div></div>
+              <span class="bar-lbl mono" style="color:#10b981">76%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">⚡ volatile</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">-0.04</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">67.2%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,500.00</td>
+          <td class="px-5 py-4 tc mono fw">$267.24</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow row-avoid" data-pred="0.753572644976023" data-sent="0.14941065813104312"
+            data-price="141.69000244140625" data-sig="AVOID" data-sym="XOM"
+            data-kellyf="0.6550017029664323" data-kellyalloc="0.15" data-kellyval="1500.0">
+          <td class="px-5 py-4">
+            <div class="sym">XOM</div>
+            <div class="sub">Energy</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-avoid">AVOID</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:75%;background:#10b981"></div></div>
+              <span class="bar-lbl mono" style="color:#10b981">75%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↓ downtrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#10b981">+0.15</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">65.5%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,500.00</td>
+          <td class="px-5 py-4 tc mono fw">$141.69</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow " data-pred="0.6901463392828738" data-sent="-0.12931266652386902"
+            data-price="709.4299926757812" data-sig="CAUTION" data-sym="QQQ"
+            data-kellyf="0.5662048749960233" data-kellyalloc="0.15" data-kellyval="1500.0">
+          <td class="px-5 py-4">
+            <div class="sym">QQQ</div>
+            <div class="sub">Technology</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-caution">CAUTION</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:69%;background:#10b981"></div></div>
+              <span class="bar-lbl mono" style="color:#10b981">69%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">⚡ volatile</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#f43f5e">-0.13</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">56.6%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,500.00</td>
+          <td class="px-5 py-4 tc mono fw">$709.43</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow row-avoid" data-pred="0.6520642456657659" data-sent="0.20688006758470745"
+            data-price="174.00999450683594" data-sig="AVOID" data-sym="CVX"
+            data-kellyf="0.5128899439320722" data-kellyalloc="0.15" data-kellyval="1500.0">
+          <td class="px-5 py-4">
+            <div class="sym">CVX</div>
+            <div class="sub">Energy</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-avoid">AVOID</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:65%;background:#10b981"></div></div>
+              <span class="bar-lbl mono" style="color:#10b981">65%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↓ downtrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#10b981">+0.21</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">51.3%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,500.00</td>
+          <td class="px-5 py-4 tc mono fw">$174.01</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow " data-pred="0.6328163675744718" data-sent="-0.10344342052076871"
+            data-price="16.489999771118164" data-sig="CAUTION" data-sym="RIVN"
+            data-kellyf="0.4859429146042604" data-kellyalloc="0.15" data-kellyval="1500.0">
+          <td class="px-5 py-4">
+            <div class="sym">RIVN</div>
+            <div class="sub">Consumer</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-caution">CAUTION</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:63%;background:#f59e0b"></div></div>
+              <span class="bar-lbl mono" style="color:#f59e0b">63%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">⚡ volatile</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#f43f5e">-0.10</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">48.6%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,500.00</td>
+          <td class="px-5 py-4 tc mono fw">$16.49</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow " data-pred="0.5865988143626942" data-sent="-0.07750894830096514"
+            data-price="747.7100219726562" data-sig="MTF_HOLD" data-sym="SPY"
+            data-kellyf="0.42123834010777195" data-kellyalloc="0.15" data-kellyval="1500.0">
+          <td class="px-5 py-4">
+            <div class="sym">SPY</div>
+            <div class="sub">Market</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-hold">MTF_HOLD</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:58%;background:#f59e0b"></div></div>
+              <span class="bar-lbl mono" style="color:#f59e0b">58%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↑ uptrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">-0.08</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">42.1%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,500.00</td>
+          <td class="px-5 py-4 tc mono fw">$747.71</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow row-avoid" data-pred="0.5562467040376673" data-sent="0.0"
+            data-price="282.2099914550781" data-sig="AVOID" data-sym="MCD"
+            data-kellyf="0.37874538565273425" data-kellyalloc="0.15" data-kellyval="1500.0">
+          <td class="px-5 py-4">
+            <div class="sym">MCD</div>
+            <div class="sub">Consumer</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-avoid">AVOID</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:55%;background:#f59e0b"></div></div>
+              <span class="bar-lbl mono" style="color:#f59e0b">55%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↓ downtrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">37.9%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,500.00</td>
+          <td class="px-5 py-4 tc mono fw">$282.21</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow row-avoid" data-pred="0.5308975876089133" data-sent="0.0"
+            data-price="196.92999267578125" data-sig="AVOID" data-sym="NVDA"
+            data-kellyf="0.3432566226524786" data-kellyalloc="0.15" data-kellyval="1500.0">
+          <td class="px-5 py-4">
+            <div class="sym">NVDA</div>
+            <div class="sub">Technology</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-avoid">AVOID</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:53%;background:#6b7280"></div></div>
+              <span class="bar-lbl mono" style="color:#6b7280">53%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↓ downtrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">34.3%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,500.00</td>
+          <td class="px-5 py-4 tc mono fw">$196.93</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow " data-pred="0.5224944781633939" data-sent="0.0"
+            data-price="222.0399932861328" data-sig="EARNINGS_HOLD" data-sym="MS"
+            data-kellyf="0.3314922694287515" data-kellyalloc="0.15" data-kellyval="1500.0">
+          <td class="px-5 py-4">
+            <div class="sym">MS</div>
+            <div class="sub">Financials</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-earn">EARNINGS_HOLD</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:52%;background:#6b7280"></div></div>
+              <span class="bar-lbl mono" style="color:#6b7280">52%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↑ uptrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">33.1%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,500.00</td>
+          <td class="px-5 py-4 tc mono fw">$222.04</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow " data-pred="0.5168413393095505" data-sent="0.0"
+            data-price="516.1099853515625" data-sig="HOLD" data-sym="AMD"
+            data-kellyf="0.3235778750333706" data-kellyalloc="0.15" data-kellyval="1500.0">
+          <td class="px-5 py-4">
+            <div class="sym">AMD</div>
+            <div class="sub">Technology</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-hold">HOLD</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:51%;background:#6b7280"></div></div>
+              <span class="bar-lbl mono" style="color:#6b7280">51%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↑ uptrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">32.4%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">15.0%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,500.00</td>
+          <td class="px-5 py-4 tc mono fw">$516.11</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow row-avoid" data-pred="0.4919503633712565" data-sent="0.0"
+            data-price="245.97999572753906" data-sig="AVOID" data-sym="AMZN"
+            data-kellyf="0.2887305087197591" data-kellyalloc="0.14436525435987954" data-kellyval="1443.6525435987953">
+          <td class="px-5 py-4">
+            <div class="sym">AMZN</div>
+            <div class="sub">Consumer</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-avoid">AVOID</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:49%;background:#6b7280"></div></div>
+              <span class="bar-lbl mono" style="color:#6b7280">49%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↓ downtrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">28.9%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">14.4%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,443.65</td>
+          <td class="px-5 py-4 tc mono fw">$245.98</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow row-avoid" data-pred="0.4633009750984129" data-sent="0.0"
+            data-price="76.18000030517578" data-sig="AVOID" data-sym="NFLX"
+            data-kellyf="0.24862136513777805" data-kellyalloc="0.12431068256888902" data-kellyval="1243.1068256888902">
+          <td class="px-5 py-4">
+            <div class="sym">NFLX</div>
+            <div class="sub">Communications</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-avoid">AVOID</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:46%;background:#6b7280"></div></div>
+              <span class="bar-lbl mono" style="color:#6b7280">46%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↓ downtrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">24.9%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">12.4%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$1,243.11</td>
+          <td class="px-5 py-4 tc mono fw">$76.18</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow " data-pred="0.41963946139394354" data-sent="0.0"
+            data-price="17.75" data-sig="HOLD" data-sym="SOFI"
+            data-kellyf="0.18749524595152095" data-kellyalloc="0.09374762297576048" data-kellyval="937.4762297576048">
+          <td class="px-5 py-4">
+            <div class="sym">SOFI</div>
+            <div class="sub">Financials</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-hold">HOLD</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:41%;background:#6b7280"></div></div>
+              <span class="bar-lbl mono" style="color:#6b7280">41%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↑ uptrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">18.7%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">9.4%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$937.48</td>
+          <td class="px-5 py-4 tc mono fw">$17.75</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow " data-pred="0.40792462851112277" data-sent="0.0"
+            data-price="345.2099914550781" data-sig="HOLD" data-sym="HD"
+            data-kellyf="0.1710944799155719" data-kellyalloc="0.08554723995778594" data-kellyval="855.4723995778595">
+          <td class="px-5 py-4">
+            <div class="sym">HD</div>
+            <div class="sub">Consumer</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-hold">HOLD</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:40%;background:#6b7280"></div></div>
+              <span class="bar-lbl mono" style="color:#6b7280">40%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↑ uptrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">17.1%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">8.6%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$855.47</td>
+          <td class="px-5 py-4 tc mono fw">$345.21</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow " data-pred="0.39790652019899314" data-sent="0.0"
+            data-price="59.86000061035156" data-sig="HOLD" data-sym="BAC"
+            data-kellyf="0.1570691282785904" data-kellyalloc="0.0785345641392952" data-kellyval="785.345641392952">
+          <td class="px-5 py-4">
+            <div class="sym">BAC</div>
+            <div class="sub">Financials</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-hold">HOLD</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:39%;background:#6b7280"></div></div>
+              <span class="bar-lbl mono" style="color:#6b7280">39%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↑ uptrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">15.7%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">7.9%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$785.35</td>
+          <td class="px-5 py-4 tc mono fw">$59.86</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow " data-pred="0.3956073266482868" data-sent="0.0"
+            data-price="296.19000244140625" data-sig="HOLD" data-sym="IWM"
+            data-kellyf="0.15385025730760155" data-kellyalloc="0.07692512865380077" data-kellyval="769.2512865380078">
+          <td class="px-5 py-4">
+            <div class="sym">IWM</div>
+            <div class="sub">Market</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-hold">HOLD</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:39%;background:#6b7280"></div></div>
+              <span class="bar-lbl mono" style="color:#6b7280">39%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↑ uptrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">15.4%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">7.7%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$769.25</td>
+          <td class="px-5 py-4 tc mono fw">$296.19</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow row-avoid" data-pred="0.3645230823860469" data-sent="0.0"
+            data-price="169.52000427246094" data-sig="AVOID" data-sym="CRM"
+            data-kellyf="0.11033231534046566" data-kellyalloc="0.05516615767023283" data-kellyval="551.6615767023283">
+          <td class="px-5 py-4">
+            <div class="sym">CRM</div>
+            <div class="sub">Technology</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-avoid">AVOID</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:36%;background:#6b7280"></div></div>
+              <span class="bar-lbl mono" style="color:#6b7280">36%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↓ downtrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">11.0%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">5.5%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$551.66</td>
+          <td class="px-5 py-4 tc mono fw">$169.52</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow " data-pred="0.356124213174217" data-sent="0.0"
+            data-price="310.6600036621094" data-sig="CAUTION" data-sym="AAPL"
+            data-kellyf="0.09857389844390382" data-kellyalloc="0.04928694922195191" data-kellyval="492.86949221951915">
+          <td class="px-5 py-4">
+            <div class="sym">AAPL</div>
+            <div class="sub">Technology</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-caution">CAUTION</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:35%;background:#6b7280"></div></div>
+              <span class="bar-lbl mono" style="color:#6b7280">35%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">⚡ volatile</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">9.9%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">4.9%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$492.87</td>
+          <td class="px-5 py-4 tc mono fw">$310.66</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow " data-pred="0.34517276220193766" data-sent="0.0"
+            data-price="528.4500122070312" data-sig="HOLD" data-sym="DIA"
+            data-kellyf="0.08324186708271268" data-kellyalloc="0.04162093354135634" data-kellyval="416.2093354135634">
+          <td class="px-5 py-4">
+            <div class="sym">DIA</div>
+            <div class="sub">Market</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-hold">HOLD</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:34%;background:#6b7280"></div></div>
+              <span class="bar-lbl mono" style="color:#6b7280">34%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↑ uptrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">8.3%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">4.2%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$416.21</td>
+          <td class="px-5 py-4 tc mono fw">$528.45</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow " data-pred="0.32092971791884733" data-sent="0.0"
+            data-price="1042.97998046875" data-sig="HOLD" data-sym="GS"
+            data-kellyf="0.04930160508638624" data-kellyalloc="0.02465080254319312" data-kellyval="246.50802543193117">
+          <td class="px-5 py-4">
+            <div class="sym">GS</div>
+            <div class="sub">Financials</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-hold">HOLD</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:32%;background:#6b7280"></div></div>
+              <span class="bar-lbl mono" style="color:#6b7280">32%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↑ uptrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">4.9%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">2.5%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$246.51</td>
+          <td class="px-5 py-4 tc mono fw">$1042.98</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow " data-pred="0.3129963102068188" data-sent="0.0"
+            data-price="268.8299865722656" data-sig="HOLD" data-sym="NET"
+            data-kellyf="0.038194834289546266" data-kellyalloc="0.019097417144773133" data-kellyval="190.97417144773132">
+          <td class="px-5 py-4">
+            <div class="sym">NET</div>
+            <div class="sub">Technology</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-hold">HOLD</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:31%;background:#6b7280"></div></div>
+              <span class="bar-lbl mono" style="color:#6b7280">31%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↑ uptrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">3.8%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">1.9%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$190.97</td>
+          <td class="px-5 py-4 tc mono fw">$268.83</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr>
+        <tr class="trow " data-pred="0.29348053229844234" data-sent="0.0"
+            data-price="352.20001220703125" data-sig="HOLD" data-sym="V"
+            data-kellyf="0.01087274521781927" data-kellyalloc="0.005436372608909635" data-kellyval="54.363726089096346">
+          <td class="px-5 py-4">
+            <div class="sym">V</div>
+            <div class="sub">Financials</div>
+          </td>
+          <td class="px-5 py-4 tc"><span class="badge badge-hold">HOLD</span></td>
+          <td class="px-5 py-4" style="min-width:140px">
+            <div class="bar-row">
+              <div class="bar-bg"><div class="bar-fill" style="width:29%;background:#6b7280"></div></div>
+              <span class="bar-lbl mono" style="color:#6b7280">29%</span>
+            </div>
+          </td>
+          <td class="px-5 py-4 tc">
+            <span class="regime-tag">↑ uptrend</span>
+          </td>
+          <td class="px-5 py-4 tc mono" style="color:#9ca3af">0.00</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">1.1%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#0ea5e9">0.5%</td>
+          <td class="px-5 py-4 tc mono fw" style="color:#10b981">$54.36</td>
+          <td class="px-5 py-4 tc mono fw">$352.20</td>
+          <td class="px-5 py-4">
+            <div class="squares"><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span><span class="sq" style="background:#1e293b"></span></div>
+            <div class="sub mt-1">0/9 passed</div>
+          </td>
+        </tr></tbody>
           </table>
         </div>
       </div>
@@ -796,7 +1417,7 @@
         <div class="panel-header">
           <span class="panel-title">Sector Rotation Detail</span>
           <span class="ts">
-            3 inflow ·
+            2 inflow ·
             0 outflow
           </span>
         </div>
@@ -808,24 +1429,24 @@
             <span class="sec-badge" style="color:#10b981;border-color:#10b981">INFLOW</span>
           </div>
           <div class="sec-bar-bg mt-3">
-            <div class="sec-bar-fill" style="width:47.26965640251538%;background:#10b981"></div>
+            <div class="sec-bar-fill" style="width:46.408226838603944%;background:#10b981"></div>
           </div>
           <div class="sec-footer">
-            <span class="mono sub">Score: 0.0236</span>
-            <span class="mono" style="color:#f43f5e">-0.01%</span>
+            <span class="mono sub">Score: 0.0232</span>
+            <span class="mono" style="color:#f43f5e">-0.00%</span>
           </div>
         </div>
-        <div class="sector-card card-inflow">
+        <div class="sector-card card-neutral">
           <div class="sec-header">
             <span class="sec-name">Healthcare</span>
-            <span class="sec-badge" style="color:#10b981;border-color:#10b981">INFLOW</span>
+            <span class="sec-badge" style="color:#9ca3af;border-color:#9ca3af">NEUTRAL</span>
           </div>
           <div class="sec-bar-bg mt-3">
-            <div class="sec-bar-fill" style="width:59.72308999625113%;background:#10b981"></div>
+            <div class="sec-bar-fill" style="width:34.137047657862915%;background:#9ca3af"></div>
           </div>
           <div class="sec-footer">
-            <span class="mono sub">Score: 0.0299</span>
-            <span class="mono" style="color:#10b981">+0.05%</span>
+            <span class="mono sub">Score: 0.0171</span>
+            <span class="mono" style="color:#10b981">+0.03%</span>
           </div>
         </div>
         <div class="sector-card card-inflow">
@@ -834,11 +1455,11 @@
             <span class="sec-badge" style="color:#10b981;border-color:#10b981">INFLOW</span>
           </div>
           <div class="sec-bar-bg mt-3">
-            <div class="sec-bar-fill" style="width:82.87759975137055%;background:#10b981"></div>
+            <div class="sec-bar-fill" style="width:88.96172081822785%;background:#10b981"></div>
           </div>
           <div class="sec-footer">
-            <span class="mono sub">Score: 0.0414</span>
-            <span class="mono" style="color:#10b981">+0.07%</span>
+            <span class="mono sub">Score: 0.0445</span>
+            <span class="mono" style="color:#10b981">+0.06%</span>
           </div>
         </div>
         <div class="sector-card card-neutral">
@@ -847,11 +1468,11 @@
             <span class="sec-badge" style="color:#9ca3af;border-color:#9ca3af">NEUTRAL</span>
           </div>
           <div class="sec-bar-bg mt-3">
-            <div class="sec-bar-fill" style="width:30.483461866175652%;background:#9ca3af"></div>
+            <div class="sec-bar-fill" style="width:24.33129942068788%;background:#9ca3af"></div>
           </div>
           <div class="sec-footer">
-            <span class="mono sub">Score: 0.0152</span>
-            <span class="mono" style="color:#10b981">+0.00%</span>
+            <span class="mono sub">Score: 0.0122</span>
+            <span class="mono" style="color:#f43f5e">-0.01%</span>
           </div>
         </div>
         <div class="sector-card card-neutral">
@@ -860,11 +1481,11 @@
             <span class="sec-badge" style="color:#9ca3af;border-color:#9ca3af">NEUTRAL</span>
           </div>
           <div class="sec-bar-bg mt-3">
-            <div class="sec-bar-fill" style="width:1.6353882705818719%;background:#9ca3af"></div>
+            <div class="sec-bar-fill" style="width:17.710622476169704%;background:#9ca3af"></div>
           </div>
           <div class="sec-footer">
-            <span class="mono sub">Score: -0.0008</span>
-            <span class="mono" style="color:#10b981">+0.00%</span>
+            <span class="mono sub">Score: -0.0089</span>
+            <span class="mono" style="color:#f43f5e">-0.00%</span>
           </div>
         </div>
         <div class="sector-card card-neutral">
@@ -873,10 +1494,10 @@
             <span class="sec-badge" style="color:#9ca3af;border-color:#9ca3af">NEUTRAL</span>
           </div>
           <div class="sec-bar-bg mt-3">
-            <div class="sec-bar-fill" style="width:22.914640470878865%;background:#9ca3af"></div>
+            <div class="sec-bar-fill" style="width:18.88088773859683%;background:#9ca3af"></div>
           </div>
           <div class="sec-footer">
-            <span class="mono sub">Score: 0.0115</span>
+            <span class="mono sub">Score: 0.0094</span>
             <span class="mono" style="color:#10b981">+0.03%</span>
           </div>
         </div>
@@ -886,10 +1507,10 @@
             <span class="sec-badge" style="color:#9ca3af;border-color:#9ca3af">NEUTRAL</span>
           </div>
           <div class="sec-bar-bg mt-3">
-            <div class="sec-bar-fill" style="width:20.421311382894537%;background:#9ca3af"></div>
+            <div class="sec-bar-fill" style="width:26.32727670295162%;background:#9ca3af"></div>
           </div>
           <div class="sec-footer">
-            <span class="mono sub">Score: 0.0102</span>
+            <span class="mono sub">Score: 0.0132</span>
             <span class="mono" style="color:#10b981">+0.04%</span>
           </div>
         </div>
@@ -899,11 +1520,11 @@
             <span class="sec-badge" style="color:#9ca3af;border-color:#9ca3af">NEUTRAL</span>
           </div>
           <div class="sec-bar-bg mt-3">
-            <div class="sec-bar-fill" style="width:34.20503707694766%;background:#9ca3af"></div>
+            <div class="sec-bar-fill" style="width:25.219970466708272%;background:#9ca3af"></div>
           </div>
           <div class="sec-footer">
-            <span class="mono sub">Score: -0.0171</span>
-            <span class="mono" style="color:#f43f5e">-0.01%</span>
+            <span class="mono sub">Score: -0.0126</span>
+            <span class="mono" style="color:#f43f5e">-0.02%</span>
           </div>
         </div>
         <div class="sector-card card-neutral">
@@ -912,11 +1533,11 @@
             <span class="sec-badge" style="color:#9ca3af;border-color:#9ca3af">NEUTRAL</span>
           </div>
           <div class="sec-bar-bg mt-3">
-            <div class="sec-bar-fill" style="width:5.826622140089692%;background:#9ca3af"></div>
+            <div class="sec-bar-fill" style="width:2.0632411695777577%;background:#9ca3af"></div>
           </div>
           <div class="sec-footer">
-            <span class="mono sub">Score: 0.0029</span>
-            <span class="mono" style="color:#10b981">+0.00%</span>
+            <span class="mono sub">Score: 0.0010</span>
+            <span class="mono" style="color:#f43f5e">-0.01%</span>
           </div>
         </div>
         <div class="sector-card card-neutral">
@@ -925,10 +1546,10 @@
             <span class="sec-badge" style="color:#9ca3af;border-color:#9ca3af">NEUTRAL</span>
           </div>
           <div class="sec-bar-bg mt-3">
-            <div class="sec-bar-fill" style="width:6.398135394329472%;background:#9ca3af"></div>
+            <div class="sec-bar-fill" style="width:4.653847098808723%;background:#9ca3af"></div>
           </div>
           <div class="sec-footer">
-            <span class="mono sub">Score: 0.0032</span>
+            <span class="mono sub">Score: 0.0023</span>
             <span class="mono" style="color:#10b981">+0.00%</span>
           </div>
         </div>
@@ -938,11 +1559,11 @@
             <span class="sec-badge" style="color:#9ca3af;border-color:#9ca3af">NEUTRAL</span>
           </div>
           <div class="sec-bar-bg mt-3">
-            <div class="sec-bar-fill" style="width:2.001831578796763%;background:#9ca3af"></div>
+            <div class="sec-bar-fill" style="width:0.9329678610525961%;background:#9ca3af"></div>
           </div>
           <div class="sec-footer">
-            <span class="mono sub">Score: 0.0010</span>
-            <span class="mono" style="color:#f43f5e">-0.01%</span>
+            <span class="mono sub">Score: -0.0005</span>
+            <span class="mono" style="color:#f43f5e">-0.02%</span>
           </div>
         </div></div>
         </div>
@@ -959,33 +1580,33 @@
       </div>
       <div class="panel-body">
         <div class="earn-list">
-        <div class="earn-row earn-later">
+        <div class="earn-row earn-soon">
           <div><span class="sym">NFLX</span><span class="sub ml-3">2026-07-16</span></div>
-          <span class="mono fw" style="color:#9ca3af">In 3d</span>
+          <span class="mono fw" style="color:#f59e0b">In 2d</span>
         </div>
-        <div class="earn-row earn-soon">
+        <div class="earn-row earn-today">
           <div><span class="sym">JPM</span><span class="sub ml-3">2026-07-14</span></div>
-          <span class="mono fw" style="color:#f59e0b">In 1d</span>
+          <span class="mono fw" style="color:#f43f5e">TODAY</span>
         </div>
-        <div class="earn-row earn-soon">
+        <div class="earn-row earn-today">
           <div><span class="sym">GS</span><span class="sub ml-3">2026-07-14</span></div>
-          <span class="mono fw" style="color:#f59e0b">In 1d</span>
+          <span class="mono fw" style="color:#f43f5e">TODAY</span>
         </div>
-        <div class="earn-row earn-soon">
+        <div class="earn-row earn-today">
           <div><span class="sym">BAC</span><span class="sub ml-3">2026-07-14</span></div>
-          <span class="mono fw" style="color:#f59e0b">In 1d</span>
+          <span class="mono fw" style="color:#f43f5e">TODAY</span>
         </div>
         <div class="earn-row earn-soon">
           <div><span class="sym">MS</span><span class="sub ml-3">2026-07-15</span></div>
-          <span class="mono fw" style="color:#f59e0b">In 2d</span>
+          <span class="mono fw" style="color:#f59e0b">In 1d</span>
         </div>
         <div class="earn-row earn-soon">
           <div><span class="sym">JNJ</span><span class="sub ml-3">2026-07-15</span></div>
-          <span class="mono fw" style="color:#f59e0b">In 2d</span>
+          <span class="mono fw" style="color:#f59e0b">In 1d</span>
         </div>
-        <div class="earn-row earn-later">
+        <div class="earn-row earn-soon">
           <div><span class="sym">UNH</span><span class="sub ml-3">2026-07-16</span></div>
-          <span class="mono fw" style="color:#9ca3af">In 3d</span>
+          <span class="mono fw" style="color:#f59e0b">In 2d</span>
         </div></div>
       </div>
     </div>
@@ -1070,7 +1691,7 @@
         </div>
         <div class="config-row">
           <span class="config-label">Minimum Volume Spike Ratio</span>
-          <span class="config-val">1.3x</span>
+          <span class="config-val">0.9x</span>
         </div>
         <div class="config-row">
           <span class="config-label">Multi-Timeframe Alignment Weight</span>
@@ -1409,7 +2030,7 @@ let sectorChart = null;
   const el = document.getElementById('sectorChart');
   if (!el) return;
   const ctx     = el.getContext('2d');
-  const rawData = [{"name": "Technology", "mom": -0.009846362129291797, "flow": "INFLOW"}, {"name": "Healthcare", "mom": 0.05199410668343196, "flow": "INFLOW"}, {"name": "Financials", "mom": 0.06653178490172973, "flow": "INFLOW"}, {"name": "Energy", "mom": 0.0013046152504982977, "flow": "NEUTRAL"}, {"name": "Consumer", "mom": 0.001346448210418183, "flow": "NEUTRAL"}, {"name": "Industrials", "mom": 0.030734141813366866, "flow": "NEUTRAL"}, {"name": "Utilities", "mom": 0.044082123551366426, "flow": "NEUTRAL"}, {"name": "Materials", "mom": -0.011938254008859062, "flow": "NEUTRAL"}, {"name": "Real Estate", "mom": 0.0015766861868498072, "flow": "NEUTRAL"}, {"name": "Communications", "mom": 0.0019307991909487399, "flow": "NEUTRAL"}, {"name": "Staples", "mom": -0.007153664887667555, "flow": "NEUTRAL"}];
+  const rawData = [{"name": "Technology", "mom": -0.003791882846039152, "flow": "INFLOW"}, {"name": "Healthcare", "mom": 0.031641226321965865, "flow": "NEUTRAL"}, {"name": "Financials", "mom": 0.06323525897284976, "flow": "INFLOW"}, {"name": "Energy", "mom": -0.012564987892204837, "flow": "NEUTRAL"}, {"name": "Consumer", "mom": -0.0034211867588231915, "flow": "NEUTRAL"}, {"name": "Industrials", "mom": 0.02931698298155161, "flow": "NEUTRAL"}, {"name": "Utilities", "mom": 0.038364784483074565, "flow": "NEUTRAL"}, {"name": "Materials", "mom": -0.021941089334172492, "flow": "NEUTRAL"}, {"name": "Real Estate", "mom": -0.01025148633402384, "flow": "NEUTRAL"}, {"name": "Communications", "mom": 0.0032749581621045465, "flow": "NEUTRAL"}, {"name": "Staples", "mom": -0.015471636735082228, "flow": "NEUTRAL"}];
   if (!rawData.length) { el.parentElement.innerHTML = '<div class="empty-state">No sector data</div>'; return; }
   const labels = rawData.map(d => d.name);
   const vals   = rawData.map(d => d.mom);
