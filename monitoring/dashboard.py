@@ -50,14 +50,18 @@ try:
     vol_spike_min   = getattr(settings, 'VOLUME_SPIKE_MIN', 1.3)
     min_rr          = getattr(settings, 'MIN_RISK_REWARD', 2.0)
     mtf_weight      = getattr(settings, 'MTF_WEIGHT_IN_SIGNAL', 0.15)
-    watchlist_len   = len(getattr(settings, 'STOCK_WATCHLIST', []))
+    try:
+        from main import get_full_watchlist as _gwl
+        watchlist_len = len(_gwl())
+    except Exception:
+        watchlist_len = len(getattr(settings, 'STOCK_WATCHLIST', [])) or 66
 except Exception:
     kelly_active = True;  kelly_mult = 0.5;  kelly_rr = 2.5
     max_pos_pct = 0.15;   buy_threshold = 0.63; max_dd_limit = 0.10
-    max_daily_loss = 0.02; max_positions = 5;   atr_stop_mult = 1.0
+    max_daily_loss = 0.02; max_positions = 8;   atr_stop_mult = 1.0
     atr_target_mult = 2.5; trailing_mult = 0.8; max_risk_trade = 0.02
     max_port_risk = 0.06;  vol_spike_min = 1.3; min_rr = 2.0
-    mtf_weight = 0.15;     watchlist_len = 41
+    mtf_weight = 0.15;     watchlist_len = 66
 
 TRADES_FILE   = 'logs/paper_trades_stocks_only.json'
 SIGNALS_FILE  = 'logs/latest_signals.json'
@@ -219,7 +223,7 @@ def create_app():
                        'justifyContent': 'space-between', 'alignItems': 'center'},
                 children=[
                     html.Div(style={'display': 'flex', 'alignItems': 'center', 'gap': '14px'}, children=[
-                        html.Img(src='/assets/icon-192.png', style={
+                        html.Img(src='/assets/icon-v2-192.png', style={
                             'height': '48px', 'width': '48px',
                             'borderRadius': '50%',
                             'border': f"2px solid {C['orange']}",
@@ -301,8 +305,24 @@ def create_app():
         dd_c     = C['green'] if drawdown >= -2 else (C['yellow'] if drawdown >= -5 else C['red'])
         now_str  = now_et().strftime('%Y-%m-%d  %H:%M:%S ET')
 
+        # Derive market regime from signals file for dynamic status bar
+        _sigs     = load_signals()
+        _regimes  = [v.get('regime', '') for v in _sigs.values() if v.get('regime')]
+        _regime   = max(set(_regimes), key=_regimes.count).upper() if _regimes else 'UNKNOWN'
+        _regime_map = {'UPTREND': 'BULL MARKET', 'DOWNTREND': 'BEAR MARKET',
+                       'SIDEWAYS': 'SIDEWAYS MARKET', 'VOLATILE': 'VOLATILE MARKET'}
+        _regime_label = _regime_map.get(_regime, _regime)
+        _saved_at = _sigs.get('_meta', {}).get('saved_at', '') or next(
+            (v.get('saved_at', '') for v in _sigs.values() if isinstance(v, dict) and v.get('saved_at')), '')
+        _scan_age = ''
+        if _saved_at:
+            try:
+                _st = datetime.fromisoformat(_saved_at.replace('Z', '+00:00')).astimezone(_ET)
+                _scan_age = f'  |  LAST SCAN: {_st.strftime("%m/%d %H:%M ET")}'
+            except Exception:
+                pass
         status_bar = [
-            html.Span('PAPER TRADING  |  ALPACA CONNECTED  |  BULL MARKET  |  SCAN: 16:15 ET DAILY',
+            html.Span(f'PAPER TRADING  |  ALPACA CONNECTED  |  {_regime_label}  |  SCAN: 16:15 ET DAILY{_scan_age}',
                       style={'color': C['green'], 'fontSize': '9px', 'fontFamily': MONO, 'letterSpacing': '1px'}),
             html.Span(now_str, style={'color': C['mid'], 'fontSize': '9px', 'fontFamily': MONO}),
         ]
@@ -444,7 +464,7 @@ def create_app():
         # ── POSITIONS ─────────────────────────────────────────────────────
         elif tab == 'positions':
             if not positions:
-                return bb_panel('ACTIVE POSITIONS', _no_data('NO OPEN POSITIONS -- WATCHING 41 STOCKS'))
+                return bb_panel('ACTIVE POSITIONS', _no_data(f'NO OPEN POSITIONS -- WATCHING {watchlist_len} STOCKS'))
             rows = []
             for sym, pos in positions.items():
                 shares = pos.get('shares', 0); entry = pos.get('entry_price', 0)
@@ -473,6 +493,17 @@ def create_app():
         elif tab == 'signals':
             if not signals:
                 return bb_panel('AI SCAN SIGNALS', _no_data('NO SIGNAL DATA -- SCANNER RUNS AT 16:15 ET DAILY'))
+            # Pull scan timestamp from any entry that has saved_at
+            _sig_ts = next((v.get('saved_at', '') for v in signals.values()
+                            if isinstance(v, dict) and v.get('saved_at')), '')
+            _sig_age_str = ''
+            if _sig_ts:
+                try:
+                    _sig_dt = datetime.fromisoformat(_sig_ts.replace('Z', '+00:00')).astimezone(_ET)
+                    _mins_ago = int((now_et() - _sig_dt).total_seconds() / 60)
+                    _sig_age_str = f'  |  SCANNED {_sig_dt.strftime("%m/%d %H:%M ET")}  ({_mins_ago}m ago)'
+                except Exception:
+                    pass
             rows = []
             for sym, d in sorted(signals.items(), key=lambda x: x[1].get('combined', x[1].get('prediction', 0)), reverse=True):
                 sig = d.get('signal', 'HOLD'); pred = d.get('prediction', 0)
@@ -484,7 +515,7 @@ def create_app():
             df = pd.DataFrame(rows)
             buy_ct   = sum(1 for r in rows if r['SIGNAL'] == 'BUY')
             avoid_ct = sum(1 for r in rows if r['SIGNAL'] in ('AVOID', 'VETOED'))
-            return bb_panel(f'AI SCAN SIGNALS  --  {len(signals)} STOCKS  |  {buy_ct} BUY  |  {avoid_ct} AVOID',
+            return bb_panel(f'AI SCAN SIGNALS  --  {len(signals)} STOCKS  |  {buy_ct} BUY  |  {avoid_ct} AVOID{_sig_age_str}',
                 dash_table.DataTable(data=df.to_dict('records'), columns=[{'name': c, 'id': c} for c in df.columns],
                     style_header=TBL_HDR, style_cell=TBL_CELL,
                     style_data_conditional=[
