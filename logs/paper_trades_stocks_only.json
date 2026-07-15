@@ -1,5 +1,5 @@
 {
-  "capital": 9871.386221946716,
+  "capital": 9266.114766258239,
   "starting_capital": 10000.0,
   "positions": {
     "TGT": {
@@ -17,6 +17,38 @@
       "entry_ml_score": null,
       "fill_type": "close",
       "current_price": 132.4199981689453
+    },
+    "AMD": {
+      "shares": 1,
+      "entry_price": 517.6686781311034,
+      "market_price": 517.4099731445312,
+      "entry_date": "2026-07-15T21:21:37.424760",
+      "highest_price": 517.6686781311034,
+      "signal": 0.35837851029143347,
+      "cost": 518.6686781311034,
+      "reason": "uptrend",
+      "stop_loss_pct": 0.08,
+      "atr": 40.035718645368306,
+      "partial_exit_done": false,
+      "entry_ml_score": null,
+      "fill_type": "close",
+      "current_price": 517.4099731445312
+    },
+    "WFC": {
+      "shares": 1,
+      "entry_price": 85.60277755737305,
+      "market_price": 85.55999755859375,
+      "entry_date": "2026-07-15T21:21:38.574626",
+      "highest_price": 85.60277755737305,
+      "signal": 0.33895801625394534,
+      "cost": 86.60277755737305,
+      "reason": "uptrend",
+      "stop_loss_pct": 0.04948076244012227,
+      "atr": 2.1167869567871094,
+      "partial_exit_done": false,
+      "entry_ml_score": null,
+      "fill_type": "close",
+      "current_price": 85.55999755859375
     }
   },
   "trade_history": [
@@ -35,11 +67,43 @@
       "atr": 4.324501037597656,
       "stop_loss_pct": 0.06780871711689165,
       "entry_ml_score": null
+    },
+    {
+      "action": "BUY",
+      "symbol": "AMD",
+      "shares": 1,
+      "price": 517.4099731445312,
+      "fill_price": 517.6686781311034,
+      "fill_type": "close",
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "cost": 518.6686781311034,
+      "date": "2026-07-15T21:21:37.424766",
+      "reason": "uptrend",
+      "atr": 40.035718645368306,
+      "stop_loss_pct": 0.08,
+      "entry_ml_score": null
+    },
+    {
+      "action": "BUY",
+      "symbol": "WFC",
+      "shares": 1,
+      "price": 85.55999755859375,
+      "fill_price": 85.60277755737305,
+      "fill_type": "close",
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "cost": 86.60277755737305,
+      "date": "2026-07-15T21:21:38.574633",
+      "reason": "uptrend",
+      "atr": 2.1167869567871094,
+      "stop_loss_pct": 0.04948076244012227,
+      "entry_ml_score": null
     }
   ],
   "daily_realized_pnl": 0.0,
   "daily_loss_limit": 200.0,
   "last_reset_date": "2026-07-15",
   "_halt_trading": false,
-  "saved_at": "2026-07-15T17:56:57.843162"
+  "saved_at": "2026-07-15T21:21:40.131156"
 }
