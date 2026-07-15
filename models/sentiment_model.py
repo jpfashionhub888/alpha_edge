@@ -22,8 +22,8 @@ os.environ.setdefault('TRANSFORMERS_CACHE', '/root/.cache/huggingface/hub')
 os.environ.setdefault('XDG_CACHE_HOME', '/root/.cache')
 try:
     os.makedirs('/root/.cache/huggingface', exist_ok=True)
-except Exception:
-    pass
+except Exception as e:
+    logger.warning(f'HuggingFace cache dir create failed: {e}')
 
 # Try loading transformers — it depends on torch internally
 TRANSFORMERS_AVAILABLE = False

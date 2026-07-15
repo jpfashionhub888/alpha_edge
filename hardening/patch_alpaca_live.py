@@ -48,13 +48,13 @@ os.environ.setdefault('XDG_CACHE_HOME',     '/root/.cache')
 for _d in ('/root/.cache/huggingface', '/root/.cache/py-yfinance'):
     try:
         os.makedirs(_d, exist_ok=True)
-    except Exception:
-        pass
+    except Exception as e:
+        import logging as _log; _log.getLogger(__name__).warning(f'Cache dir create failed for {_d}: {e}')
 try:
     import yfinance as _yf_cache
     _yf_cache.set_tz_cache_location('/root/.cache/py-yfinance')
-except Exception:
-    pass
+except Exception as e:
+    import logging as _log; _log.getLogger(__name__).warning(f'yfinance cache location set failed: {e}')
 
 '''
 
@@ -80,8 +80,8 @@ BACKUP_SNIPPET = '''\
                 try:
                     import shutil as _shutil
                     _shutil.copy2(trade_file, trade_file + '.bak')
-                except Exception:
-                    pass
+                except Exception as e:
+                    import logging as _log; _log.getLogger(__name__).warning(f'State backup failed: {e}')
 '''
 
 # Anchor: the atomic write pattern used in both _record_buy_to_state and

@@ -319,8 +319,8 @@ def create_app():
             try:
                 _st = datetime.fromisoformat(_saved_at.replace('Z', '+00:00')).astimezone(_ET)
                 _scan_age = f'  |  LAST SCAN: {_st.strftime("%m/%d %H:%M ET")}'
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f'Dashboard scan timestamp parse failed: {e}')
         status_bar = [
             html.Span(f'PAPER TRADING  |  ALPACA CONNECTED  |  {_regime_label}  |  SCAN: 16:15 ET DAILY{_scan_age}',
                       style={'color': C['green'], 'fontSize': '9px', 'fontFamily': MONO, 'letterSpacing': '1px'}),
@@ -502,8 +502,8 @@ def create_app():
                     _sig_dt = datetime.fromisoformat(_sig_ts.replace('Z', '+00:00')).astimezone(_ET)
                     _mins_ago = int((now_et() - _sig_dt).total_seconds() / 60)
                     _sig_age_str = f'  |  SCANNED {_sig_dt.strftime("%m/%d %H:%M ET")}  ({_mins_ago}m ago)'
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f'Dashboard signal timestamp parse failed: {e}')
             rows = []
             for sym, d in sorted(signals.items(), key=lambda x: x[1].get('combined', x[1].get('prediction', 0)), reverse=True):
                 sig = d.get('signal', 'HOLD'); pred = d.get('prediction', 0)
