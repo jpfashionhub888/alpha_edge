@@ -144,15 +144,32 @@ def get_earnings_calendar(watchlist):
 def get_full_watchlist():
     """Return expanded stock watchlist."""
     return [
+        # Mega-cap tech
         'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA',
         'META', 'TSLA', 'AMD', 'NFLX',
+        # ETFs
         'SPY', 'QQQ', 'IWM', 'DIA',
+        'XLF', 'XLK', 'XLE', 'XLV',
+        # Financials
         'JPM', 'V', 'GS', 'BAC', 'MS',
+        'WFC', 'C', 'AXP', 'BLK',
+        # Healthcare
         'JNJ', 'PFE', 'UNH', 'ABBV', 'LLY', 'MRK',
+        'MRNA', 'GILD', 'REGN',
+        # Consumer / Retail
         'WMT', 'COST', 'HD', 'MCD',
+        'KO', 'PEP', 'PG', 'NKE', 'TGT',
+        # Energy
         'XOM', 'CVX', 'OXY',
-        'SOFI', 'PLTR', 'RIVN', 'HOOD', 'MARA',
+        # Industrials
+        'CAT', 'HON', 'BA', 'GE', 'LMT',
+        # Semiconductors
+        'TSM', 'INTC', 'QCOM', 'AVGO', 'MU',
+        # SaaS / Cloud
         'CRM', 'SNOW', 'NET', 'DDOG', 'CRWD',
+        'NOW', 'ADBE', 'ORCL', 'INTU',
+        # Speculative / Growth
+        'SOFI', 'PLTR', 'RIVN', 'HOOD', 'MARA',
     ]
 
 
@@ -817,3 +834,4 @@ def run_daily_scan():
 
 if __name__ == '__main__':
     run_daily_scan()
+daily_scan()
