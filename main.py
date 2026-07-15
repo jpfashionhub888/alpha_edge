@@ -832,6 +832,4 @@ def run_daily_scan():
     return stock_signals
 
 
-if __name__ == '__main__':
     run_daily_scan()
-daily_scan()
