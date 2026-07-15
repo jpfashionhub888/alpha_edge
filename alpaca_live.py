@@ -705,46 +705,12 @@ class AlpacaLiveTrader:
                 continue
             self._check_stops_targets()
 
-    def _update_state_prices(self, positions: dict) -> None:
-        """Write current prices + live P&L into paper_trades_stocks_only.json."""
-        try:
-            import json as _json, tempfile as _tf
-            trade_file = 'logs/paper_trades_stocks_only.json'
-            if not os.path.exists(trade_file):
-                return
-            with open(trade_file) as f:
-                state = _json.load(f)
-            changed = False
-            for sym, pos_data in state.get('positions', {}).items():
-                live = positions.get(sym, {})
-                curr = live.get('current_price', 0)
-                if curr and curr != pos_data.get('current_price', 0):
-                    entry   = pos_data.get('entry_price', curr)
-                    shares  = pos_data.get('shares', 0)
-                    pnl     = round((curr - entry) * shares, 2)
-                    pnl_pct = round((curr - entry) / entry * 100, 4) if entry > 0 else 0
-                    pos_data['current_price'] = round(curr, 4)
-                    pos_data['pnl']           = pnl
-                    pos_data['pnl_pct']       = pnl_pct
-                    changed = True
-            if changed:
-                state['prices_updated_at'] = datetime.now(MARKET_TZ).isoformat()
-                tmp_fd, tmp_path = _tf.mkstemp(dir='logs', suffix='.tmp')
-                with os.fdopen(tmp_fd, 'w') as f:
-                    _json.dump(state, f, indent=2)
-                os.replace(tmp_path, trade_file)
-        except Exception as e:
-            logger.warning(f'Could not update state prices: {e}')
-
     def _check_stops_targets(self):
         """Check managed positions against current Alpaca prices."""
         if not self.managed_positions:
             return
 
         positions = self.broker.get_positions()
-
-        # Always sync live prices so dashboard P&L stays current
-        self._update_state_prices(positions)
 
         for symbol in list(self.managed_positions.keys()):
             if symbol not in positions:
@@ -873,4 +839,39 @@ class AlpacaLiveTrader:
             logger.warning(f'Could not record exit to JSON for {symbol}: {e}')
 
     def _sync_positions(self):
-        """Load existing Alpaca position
+        """Load existing Alpaca positions on startup."""
+        positions = self.broker.get_positions()
+        if positions:
+            print(f'\n  Synced {len(positions)} existing positions from Alpaca')
+            for symbol, pos in positions.items():
+                print(
+                    f'    {symbol}: {pos["shares"]} shares @ ${pos["entry_price"]:.2f}'
+                    f' | PnL={pos["pnl_pct"]:.1%}'
+                )
+
+    def _print_account(self):
+        account = self.broker.get_account()
+        if not account:
+            return
+        print(
+            f'\n  💰 {self.mode} Account | '
+            f'Portfolio: ${account["portfolio_value"]:,.2f} | '
+            f'Cash: ${account["cash"]:,.2f} | '
+            f'Buying Power: ${account["buying_power"]:,.2f}'
+        )
+        positions = self.broker.get_positions()
+        if positions:
+            print(f'  Open positions ({len(positions)}):')
+            for sym, pos in positions.items():
+                emoji = '🟢' if pos['pnl'] >= 0 else '🔴'
+                print(
+                    f'    {emoji} {sym}: {pos["shares"]} shares | '
+                    f'entry=${pos["entry_price"]:.2f} | '
+                    f'current=${pos["current_price"]:.2f} | '
+                    f'PnL=${pos["pnl"]:+.2f} ({pos["pnl_pct"]:.1%})'
+                )
+
+
+if __name__ == '__main__':
+    trader = AlpacaLiveTrader()
+    trader.start()
