@@ -7,7 +7,7 @@
       "entry_price": 127.61377805328368,
       "market_price": 127.55000305175781,
       "entry_date": "2026-07-15T15:19:08.735625",
-      "highest_price": 127.61377805328368,
+      "highest_price": 132.4199981689453,
       "signal": 0.5330182360957537,
       "cost": 128.61377805328368,
       "reason": "uptrend",
@@ -16,7 +16,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 127.55000305175781
+      "current_price": 132.4199981689453
     }
   },
   "trade_history": [
@@ -41,5 +41,5 @@
   "daily_loss_limit": 200.0,
   "last_reset_date": "2026-07-15",
   "_halt_trading": false,
-  "saved_at": "2026-07-15T15:19:10.322995"
+  "saved_at": "2026-07-15T17:56:57.843162"
 }
