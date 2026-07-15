@@ -7,11 +7,23 @@ Falls back to a keyword-based scorer if torch/transformers
 are unavailable (e.g. Windows DLL issue).
 """
 
+import os
 import pandas as pd
 import numpy as np
 import logging
 
 logger = logging.getLogger(__name__)
+
+# ── Cache path hardening ───────────────────────────────────────────────────────
+# Must be set BEFORE transformers is imported so HuggingFace uses /root/.cache
+# instead of /home/alphaedge which is owned by a different user.
+os.environ.setdefault('HF_HOME',        '/root/.cache/huggingface')
+os.environ.setdefault('TRANSFORMERS_CACHE', '/root/.cache/huggingface/hub')
+os.environ.setdefault('XDG_CACHE_HOME', '/root/.cache')
+try:
+    os.makedirs('/root/.cache/huggingface', exist_ok=True)
+except Exception:
+    pass
 
 # Try loading transformers — it depends on torch internally
 TRANSFORMERS_AVAILABLE = False
