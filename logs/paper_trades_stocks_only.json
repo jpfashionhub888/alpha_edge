@@ -1,11 +1,45 @@
 {
-  "capital": 10000.0,
+  "capital": 9871.386221946716,
   "starting_capital": 10000.0,
-  "positions": {},
-  "trade_history": [],
+  "positions": {
+    "TGT": {
+      "shares": 1,
+      "entry_price": 127.61377805328368,
+      "market_price": 127.55000305175781,
+      "entry_date": "2026-07-15T15:19:08.735625",
+      "highest_price": 127.61377805328368,
+      "signal": 0.5330182360957537,
+      "cost": 128.61377805328368,
+      "reason": "uptrend",
+      "stop_loss_pct": 0.06780871711689165,
+      "atr": 4.324501037597656,
+      "partial_exit_done": false,
+      "entry_ml_score": null,
+      "fill_type": "close",
+      "current_price": 127.55000305175781
+    }
+  },
+  "trade_history": [
+    {
+      "action": "BUY",
+      "symbol": "TGT",
+      "shares": 1,
+      "price": 127.55000305175781,
+      "fill_price": 127.61377805328368,
+      "fill_type": "close",
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "cost": 128.61377805328368,
+      "date": "2026-07-15T15:19:08.735633",
+      "reason": "uptrend",
+      "atr": 4.324501037597656,
+      "stop_loss_pct": 0.06780871711689165,
+      "entry_ml_score": null
+    }
+  ],
   "daily_realized_pnl": 0.0,
   "daily_loss_limit": 200.0,
-  "last_reset_date": "2026-07-13",
+  "last_reset_date": "2026-07-15",
   "_halt_trading": false,
-  "saved_at": "2026-07-14T21:21:51.481907"
+  "saved_at": "2026-07-15T15:19:10.322995"
 }
