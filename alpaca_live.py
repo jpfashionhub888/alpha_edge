@@ -618,6 +618,7 @@ class AlpacaLiveTrader:
                     'score'       : combined,
                 }
                 self._save_managed_positions()  # BUG 4 FIX: persist to disk
+                self._record_buy_to_state(symbol, price, dollar_amount)  # sync dashboard
                 try:
                     self.telegram.alert_buy_signal(
                         symbol, price, combined,
@@ -752,6 +753,45 @@ class AlpacaLiveTrader:
 
     # ── Utilities ─────────────────────────────────────────────────────
 
+    def _record_buy_to_state(self, symbol: str, price: float, dollar_amount: float) -> None:
+        """Write BUY entry into paper_trades_stocks_only.json so dashboard shows open positions."""
+        try:
+            import json as _json, tempfile as _tf
+            trade_file = 'logs/paper_trades_stocks_only.json'
+            os.makedirs('logs', exist_ok=True)
+            state = {}
+            if os.path.exists(trade_file):
+                with open(trade_file) as f:
+                    state = _json.load(f)
+            shares = round(dollar_amount / price, 4) if price > 0 else 0
+            state.setdefault('positions', {})[symbol] = {
+                'shares'       : shares,
+                'entry_price'  : round(price, 4),
+                'current_price': round(price, 4),
+                'pnl'          : 0.0,
+                'pnl_pct'      : 0.0,
+            }
+            state['capital'] = round(state.get('capital', 10000.0) - dollar_amount, 2)
+            state.setdefault('trade_history', []).append({
+                'action'    : 'BUY',
+                'symbol'    : symbol,
+                'shares'    : shares,
+                'price'     : round(price, 4),
+                'fill_price': round(price, 4),
+                'pnl'       : 0.0,
+                'pnl_pct'   : 0.0,
+                'reason'    : 'SIGNAL',
+                'date'      : datetime.now(MARKET_TZ).isoformat(),
+            })
+            state['saved_at'] = datetime.now(MARKET_TZ).isoformat()
+            tmp_fd, tmp_path = _tf.mkstemp(dir='logs', suffix='.tmp')
+            with os.fdopen(tmp_fd, 'w') as f:
+                _json.dump(state, f, indent=2)
+            os.replace(tmp_path, trade_file)
+            logger.info(f'{symbol}: BUY recorded to state (shares={shares} @ ${price:.2f})')
+        except Exception as e:
+            logger.warning(f'Could not record BUY to state for {symbol}: {e}')
+
     def _save_managed_positions(self):
         """Persist stop/target levels to disk so they survive restarts."""
         try:
@@ -826,6 +866,16 @@ class AlpacaLiveTrader:
                 emoji = '🟢' if pos['pnl'] >= 0 else '🔴'
                 print(
                     f'    {emoji} {sym}: {pos["shares"]} shares | '
+                    f'entry=${pos["entry_price"]:.2f} | '
+                    f'current=${pos["current_price"]:.2f} | '
+                    f'PnL=${pos["pnl"]:+.2f} ({pos["pnl_pct"]:.1%})'
+                )
+
+
+if __name__ == '__main__':
+    trader = AlpacaLiveTrader()
+    trader.start()
+{sym}: {pos["shares"]} shares | '
                     f'entry=${pos["entry_price"]:.2f} | '
                     f'current=${pos["current_price"]:.2f} | '
                     f'PnL=${pos["pnl"]:+.2f} ({pos["pnl_pct"]:.1%})'
