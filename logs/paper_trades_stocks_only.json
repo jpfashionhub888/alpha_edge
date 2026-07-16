@@ -1,5 +1,5 @@
 {
-  "capital": 9266.114766258239,
+  "capital": 8918.221405036926,
   "starting_capital": 10000.0,
   "positions": {
     "TGT": {
@@ -16,14 +16,14 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 132.4199981689453
+      "current_price": 127.61377805328368
     },
     "AMD": {
       "shares": 1,
       "entry_price": 517.6686781311034,
       "market_price": 517.4099731445312,
       "entry_date": "2026-07-15T21:21:37.424760",
-      "highest_price": 517.6686781311034,
+      "highest_price": 546.719970703125,
       "signal": 0.35837851029143347,
       "cost": 518.6686781311034,
       "reason": "uptrend",
@@ -32,14 +32,14 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 517.4099731445312
+      "current_price": 546.719970703125
     },
     "WFC": {
       "shares": 1,
       "entry_price": 85.60277755737305,
       "market_price": 85.55999755859375,
       "entry_date": "2026-07-15T21:21:38.574626",
-      "highest_price": 85.60277755737305,
+      "highest_price": 86.91000366210938,
       "signal": 0.33895801625394534,
       "cost": 86.60277755737305,
       "reason": "uptrend",
@@ -48,7 +48,23 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 85.55999755859375
+      "current_price": 86.91000366210938
+    },
+    "AXP": {
+      "shares": 1,
+      "entry_price": 346.89336122131346,
+      "market_price": 346.7200012207031,
+      "entry_date": "2026-07-16T15:28:14.725603",
+      "highest_price": 346.89336122131346,
+      "signal": 0.42548301125959587,
+      "cost": 347.89336122131346,
+      "reason": "uptrend",
+      "stop_loss_pct": 0.04892624872201851,
+      "atr": 8.481854508311342,
+      "partial_exit_done": false,
+      "entry_ml_score": null,
+      "fill_type": "close",
+      "current_price": 346.7200012207031
     }
   },
   "trade_history": [
@@ -99,11 +115,27 @@
       "atr": 2.1167869567871094,
       "stop_loss_pct": 0.04948076244012227,
       "entry_ml_score": null
+    },
+    {
+      "action": "BUY",
+      "symbol": "AXP",
+      "shares": 1,
+      "price": 346.7200012207031,
+      "fill_price": 346.89336122131346,
+      "fill_type": "close",
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "cost": 347.89336122131346,
+      "date": "2026-07-16T15:28:14.725613",
+      "reason": "uptrend",
+      "atr": 8.481854508311342,
+      "stop_loss_pct": 0.04892624872201851,
+      "entry_ml_score": null
     }
   ],
   "daily_realized_pnl": 0.0,
   "daily_loss_limit": 200.0,
-  "last_reset_date": "2026-07-15",
+  "last_reset_date": "2026-07-16",
   "_halt_trading": false,
-  "saved_at": "2026-07-15T21:21:40.131156"
+  "saved_at": "2026-07-16T15:28:16.363742"
 }
