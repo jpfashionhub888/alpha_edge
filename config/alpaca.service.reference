@@ -1,0 +1,27 @@
+[Unit]
+Description=AlphaEdge Alpaca Stock Bot
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=alphaedge
+Group=alphaedge
+WorkingDirectory=/root/alpha_edge
+ExecStart=/root/alpha_edge/venv/bin/python /root/alpha_edge/alpaca_live.py
+Restart=on-failure
+RestartSec=60s
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+# ── Security hardening ─────────────────────────────────────────────────
+EnvironmentFile=/etc/alphaedge/secrets
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=false
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target
