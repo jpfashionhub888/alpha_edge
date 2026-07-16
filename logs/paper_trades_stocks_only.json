@@ -16,7 +16,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 132.27000427246094
+      "current_price": 127.61377805328368
     },
     "AMD": {
       "shares": 1,
@@ -48,7 +48,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 86.91000366210938
+      "current_price": 85.60277755737305
     },
     "AXP": {
       "shares": 1,
@@ -64,7 +64,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 346.7200012207031
+      "current_price": 346.89336122131346
     },
     "MS": {
       "shares": 1,
@@ -169,5 +169,5 @@
   "daily_loss_limit": 200.0,
   "last_reset_date": "2026-07-16",
   "_halt_trading": false,
-  "saved_at": "2026-07-16T17:55:15.858971"
+  "saved_at": "2026-07-16T21:24:25.859953"
 }
