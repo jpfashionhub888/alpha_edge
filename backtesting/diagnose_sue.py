@@ -33,23 +33,28 @@ print()
 
 for sym in SYMBOLS:
     ticker = yf.Ticker(sym)
-    hist = ticker.earnings_history
+    # Use get_earnings_dates — returns actual announcement dates
+    hist = ticker.get_earnings_dates(limit=24)
     if hist is None or len(hist) == 0:
         print(f'  {sym}: NO DATA')
         continue
 
     hist = hist.copy()
-    hist.columns = [c.lower().replace(' ', '_') for c in hist.columns]
+    # Drop future (no actual yet)
+    if 'Reported EPS' in hist.columns:
+        hist = hist[hist['Reported EPS'].notna()]
+    if hasattr(hist.index, 'tz') and hist.index.tz is not None:
+        hist.index = hist.index.tz_localize(None)
 
-    print(f'  {sym} ({len(hist)} rows):')
+    print(f'  {sym} ({len(hist)} rows with actuals):')
     print(f'    Columns : {list(hist.columns)}')
-    print(f'    Index   : {list(hist.index[-4:])}')  # last 4 dates
-
-    # Check if columns have expected data
-    for col in ['epsactual', 'epsestimate', 'surprisepct']:
+    print(f'    Date range: {hist.index.min().date()} → {hist.index.max().date()}')
+    print(f'    Last 4 dates: {[str(d.date()) for d in sorted(hist.index)[-4:]]}')
+    # Coverage check
+    for col in ['EPS Estimate', 'Reported EPS', 'Surprise(%)']:
         if col in hist.columns:
-            nulls = hist[col].isna().sum()
-            print(f'    {col}: {len(hist) - nulls}/{len(hist)} non-null')
+            non_null = hist[col].notna().sum()
+            print(f'    {col}: {non_null}/{len(hist)} non-null')
     print()
 
 # ── 2. Check date type — announcement vs fiscal end ──────────────────────────
@@ -158,10 +163,4 @@ print('\n[5] EARNINGS DATA COVERAGE SUMMARY')
 print()
 for sym, earn_df in earnings.items():
     n_rows = len(earn_df)
-    has_estimate = 'estimated_eps' in earn_df.columns and earn_df['estimated_eps'].notna().sum()
-    date_range = f"{earn_df.index[0].date()} → {earn_df.index[-1].date()}" if n_rows else 'N/A'
-    print(f'  {sym:<8} rows={n_rows:<4} estimate_cols={has_estimate:<5} range={date_range}')
-
-print('\n' + '=' * 65)
-print('Diagnostic complete.')
-print('=' * 65)
+    has_estimate = 'es

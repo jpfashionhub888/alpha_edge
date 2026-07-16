@@ -103,37 +103,49 @@ class DataLoader:
             try:
                 ticker = yf.Ticker(sym)
 
-                # earnings_history: actual vs estimated EPS per quarter
-                hist = ticker.earnings_history
+                # get_earnings_dates(limit=24) returns ACTUAL ANNOUNCEMENT DATES
+                # with consensus estimates — NOT fiscal quarter ends.
+                # earnings_history only returns 4 rows with fiscal dates (unusable).
+                hist = ticker.get_earnings_dates(limit=24)
                 if hist is None or len(hist) == 0:
-                    logger.debug(f'{sym}: no earnings history available')
+                    logger.debug(f'{sym}: no earnings dates available')
                     continue
 
-                # Normalise column names
                 hist = hist.copy()
-                hist.columns = [c.lower().replace(' ', '_') for c in hist.columns]
-
-                # Expected columns: epsactual, epsestimate, epsdifference, surprisepct
+                # Columns: 'EPS Estimate', 'Reported EPS', 'Surprise(%)'
+                hist.columns = [c.strip() for c in hist.columns]
                 col_map = {
-                    'epsactual'  : 'actual_eps',
-                    'epsestimate': 'estimated_eps',
-                    'epsdifference': 'surprise',
-                    'surprisepct': 'surprise_pct',
+                    'Reported EPS' : 'actual_eps',
+                    'EPS Estimate' : 'estimated_eps',
+                    'Surprise(%)'  : 'surprise_pct',
                 }
                 hist = hist.rename(columns={k: v for k, v in col_map.items() if k in hist.columns})
 
-                if 'actual_eps' not in hist.columns:
-                    logger.debug(f'{sym}: unexpected earnings columns: {list(hist.columns)}')
+                # Drop future earnings (no actual yet — NaN reported EPS)
+                if 'actual_eps' in hist.columns:
+                    hist = hist[hist['actual_eps'].notna()]
+
+                if len(hist) == 0 or 'actual_eps' not in hist.columns:
+                    logger.debug(f'{sym}: no historical earnings with actuals')
                     continue
 
+                # Compute surprise from components
+                if 'estimated_eps' in hist.columns and 'surprise_pct' not in hist.columns:
+                    hist['surprise'] = hist['actual_eps'] - hist['estimated_eps']
+                elif 'estimated_eps' in hist.columns:
+                    hist['surprise'] = hist['actual_eps'] - hist['estimated_eps']
+
                 hist.index = pd.to_datetime(hist.index)
+                # Earnings dates index may be timezone-aware — strip tz for consistency
+                if hasattr(hist.index, 'tz') and hist.index.tz is not None:
+                    hist.index = hist.index.tz_localize(None)
                 hist = hist.sort_index()
 
                 if self.cache_enabled:
                     hist.to_parquet(cache_path)
 
                 results[sym] = hist
-                time.sleep(0.1)   # rate limit
+                time.sleep(0.15)   # rate limit
 
             except Exception as e:
                 logger.warning(f'{sym}: earnings fetch failed ({e})')
@@ -254,24 +266,4 @@ class DataLoader:
                 return None
             df = pd.DataFrame([{
                 'date'  : pd.Timestamp(b.timestamp, unit='ms'),
-                'open'  : b.open,
-                'high'  : b.high,
-                'low'   : b.low,
-                'close' : b.close,
-                'volume': b.volume,
-            } for b in bars])
-            df.set_index('date', inplace=True)
-            return df
-        except Exception as e:
-            logger.debug(f'{symbol}: Polygon fetch failed ({e}), falling back to yfinance')
-            return None
-
-    @staticmethod
-    def _fetch_sp500_symbols() -> List[str]:
-        """Fetch current S&P 500 constituents from Wikipedia."""
-        table = pd.read_html(
-            'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies',
-            attrs={'id': 'constituents'},
-        )[0]
-        symbols = table['Symbol'].str.replace('.', '-', regex=False).tolist()
-        return [s.strip() for s in symbols if s.strip()]
+ 
