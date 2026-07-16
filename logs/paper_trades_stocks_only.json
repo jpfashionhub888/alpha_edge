@@ -1,5 +1,5 @@
 {
-  "capital": 8918.221405036926,
+  "capital": 8694.980335151671,
   "starting_capital": 10000.0,
   "positions": {
     "TGT": {
@@ -16,7 +16,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 127.61377805328368
+      "current_price": 132.27000427246094
     },
     "AMD": {
       "shares": 1,
@@ -65,6 +65,22 @@
       "entry_ml_score": null,
       "fill_type": "close",
       "current_price": 346.7200012207031
+    },
+    "MS": {
+      "shares": 1,
+      "entry_price": 222.2410698852539,
+      "market_price": 222.1300048828125,
+      "entry_date": "2026-07-16T17:55:15.154260",
+      "highest_price": 222.2410698852539,
+      "signal": 0.36816403308992407,
+      "cost": 223.2410698852539,
+      "reason": "uptrend",
+      "stop_loss_pct": 0.06149228757535727,
+      "atr": 6.82964106968471,
+      "partial_exit_done": false,
+      "entry_ml_score": null,
+      "fill_type": "close",
+      "current_price": 222.1300048828125
     }
   },
   "trade_history": [
@@ -131,11 +147,27 @@
       "atr": 8.481854508311342,
       "stop_loss_pct": 0.04892624872201851,
       "entry_ml_score": null
+    },
+    {
+      "action": "BUY",
+      "symbol": "MS",
+      "shares": 1,
+      "price": 222.1300048828125,
+      "fill_price": 222.2410698852539,
+      "fill_type": "close",
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "cost": 223.2410698852539,
+      "date": "2026-07-16T17:55:15.154268",
+      "reason": "uptrend",
+      "atr": 6.82964106968471,
+      "stop_loss_pct": 0.06149228757535727,
+      "entry_ml_score": null
     }
   ],
   "daily_realized_pnl": 0.0,
   "daily_loss_limit": 200.0,
   "last_reset_date": "2026-07-16",
   "_halt_trading": false,
-  "saved_at": "2026-07-16T15:28:16.363742"
+  "saved_at": "2026-07-16T17:55:15.858971"
 }
