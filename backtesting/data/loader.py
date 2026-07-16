@@ -21,7 +21,6 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-# Cache directory — avoids re-downloading on repeated runs
 CACHE_DIR = Path(os.getenv('ALPHAEDGE_DATA_CACHE', 'backtesting/data/cache'))
 
 
@@ -32,7 +31,6 @@ class DataLoader:
     Usage:
         loader = DataLoader()
         data   = loader.get_ohlcv(['AAPL', 'MSFT'], '2020-01-01', '2024-12-31')
-        # Returns {symbol: DataFrame(open, high, low, close, volume)}
     """
 
     def __init__(
@@ -44,8 +42,6 @@ class DataLoader:
         self.polygon_key    = polygon_api_key or os.getenv('POLYGON_API_KEY')
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-    # ── Public ────────────────────────────────────────────────────────────────
-
     def get_ohlcv(
         self,
         symbols   : List[str],
@@ -55,10 +51,7 @@ class DataLoader:
     ) -> Dict[str, pd.DataFrame]:
         """
         Fetch OHLCV data for a list of symbols.
-
         Returns {symbol: DataFrame} with columns: open, high, low, close, volume
-        Index: DatetimeIndex (trading days only)
-        Adjusted for splits + dividends.
         """
         results = {}
         for sym in symbols:
@@ -66,7 +59,7 @@ class DataLoader:
             if df is not None and len(df) > 0:
                 results[sym] = df
             else:
-                logger.warning(f'{sym}: no data returned for {start}→{end}')
+                logger.warning('%s: no data returned for %s to %s', sym, start, end)
         return results
 
     def get_earnings_history(
@@ -74,24 +67,23 @@ class DataLoader:
         symbols: List[str],
     ) -> Dict[str, pd.DataFrame]:
         """
-        Fetch historical earnings (actual EPS vs consensus estimate).
+        Fetch historical earnings using actual announcement dates.
+
+        Uses ticker.get_earnings_dates(limit=24) which returns:
+          - Actual announcement dates (not fiscal quarter ends)
+          - EPS Estimate vs Reported EPS
+          - Up to 24 quarters of history
 
         Returns {symbol: DataFrame} with columns:
-          date, actual_eps, estimated_eps, surprise, surprise_pct
-
-        Used for: SUE (Standardised Unexpected Earnings) signal.
-        Data source: yfinance earnings history (free).
-        Note: point-in-time earnings data requires Polygon; yfinance gives
-              current revision of historical actuals which is slightly
-              subject to restatement. Acceptable for initial signal research.
+          actual_eps, estimated_eps, surprise_pct
+        Index: DatetimeIndex of announcement dates (timezone-naive)
         """
         import yfinance as yf
 
         results = {}
         for sym in symbols:
-            cache_path = CACHE_DIR / f'{sym}_earnings.parquet'
+            cache_path = CACHE_DIR / (sym + '_earnings.parquet')
             if self.cache_enabled and cache_path.exists():
-                # Only use cache if < 7 days old
                 age_days = (time.time() - cache_path.stat().st_mtime) / 86400
                 if age_days < 7:
                     try:
@@ -102,18 +94,19 @@ class DataLoader:
 
             try:
                 ticker = yf.Ticker(sym)
-
-                # get_earnings_dates(limit=24) returns ACTUAL ANNOUNCEMENT DATES
-                # with consensus estimates — NOT fiscal quarter ends.
-                # earnings_history only returns 4 rows with fiscal dates (unusable).
                 hist = ticker.get_earnings_dates(limit=24)
+
                 if hist is None or len(hist) == 0:
-                    logger.debug(f'{sym}: no earnings dates available')
+                    logger.debug('%s: no earnings dates available', sym)
                     continue
 
                 hist = hist.copy()
-                # Columns: 'EPS Estimate', 'Reported EPS', 'Surprise(%)'
-                hist.columns = [c.strip() for c in hist.columns]
+
+                # Strip timezone from index
+                if hasattr(hist.index, 'tz') and hist.index.tz is not None:
+                    hist.index = hist.index.tz_localize(None)
+
+                # Rename columns to internal names
                 col_map = {
                     'Reported EPS' : 'actual_eps',
                     'EPS Estimate' : 'estimated_eps',
@@ -121,66 +114,52 @@ class DataLoader:
                 }
                 hist = hist.rename(columns={k: v for k, v in col_map.items() if k in hist.columns})
 
-                # Drop future earnings (no actual yet — NaN reported EPS)
+                # Drop future earnings (no actual yet)
                 if 'actual_eps' in hist.columns:
                     hist = hist[hist['actual_eps'].notna()]
 
-                if len(hist) == 0 or 'actual_eps' not in hist.columns:
-                    logger.debug(f'{sym}: no historical earnings with actuals')
+                if len(hist) == 0:
+                    logger.debug('%s: no past earnings with actuals', sym)
                     continue
 
-                # Compute surprise from components
-                if 'estimated_eps' in hist.columns and 'surprise_pct' not in hist.columns:
-                    hist['surprise'] = hist['actual_eps'] - hist['estimated_eps']
-                elif 'estimated_eps' in hist.columns:
+                # Compute dollar surprise
+                if 'estimated_eps' in hist.columns:
                     hist['surprise'] = hist['actual_eps'] - hist['estimated_eps']
 
                 hist.index = pd.to_datetime(hist.index)
-                # Earnings dates index may be timezone-aware — strip tz for consistency
-                if hasattr(hist.index, 'tz') and hist.index.tz is not None:
-                    hist.index = hist.index.tz_localize(None)
                 hist = hist.sort_index()
 
                 if self.cache_enabled:
                     hist.to_parquet(cache_path)
 
                 results[sym] = hist
-                time.sleep(0.15)   # rate limit
+                time.sleep(0.15)
 
             except Exception as e:
-                logger.warning(f'{sym}: earnings fetch failed ({e})')
+                logger.warning('%s: earnings fetch failed (%s)', sym, e)
 
         return results
 
     def get_universe(
         self,
-        min_avg_volume_m: float = 5.0,   # minimum $5M avg daily volume
+        min_avg_volume_m: float = 5.0,
         use_sp500       : bool  = True,
     ) -> List[str]:
-        """
-        Build a tradeable universe.
-
-        Default: S&P 500 constituents (well-known, liquid, no survivorship bias
-        concern for the training period since we use current constituents).
-        For research-grade backtesting, use a point-in-time universe instead.
-        """
+        """Build a tradeable universe."""
         if use_sp500:
             try:
                 return self._fetch_sp500_symbols()
             except Exception as e:
-                logger.warning(f'S&P 500 fetch failed ({e}) — using hardcoded fallback')
+                logger.warning('S&P 500 fetch failed (%s) -- using fallback', e)
 
-        # Fallback: liquid large-caps
         return [
             'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NVDA', 'TSLA',
             'JPM',  'JNJ',  'V',     'PG',   'UNH',  'HD',   'MA',
             'BAC',  'ABBV', 'CVX',   'MRK',  'LLY',  'COST',
             'AVGO', 'PEP',  'KO',    'WMT',  'MCD',  'CRM',  'ACN',
-            'TMO',  'DHR',  'NEE',   'ABT',  'TXN',  'LIN',  'QCOM',
+            'TMO',  'DHR',  'NEE',   'ABT',  'TXN',  'QCOM',
             'PM',   'AMGN', 'RTX',   'CAT',  'HON',  'IBM',
         ]
-
-    # ── Private ───────────────────────────────────────────────────────────────
 
     def _get_single_ohlcv(
         self,
@@ -189,9 +168,8 @@ class DataLoader:
         end     : str,
         interval: str,
     ) -> Optional[pd.DataFrame]:
-        """Fetch OHLCV for a single symbol, checking cache first."""
-        cache_key  = f'{symbol}_{start}_{end}_{interval}'
-        cache_path = CACHE_DIR / f'{cache_key}.parquet'
+        cache_key  = '%s_%s_%s_%s' % (symbol, start, end, interval)
+        cache_path = CACHE_DIR / (cache_key + '.parquet')
 
         if self.cache_enabled and cache_path.exists():
             try:
@@ -199,7 +177,6 @@ class DataLoader:
             except Exception:
                 pass
 
-        # Try Polygon first (if key available), fall back to yfinance
         df = None
         if self.polygon_key:
             df = self._fetch_polygon(symbol, start, end)
@@ -232,7 +209,6 @@ class DataLoader:
             if raw is None or len(raw) == 0:
                 return None
 
-            # Flatten MultiIndex columns if present
             if isinstance(raw.columns, pd.MultiIndex):
                 raw.columns = raw.columns.get_level_values(0)
 
@@ -243,13 +219,13 @@ class DataLoader:
             required = ['open', 'high', 'low', 'close', 'volume']
             missing  = [c for c in required if c not in raw.columns]
             if missing:
-                logger.warning(f'{symbol}: missing columns {missing}')
+                logger.warning('%s: missing columns %s', symbol, missing)
                 return None
 
             return raw[required].dropna(subset=['close'])
 
         except Exception as e:
-            logger.warning(f'{symbol}: yfinance fetch failed ({e})')
+            logger.warning('%s: yfinance fetch failed (%s)', symbol, e)
             return None
 
     def _fetch_polygon(
@@ -264,6 +240,30 @@ class DataLoader:
             bars   = client.get_aggs(symbol, 1, 'day', start, end, adjusted=True)
             if not bars:
                 return None
-            df = pd.DataFrame([{
-                'date'  : pd.Timestamp(b.timestamp, unit='ms'),
- 
+            rows = []
+            for b in bars:
+                rows.append({
+                    'date'  : pd.Timestamp(b.timestamp, unit='ms'),
+                    'open'  : b.open,
+                    'high'  : b.high,
+                    'low'   : b.low,
+                    'close' : b.close,
+                    'volume': b.volume,
+                })
+            df = pd.DataFrame(rows)
+            df.set_index('date', inplace=True)
+            return df
+        except Exception as e:
+            logger.debug('%s: Polygon fetch failed (%s)', symbol, e)
+            return None
+
+    @staticmethod
+    def _fetch_sp500_symbols() -> List[str]:
+        """Fetch current S&P 500 constituents from Wikipedia."""
+        import lxml  # noqa: F401 -- required by pd.read_html
+        table = pd.read_html(
+            'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies',
+            attrs={'id': 'constituents'},
+        )[0]
+        symbols = table['Symbol'].str.replace('.', '-', regex=False).tolist()
+        return [s.strip() for s in symbols if s.strip()]
