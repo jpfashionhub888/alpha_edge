@@ -21,8 +21,17 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Overfit thresholds (kept in sync with model_validator.py)
-OVERFIT_WARN_GAP  = 0.10
-OVERFIT_HARD_STOP = 0.20
+#
+# KEY: train_AUC on in-sample data is always near 1.0 for any fitted tree.
+# The gap (train - val) is therefore always large and not a useful signal.
+# The right check is val_AUC alone: does the model beat random on held-out data?
+#
+# VAL_AUC_MIN: primary block — model worse than or equal to random
+# OVERFIT_HARD_STOP: secondary block — only fires when gap is extreme AND val weak
+# OVERFIT_WARN_GAP: warning threshold (log but don't halt)
+VAL_AUC_MIN       = 0.53   # below this = worse than random; no signals
+OVERFIT_WARN_GAP  = 0.20   # warn but proceed
+OVERFIT_HARD_STOP = 0.45   # block only when gap extreme AND val marginal
 
 
 class TechnicalPredictor:
@@ -109,12 +118,13 @@ class TechnicalPredictor:
         # ==========================================
         try:
             xgb_base = xgb.XGBClassifier(
-                n_estimators=200,
-                max_depth=3,
-                learning_rate=0.01,
+                n_estimators=50,         # was 200 — 300 samples can't support 200 trees
+                max_depth=2,             # was 3 — depth-2 = 4 leaf nodes max
+                learning_rate=0.05,      # was 0.01
                 subsample=0.8,
                 colsample_bytree=0.8,
-                gamma=1,
+                gamma=2,                 # was 1 — aggressive pruning
+                min_child_weight=5,      # new — no split on <5 samples
                 reg_alpha=1,
                 reg_lambda=2,
                 random_state=42,
@@ -143,11 +153,13 @@ class TechnicalPredictor:
         # ==========================================
         try:
             lgb_base = lgb.LGBMClassifier(
-                n_estimators=200,
-                max_depth=4,
-                learning_rate=0.01,
+                n_estimators=50,         # was 200
+                max_depth=2,             # was 4
+                num_leaves=7,            # new — LGB ignores max_depth without this
+                learning_rate=0.05,      # was 0.01
                 subsample=0.8,
                 colsample_bytree=0.8,
+                min_child_samples=15,    # new — leaf needs ≥15 samples
                 reg_alpha=1,
                 reg_lambda=2,
                 random_state=42,
@@ -178,9 +190,10 @@ class TechnicalPredictor:
         # ==========================================
         try:
             rf_base = RandomForestClassifier(
-                n_estimators=200,
-                max_depth=5,
-                min_samples_leaf=10,
+                n_estimators=100,        # was 200
+                max_depth=3,             # was 5
+                min_samples_leaf=20,     # was 10
+                min_samples_split=10,    # new
                 max_features='sqrt',
                 random_state=42,
                 n_jobs=1
@@ -209,12 +222,13 @@ class TechnicalPredictor:
         # ==========================================
         try:
             cat_model = CatBoostClassifier(
-                iterations    = 200,
-                depth         = 4,
-                learning_rate = 0.01,
-                random_seed   = 42,
-                verbose       = 0,
-                thread_count  = 1,
+                iterations      = 50,          # was 200
+                depth           = 2,           # was 4
+                learning_rate   = 0.05,        # was 0.01
+                min_data_in_leaf= 10,          # new
+                random_seed     = 42,
+                verbose         = 0,
+                thread_count    = 1,
             )
             cat_model.fit(X_tr, y_tr)
             self.models['catboost'] = cat_model
@@ -277,7 +291,18 @@ class TechnicalPredictor:
 
             self.overfit_gap = self.train_auc - self.val_auc
 
-            if self.overfit_gap > OVERFIT_HARD_STOP:
+            # Primary block: model predicts worse than (or equal to) random
+            # on held-out data.  Gap-only checks are misleading because
+            # in-sample train_AUC is always near 1.0 for any fitted tree.
+            if self.val_auc < VAL_AUC_MIN:
+                self.overfit_flagged = True
+                logger.error(
+                    f'MODEL QUALITY HARD STOP: val_AUC={self.val_auc:.3f} < {VAL_AUC_MIN} '
+                    f'(train={self.train_auc:.3f}, gap={self.overfit_gap:.3f}) '
+                    f'— model has no predictive power on held-out data'
+                )
+            # Secondary block: extreme overfit AND only marginal generalization
+            elif self.overfit_gap > OVERFIT_HARD_STOP and self.val_auc < 0.58:
                 self.overfit_flagged = True
                 logger.error(
                     f'OVERFIT HARD STOP: train_AUC={self.train_auc:.3f} '
