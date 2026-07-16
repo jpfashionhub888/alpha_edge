@@ -327,6 +327,109 @@ class PositionReconciler:
             logger.debug(f'[Reconcile] Failed to write recon log: {e}')
 
 
+    def auto_correct_local_state(self, broker) -> dict:
+        """
+        Auto-correct the local state file to match Alpaca (source of truth).
+
+        Rules:
+          ORPHAN   → remove from local state; return freed capital to cash
+          MISMATCH → log only (values self-correct on next price tick)
+          PHANTOM  → do NOT auto-fix; return as blocking issue for caller
+
+        Returns:
+            {
+              'phantoms'        : list[dict],   # caller should halt if non-empty
+              'orphans_fixed'   : int,
+              'mismatches_fixed': int,
+            }
+        """
+        import tempfile
+
+        broker_positions = self._fetch_broker_positions(broker)
+        local_positions  = self._load_local_positions()
+
+        if broker_positions is None or local_positions is None:
+            logger.warning('[Reconcile] auto_correct: position fetch failed — skipping')
+            return {'phantoms': [], 'orphans_fixed': 0, 'mismatches_fixed': 0}
+
+        broker_symbols = set(broker_positions.keys())
+        local_symbols  = set(local_positions.keys())
+
+        phantoms         = []
+        orphans_fixed    = 0
+        mismatches_fixed = 0
+
+        # PHANTOM — broker has a position we have no record of (double-buy risk)
+        for sym in broker_symbols - local_symbols:
+            phantoms.append({
+                'type'        : 'PHANTOM',
+                'symbol'      : sym,
+                'broker_value': broker_positions[sym],
+                'description' : (
+                    f'Broker holds {sym} (${broker_positions[sym]:.2f}) '
+                    f'but local state has no record — manual review required'
+                ),
+            })
+            logger.error(
+                f'[Reconcile] PHANTOM {sym} broker=${broker_positions[sym]:.2f} '
+                f'local=none — will NOT auto-fix'
+            )
+
+        # ORPHAN — local has position broker does not; Alpaca is source of truth
+        orphan_syms = local_symbols - broker_symbols
+        if orphan_syms:
+            try:
+                with open(self.log_file) as f:
+                    state = json.load(f)
+
+                positions = state.get('positions', {})
+                changed   = False
+
+                for raw_sym in list(positions.keys()):
+                    if raw_sym.upper() in orphan_syms:
+                        freed = local_positions.get(raw_sym.upper(), 0.0)
+                        state['capital'] = round(state.get('capital', 0.0) + freed, 2)
+                        del positions[raw_sym]
+                        logger.info(
+                            f'[Reconcile] Auto-removed ORPHAN {raw_sym} '
+                            f'(${freed:.2f} returned to capital)'
+                        )
+                        orphans_fixed += 1
+                        changed = True
+
+                if changed:
+                    state['positions'] = positions
+                    state['saved_at']  = datetime.now(timezone.utc).isoformat()
+
+                    # Backup before atomic write
+                    bak = str(self.log_file) + '.bak'
+                    if os.path.exists(str(self.log_file)) and os.path.getsize(str(self.log_file)) > 20:
+                        try:
+                            import shutil as _sh
+                            _sh.copy2(str(self.log_file), bak)
+                        except Exception as e:
+                            logger.warning(f'[Reconcile] Backup before orphan-clean failed: {e}')
+
+                    tmp_fd, tmp_path = tempfile.mkstemp(
+                        dir=str(self.log_file.parent), suffix='.tmp'
+                    )
+                    with os.fdopen(tmp_fd, 'w') as f:
+                        json.dump(state, f, indent=2)
+                    os.replace(tmp_path, str(self.log_file))
+                    logger.info(
+                        f'[Reconcile] State corrected: {orphans_fixed} orphan(s) removed'
+                    )
+
+            except Exception as e:
+                logger.error(f'[Reconcile] auto_correct write failed: {e}')
+
+        return {
+            'phantoms'        : phantoms,
+            'orphans_fixed'   : orphans_fixed,
+            'mismatches_fixed': mismatches_fixed,
+        }
+
+
 # ── Convenience function ───────────────────────────────────────────────────────
 
 def reconcile_on_startup(
