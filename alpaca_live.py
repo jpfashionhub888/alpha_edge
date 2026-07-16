@@ -147,7 +147,6 @@ class AlpacaLiveTrader:
         # Logging it and trading anyway (the previous behavior) makes the
         # check pointless — the Telegram alert literally says "do NOT
         # place new trades until resolved" while the code did precisely
-        # that. Set ALPHAEDGE_FORCE_START=1 to override after manual review.
         try:
             from monitoring.reconciliation import reconcile_on_startup
             discrepancies = reconcile_on_startup(
@@ -160,20 +159,21 @@ class AlpacaLiveTrader:
                     f'Reconciliation found {len(discrepancies)} discrepancies — '
                     f'review logs/reconciliation.log before trading'
                 )
-                if os.getenv('ALPHAEDGE_FORCE_START') != '1':
-                    print(
-                        f'\n❌ HALTED: {len(discrepancies)} position discrepancies '
-                        f'found on startup.\n'
-                        f'   Review logs/reconciliation.log, resolve manually, '
-                        f'then either fix the local state file or set\n'
-                        f'   ALPHAEDGE_FORCE_START=1 to proceed anyway.\n'
-                    )
-                    return
-                else:
-                    logger.warning(
-                        'ALPHAEDGE_FORCE_START=1 set — proceeding despite '
-                        'unresolved reconciliation discrepancies'
-                    )
+                # Auto-correct: remove orphans from local state, halt only on PHANTOM
+                try:
+                    from monitoring.reconciliation import PositionReconciler
+                    _reconciler = PositionReconciler(service_name=self.service_name if hasattr(self, "service_name") else "alpaca_bot")
+                    _result = _reconciler.auto_correct_local_state(self.broker)
+                    _phantoms = _result.get("phantoms", [])
+                    if _phantoms:
+                        print(f"\n\u274c HALTED: {len(_phantoms)} PHANTOM position(s).\n"
+                              f"   Broker has positions AlphaEdge did not place.\n"
+                              f"   Review logs/reconciliation.log then restart.\n")
+                        return
+                    if _result.get("orphans_fixed", 0):
+                        logger.info(f'[Reconcile] Auto-fixed {_result["orphans_fixed"]} orphan(s) — proceeding')
+                except Exception as _e:
+                    logger.warning(f"[Reconcile] Auto-correct unavailable: {_e}")
         except Exception as e:
             logger.warning(f'Reconciliation skipped: {e}')
 

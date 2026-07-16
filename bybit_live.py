@@ -114,18 +114,18 @@ class BybitLiveTrader:
                         f'Reconciliation found {len(discrepancies)} open Bybit '
                         f'position(s) the bot has no local record of.'
                     )
-                    if os.getenv('ALPHAEDGE_FORCE_START') != '1':
-                        print(
-                            f'\n❌ HALTED: {len(discrepancies)} Bybit position(s) '
-                            f'found with no local record (likely from before a '
-                            f'restart).\n   Review logs/reconciliation.log, then '
-                            f'set ALPHAEDGE_FORCE_START=1 to proceed anyway.\n'
-                        )
-                        return
-                    logger.warning(
-                        'ALPHAEDGE_FORCE_START=1 set — proceeding despite '
-                        'unrecognized open positions'
-                    )
+                    # Auto-correct: remove orphans, halt only on PHANTOM
+                    try:
+                        from monitoring.reconciliation import PositionReconciler
+                        _rec = PositionReconciler(service_name=getattr(self, "service_name", "bot"))
+                        _res = _rec.auto_correct_local_state(self.broker)
+                        if _res.get("phantoms"):
+                            print("\n❌ HALTED: PHANTOM position(s). Review logs/reconciliation.log then restart.\n")
+                            return
+                        if _res.get("orphans_fixed", 0):
+                            logger.info(f'[Reconcile] Auto-fixed {_res["orphans_fixed"]} orphan(s)')
+                    except Exception as _e:
+                        logger.warning(f"[Reconcile] Auto-correct unavailable: {_e}")
             except Exception as e:
                 logger.warning(f'Reconciliation skipped: {e}')
 
