@@ -151,7 +151,8 @@ qreturns.columns = ['mean_ret', 'median_ret', 'count']
 print(f'  {"Quintile":<12} {"Mean Ret":>10} {"Median Ret":>12} {"N":>6}')
 print('  ' + '-' * 45)
 for q, row in qreturns.iterrows():
-    print(f'  {str(q):<12} {row.mean_ret:>10.2%} {row.median_ret:>12.2%} {row.count:>6.0f}')
+    mr = row['mean_ret']; mdr = row['median_ret']; cnt = int(row['count'])
+    print(f'  {str(q):<12} {mr:>10.2%} {mdr:>12.2%} {cnt:>6}')
 
 q5_mean = qreturns.loc['Q5(high)', 'mean_ret']
 q1_mean = qreturns.loc['Q1(low)', 'mean_ret']
