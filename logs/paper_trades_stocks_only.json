@@ -7,7 +7,7 @@
       "entry_price": 127.61377805328368,
       "market_price": 127.55000305175781,
       "entry_date": "2026-07-15T15:19:08.735625",
-      "highest_price": 132.4199981689453,
+      "highest_price": 135.13999938964844,
       "signal": 0.5330182360957537,
       "cost": 128.61377805328368,
       "reason": "uptrend",
@@ -16,14 +16,14 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 127.61377805328368
+      "current_price": 135.13999938964844
     },
     "AMD": {
       "shares": 1,
       "entry_price": 517.6686781311034,
       "market_price": 517.4099731445312,
       "entry_date": "2026-07-15T21:21:37.424760",
-      "highest_price": 546.719970703125,
+      "highest_price": 557.8900146484375,
       "signal": 0.35837851029143347,
       "cost": 518.6686781311034,
       "reason": "uptrend",
@@ -32,14 +32,14 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 546.719970703125
+      "current_price": 557.8900146484375
     },
     "WFC": {
       "shares": 1,
       "entry_price": 85.60277755737305,
       "market_price": 85.55999755859375,
       "entry_date": "2026-07-15T21:21:38.574626",
-      "highest_price": 86.91000366210938,
+      "highest_price": 87.16000366210938,
       "signal": 0.33895801625394534,
       "cost": 86.60277755737305,
       "reason": "uptrend",
@@ -48,14 +48,14 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 85.60277755737305
+      "current_price": 87.16000366210938
     },
     "AXP": {
       "shares": 1,
       "entry_price": 346.89336122131346,
       "market_price": 346.7200012207031,
       "entry_date": "2026-07-16T15:28:14.725603",
-      "highest_price": 346.89336122131346,
+      "highest_price": 350.5799865722656,
       "signal": 0.42548301125959587,
       "cost": 347.89336122131346,
       "reason": "uptrend",
@@ -64,14 +64,14 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 346.89336122131346
+      "current_price": 350.5799865722656
     },
     "MS": {
       "shares": 1,
       "entry_price": 222.2410698852539,
       "market_price": 222.1300048828125,
       "entry_date": "2026-07-16T17:55:15.154260",
-      "highest_price": 222.2410698852539,
+      "highest_price": 222.27999877929688,
       "signal": 0.36816403308992407,
       "cost": 223.2410698852539,
       "reason": "uptrend",
@@ -80,7 +80,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 222.1300048828125
+      "current_price": 222.27999877929688
     }
   },
   "trade_history": [
@@ -169,5 +169,5 @@
   "daily_loss_limit": 200.0,
   "last_reset_date": "2026-07-16",
   "_halt_trading": false,
-  "saved_at": "2026-07-16T21:24:25.859953"
+  "saved_at": "2026-07-17T15:06:52.308657"
 }

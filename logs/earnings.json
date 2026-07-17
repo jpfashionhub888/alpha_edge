@@ -2,51 +2,36 @@
   {
     "symbol": "GOOGL",
     "date": "2026-07-22",
-    "days_until": 6
+    "days_until": 5
   },
   {
     "symbol": "TSLA",
     "date": "2026-07-22",
-    "days_until": 6
+    "days_until": 5
   },
   {
-    "symbol": "NFLX",
-    "date": "2026-07-16",
-    "days_until": 0
-  },
-  {
-    "symbol": "UNH",
-    "date": "2026-07-16",
-    "days_until": 0
+    "symbol": "AXP",
+    "date": "2026-07-24",
+    "days_until": 7
   },
   {
     "symbol": "HON",
     "date": "2026-07-23",
-    "days_until": 7
-  },
-  {
-    "symbol": "GE",
-    "date": "2026-07-16",
-    "days_until": 0
+    "days_until": 6
   },
   {
     "symbol": "LMT",
     "date": "2026-07-23",
-    "days_until": 7
-  },
-  {
-    "symbol": "TSM",
-    "date": "2026-07-16",
-    "days_until": 0
+    "days_until": 6
   },
   {
     "symbol": "INTC",
     "date": "2026-07-23",
-    "days_until": 7
+    "days_until": 6
   },
   {
     "symbol": "NOW",
     "date": "2026-07-22",
-    "days_until": 6
+    "days_until": 5
   }
 ]
