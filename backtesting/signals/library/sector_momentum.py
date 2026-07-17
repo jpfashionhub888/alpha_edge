@@ -213,7 +213,7 @@ class SectorMomentumBacktest:
         self.engine  = EventDrivenBacktester(
             initial_capital = initial_capital,
             fill_model      = FillModel(spread_bps=3.0, market_impact_factor=0.05),
-            cost_model      = TransactionCostModel(commission_per_share=0.0),
+            cost_model      = TransactionCostModel(commission_bps=0.0),
         )
         self.top_n = top_n
 
