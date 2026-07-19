@@ -44,7 +44,7 @@ SYMBOLS = [
 ]
 
 TARGET_DAYS = 21
-TRAIN_DAYS  = 365
+TRAIN_DAYS  = 504   # 2 trading years -- 21-day target + feature warmup needs extra headroom
 MIN_TRAIN   = 150
 K_FEATURES  = 20
 FWD_DAYS    = [5, 10, 21]
