@@ -2,36 +2,36 @@
   {
     "symbol": "GOOGL",
     "date": "2026-07-22",
-    "days_until": 5
+    "days_until": 2
   },
   {
     "symbol": "TSLA",
     "date": "2026-07-22",
-    "days_until": 5
+    "days_until": 2
   },
   {
     "symbol": "AXP",
     "date": "2026-07-24",
-    "days_until": 7
+    "days_until": 4
   },
   {
     "symbol": "HON",
     "date": "2026-07-23",
-    "days_until": 6
+    "days_until": 3
   },
   {
     "symbol": "LMT",
     "date": "2026-07-23",
-    "days_until": 6
+    "days_until": 3
   },
   {
     "symbol": "INTC",
     "date": "2026-07-23",
-    "days_until": 6
+    "days_until": 3
   },
   {
     "symbol": "NOW",
     "date": "2026-07-22",
-    "days_until": 5
+    "days_until": 2
   }
 ]
