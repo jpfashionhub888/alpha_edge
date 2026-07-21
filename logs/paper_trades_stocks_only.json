@@ -32,7 +32,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 355.05999755859375
+      "current_price": 346.89336122131346
     },
     "MS": {
       "shares": 1,
@@ -80,7 +80,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 210.72999572753906
+      "current_price": 210.8353607254028
     }
   },
   "trade_history": [
@@ -229,5 +229,5 @@
   "daily_loss_limit": 200.0,
   "last_reset_date": "2026-07-21",
   "_halt_trading": false,
-  "saved_at": "2026-07-21T17:59:02.196583"
+  "saved_at": "2026-07-21T21:39:22.653924"
 }
