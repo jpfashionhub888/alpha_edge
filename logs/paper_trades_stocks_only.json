@@ -1,5 +1,5 @@
 {
-  "capital": 8885.930362774347,
+  "capital": 8674.095002048944,
   "starting_capital": 10000.0,
   "positions": {
     "TGT": {
@@ -65,6 +65,22 @@
       "entry_ml_score": null,
       "fill_type": "close",
       "current_price": 425.19000244140625
+    },
+    "CRWD": {
+      "shares": 1,
+      "entry_price": 210.8353607254028,
+      "market_price": 210.72999572753906,
+      "entry_date": "2026-07-21T17:59:01.571569",
+      "highest_price": 210.8353607254028,
+      "signal": 0.39336975275187175,
+      "cost": 211.8353607254028,
+      "reason": "uptrend",
+      "stop_loss_pct": 0.08,
+      "atr": 11.489640372140068,
+      "partial_exit_done": false,
+      "entry_ml_score": null,
+      "fill_type": "close",
+      "current_price": 210.72999572753906
     }
   },
   "trade_history": [
@@ -191,11 +207,27 @@
       "pnl_pct": -0.004151987265427719,
       "date": "2026-07-21T15:31:13.781405",
       "reason": "time_stop"
+    },
+    {
+      "action": "BUY",
+      "symbol": "CRWD",
+      "shares": 1,
+      "price": 210.72999572753906,
+      "fill_price": 210.8353607254028,
+      "fill_type": "close",
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "cost": 211.8353607254028,
+      "date": "2026-07-21T17:59:01.571575",
+      "reason": "uptrend",
+      "atr": 11.489640372140068,
+      "stop_loss_pct": 0.08,
+      "entry_ml_score": null
     }
   ],
   "daily_realized_pnl": -2.357957518797889,
   "daily_loss_limit": 200.0,
   "last_reset_date": "2026-07-21",
   "_halt_trading": false,
-  "saved_at": "2026-07-21T15:31:14.407272"
+  "saved_at": "2026-07-21T17:59:02.196583"
 }
