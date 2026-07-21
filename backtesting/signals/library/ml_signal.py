@@ -215,6 +215,19 @@ class MLSignal(BaseSignal):
             )
             return False
 
+        # Sanity-check: run a dummy prediction to ensure models are actually fitted.
+        # TechnicalPredictor catches per-model fit failures silently; if all models
+        # are unfitted the ensemble returns 0.5 for everything (useless signal).
+        try:
+            test_pred = predictor.predict(X_sel.iloc[:1])
+            if float(test_pred[0]) == 0.5 and len(predictor.models) > 0:
+                # All models returned 0.5 -- none fitted successfully
+                logger.warning('MLSignal: all sub-models unfitted at %s -- skipping', date.date())
+                return False
+        except Exception as exc:
+            logger.warning('MLSignal: predictor sanity check failed at %s: %s', date.date(), exc)
+            return False
+
         self._predictor    = predictor
         self._feature_cols = sel_cols
         self._last_retrain = date
@@ -369,5 +382,8 @@ class MLBacktest:
             rebalance_freq = 'M',
         )
 
-        result.print_summary()
+        eq      = result.equity_curve['equity']
+        trades  = result.trades
+        summary = performance_summary(eq, trades)
+        print_summary(summary)
         return result
