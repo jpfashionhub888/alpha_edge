@@ -1,5 +1,5 @@
 {
-  "capital": 9228.088140178399,
+  "capital": 8885.930362774347,
   "starting_capital": 10000.0,
   "positions": {
     "TGT": {
@@ -16,30 +16,14 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 134.77000427246094
-    },
-    "WFC": {
-      "shares": 1,
-      "entry_price": 85.60277755737305,
-      "market_price": 85.55999755859375,
-      "entry_date": "2026-07-15T21:21:38.574626",
-      "highest_price": 87.66999816894531,
-      "signal": 0.33895801625394534,
-      "cost": 86.60277755737305,
-      "reason": "uptrend",
-      "stop_loss_pct": 0.04948076244012227,
-      "atr": 2.1167869567871094,
-      "partial_exit_done": false,
-      "entry_ml_score": null,
-      "fill_type": "close",
-      "current_price": 87.66999816894531
+      "current_price": 134.0
     },
     "AXP": {
       "shares": 1,
       "entry_price": 346.89336122131346,
       "market_price": 346.7200012207031,
       "entry_date": "2026-07-16T15:28:14.725603",
-      "highest_price": 354.42999267578125,
+      "highest_price": 355.05999755859375,
       "signal": 0.42548301125959587,
       "cost": 347.89336122131346,
       "reason": "uptrend",
@@ -48,14 +32,14 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 354.42999267578125
+      "current_price": 355.05999755859375
     },
     "MS": {
       "shares": 1,
       "entry_price": 222.2410698852539,
       "market_price": 222.1300048828125,
       "entry_date": "2026-07-16T17:55:15.154260",
-      "highest_price": 222.27999877929688,
+      "highest_price": 227.6699981689453,
       "signal": 0.36816403308992407,
       "cost": 223.2410698852539,
       "reason": "uptrend",
@@ -64,7 +48,23 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 221.08999633789062
+      "current_price": 227.6699981689453
+    },
+    "UNH": {
+      "shares": 1,
+      "entry_price": 425.4025974426269,
+      "market_price": 425.19000244140625,
+      "entry_date": "2026-07-21T15:31:13.153150",
+      "highest_price": 425.4025974426269,
+      "signal": 0.4235196874584727,
+      "cost": 426.4025974426269,
+      "reason": "uptrend",
+      "stop_loss_pct": 0.06172028979215507,
+      "atr": 13.121425083705358,
+      "partial_exit_done": false,
+      "entry_ml_score": null,
+      "fill_type": "close",
+      "current_price": 425.19000244140625
     }
   },
   "trade_history": [
@@ -161,11 +161,41 @@
       "pnl_pct": 0.031785082244907926,
       "date": "2026-07-20T15:38:58.014913",
       "reason": "trailing_stop"
+    },
+    {
+      "action": "BUY",
+      "symbol": "UNH",
+      "shares": 1,
+      "price": 425.19000244140625,
+      "fill_price": 425.4025974426269,
+      "fill_type": "close",
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "cost": 426.4025974426269,
+      "date": "2026-07-21T15:31:13.153156",
+      "reason": "uptrend",
+      "atr": 13.121425083705358,
+      "stop_loss_pct": 0.06172028979215507,
+      "entry_ml_score": null
+    },
+    {
+      "action": "SELL",
+      "symbol": "WFC",
+      "shares": 1,
+      "price": 85.29000091552734,
+      "fill_price": 85.24735591506959,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "revenue": 84.24482003857516,
+      "pnl": -2.357957518797889,
+      "pnl_pct": -0.004151987265427719,
+      "date": "2026-07-21T15:31:13.781405",
+      "reason": "time_stop"
     }
   ],
-  "daily_realized_pnl": 14.439126895623872,
+  "daily_realized_pnl": -2.357957518797889,
   "daily_loss_limit": 200.0,
-  "last_reset_date": "2026-07-20",
+  "last_reset_date": "2026-07-21",
   "_halt_trading": false,
-  "saved_at": "2026-07-20T21:39:23.867989"
+  "saved_at": "2026-07-21T15:31:14.407272"
 }
