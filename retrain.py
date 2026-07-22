@@ -158,6 +158,19 @@ def retrain_all():
                 model = TechnicalPredictor(use_lstm=False)
                 model.train(X_train[selected], y_train)
 
+                # Quality gate: skip models that failed overfit check
+                # (mirrors alpaca_live.py line 383 — alpaca_live.py checks this
+                # on fresh-trained models; retrain.py previously skipped it,
+                # allowing val_AUC=0.15 models to be cached and used for live signals)
+                if getattr(model, 'overfit_flagged', False):
+                    logger.warning(
+                        f'  ⚠️  {symbol} skipped — failed quality gate '
+                        f'(val_AUC={getattr(model, "val_auc", "?"):.3f} < {0.53} '
+                        f'or extreme overfit gap), not caching'
+                    )
+                    failed += 1
+                    continue
+
                 # Save to cache
                 save_models(symbol, {
                     'xgboost'          : model.models.get('xgboost'),
