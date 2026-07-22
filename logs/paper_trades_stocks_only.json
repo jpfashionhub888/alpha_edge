@@ -1,23 +1,7 @@
 {
-  "capital": 8674.095002048944,
+  "capital": 8811.311841798852,
   "starting_capital": 10000.0,
   "positions": {
-    "TGT": {
-      "shares": 1,
-      "entry_price": 127.61377805328368,
-      "market_price": 127.55000305175781,
-      "entry_date": "2026-07-15T15:19:08.735625",
-      "highest_price": 135.13999938964844,
-      "signal": 0.5330182360957537,
-      "cost": 128.61377805328368,
-      "reason": "uptrend",
-      "stop_loss_pct": 0.06780871711689165,
-      "atr": 4.324501037597656,
-      "partial_exit_done": false,
-      "entry_ml_score": null,
-      "fill_type": "close",
-      "current_price": 134.0
-    },
     "AXP": {
       "shares": 1,
       "entry_price": 346.89336122131346,
@@ -39,7 +23,7 @@
       "entry_price": 222.2410698852539,
       "market_price": 222.1300048828125,
       "entry_date": "2026-07-16T17:55:15.154260",
-      "highest_price": 227.6699981689453,
+      "highest_price": 228.5500030517578,
       "signal": 0.36816403308992407,
       "cost": 223.2410698852539,
       "reason": "uptrend",
@@ -48,7 +32,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 227.6699981689453
+      "current_price": 228.5500030517578
     },
     "UNH": {
       "shares": 1,
@@ -64,7 +48,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 425.19000244140625
+      "current_price": 418.5199890136719
     },
     "CRWD": {
       "shares": 1,
@@ -80,7 +64,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 210.8353607254028
+      "current_price": 206.77000427246094
     }
   },
   "trade_history": [
@@ -223,11 +207,25 @@
       "atr": 11.489640372140068,
       "stop_loss_pct": 0.08,
       "entry_ml_score": null
+    },
+    {
+      "action": "SELL",
+      "symbol": "TGT",
+      "shares": 1,
+      "price": 138.2899932861328,
+      "fill_price": 138.22084828948977,
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "revenue": 137.2168397499073,
+      "pnl": 8.603061696623627,
+      "pnl_pct": 0.08311853467559924,
+      "date": "2026-07-22T15:29:05.581022",
+      "reason": "take_profit"
     }
   ],
-  "daily_realized_pnl": -2.357957518797889,
+  "daily_realized_pnl": 8.603061696623627,
   "daily_loss_limit": 200.0,
-  "last_reset_date": "2026-07-21",
+  "last_reset_date": "2026-07-22",
   "_halt_trading": false,
-  "saved_at": "2026-07-21T21:39:22.653924"
+  "saved_at": "2026-07-22T15:29:06.235305"
 }

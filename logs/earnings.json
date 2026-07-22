@@ -1,42 +1,87 @@
 [
   {
+    "symbol": "MSFT",
+    "date": "2026-07-29",
+    "days_until": 7
+  },
+  {
     "symbol": "GOOGL",
     "date": "2026-07-22",
-    "days_until": 1
+    "days_until": 0
+  },
+  {
+    "symbol": "META",
+    "date": "2026-07-29",
+    "days_until": 7
   },
   {
     "symbol": "TSLA",
     "date": "2026-07-22",
-    "days_until": 1
+    "days_until": 0
+  },
+  {
+    "symbol": "V",
+    "date": "2026-07-28",
+    "days_until": 6
   },
   {
     "symbol": "AXP",
     "date": "2026-07-24",
-    "days_until": 3
+    "days_until": 2
+  },
+  {
+    "symbol": "KO",
+    "date": "2026-07-28",
+    "days_until": 6
+  },
+  {
+    "symbol": "PG",
+    "date": "2026-07-29",
+    "days_until": 7
+  },
+  {
+    "symbol": "HON",
+    "date": "2026-07-23",
+    "days_until": 1
   },
   {
     "symbol": "BA",
     "date": "2026-07-28",
-    "days_until": 7
+    "days_until": 6
   },
   {
     "symbol": "LMT",
     "date": "2026-07-23",
-    "days_until": 2
+    "days_until": 1
   },
   {
     "symbol": "INTC",
     "date": "2026-07-23",
-    "days_until": 2
+    "days_until": 1
+  },
+  {
+    "symbol": "QCOM",
+    "date": "2026-07-29",
+    "days_until": 7
   },
   {
     "symbol": "NOW",
     "date": "2026-07-22",
-    "days_until": 1
+    "days_until": 0
+  },
+  {
+    "symbol": "SOFI",
+    "date": "2026-07-29",
+    "days_until": 7
+  },
+  {
+    "symbol": "HOOD",
+    "date": "2026-07-29",
+    "days_until": 7
   },
   {
     "symbol": "MARA",
     "date": "2026-07-28",
-    "days_until": 7
+    "days_until": 6
   }
 ]
