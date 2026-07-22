@@ -72,15 +72,17 @@ class MLSignal(BaseSignal):
 
     def __init__(
         self,
-        train_days   : int = TRAIN_DAYS,
-        target_days  : int = TARGET_DAYS,
-        k_features   : int = K_FEATURES,
-        retrain_days : int = RETRAIN_DAYS,
+        train_days          : int  = TRAIN_DAYS,
+        target_days         : int  = TARGET_DAYS,
+        k_features          : int  = K_FEATURES,
+        retrain_days        : int  = RETRAIN_DAYS,
+        bypass_quality_gate : bool = False,
     ):
-        self._train_days    = train_days
-        self._target_days   = target_days
-        self._k_features    = k_features
-        self._retrain_days  = retrain_days
+        self._train_days          = train_days
+        self._target_days         = target_days
+        self._k_features          = k_features
+        self._retrain_days        = retrain_days
+        self._bypass_quality_gate = bypass_quality_gate
 
         self._predictor     = None   # TechnicalPredictor (trained)
         self._feature_cols  = None   # list[str] used in training
@@ -208,12 +210,16 @@ class MLSignal(BaseSignal):
             logger.warning('MLSignal: TechnicalPredictor.train() failed: %s', exc)
             return False
 
-        if predictor.overfit_flagged:
+        if predictor.overfit_flagged and not self._bypass_quality_gate:
             logger.warning(
                 'MLSignal: model failed quality gate (val_AUC < threshold) at %s -- '
                 'skipping this rebalance date', date.date()
             )
             return False
+        if predictor.overfit_flagged:
+            logger.debug(
+                'MLSignal: quality gate bypassed (backtest mode) at %s', date.date()
+            )
 
         # Sanity-check: run a dummy prediction to ensure models are actually fitted.
         # TechnicalPredictor catches per-model fit failures silently; if all models
@@ -317,7 +323,11 @@ class MLBacktest:
         from backtesting.engine.cost_model   import TransactionCostModel
 
         self.loader         = DataLoader()
-        self.signal         = MLSignal(train_days=train_days, target_days=target_days)
+        self.signal         = MLSignal(
+            train_days          = train_days,
+            target_days         = target_days,
+            bypass_quality_gate = True,   # backtest mode: test raw signal IC -> Sharpe
+        )
         self.engine         = EventDrivenBacktester(
             initial_capital = initial_capital,
             fill_model      = FillModel(spread_bps=5.0, market_impact_factor=0.1),
