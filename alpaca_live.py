@@ -159,6 +159,17 @@ class AlpacaLiveTrader:
                     f'Reconciliation found {len(discrepancies)} discrepancies — '
                     f'review logs/reconciliation.log before trading'
                 )
+                # C_FIX: MISMATCH must halt — self-correction was never implemented,
+                # and trading through an unresolved value discrepancy risks acting
+                # on wrong position sizing/risk numbers.
+                _mismatches = [d for d in discrepancies if d.get('type') == 'MISMATCH']
+                if _mismatches:
+                    print(f"\n\u274c HALTED: {len(_mismatches)} value MISMATCH(es).\n"
+                          f"   Local state and broker disagree on position value.\n"
+                          f"   Review logs/reconciliation.log then restart.\n")
+                    for _m in _mismatches:
+                        logger.error(f"[Reconcile] HALT: {_m['description']}")
+                    return
                 # Auto-correct: remove orphans from local state, halt only on PHANTOM
                 try:
                     from monitoring.reconciliation import PositionReconciler
