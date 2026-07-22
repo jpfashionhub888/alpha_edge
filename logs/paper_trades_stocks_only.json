@@ -1,5 +1,5 @@
 {
-  "capital": 8811.311841798852,
+  "capital": 7905.579672487328,
   "starting_capital": 10000.0,
   "positions": {
     "AXP": {
@@ -65,6 +65,22 @@
       "entry_ml_score": null,
       "fill_type": "close",
       "current_price": 206.77000427246094
+    },
+    "MU": {
+      "shares": 1,
+      "entry_price": 904.7321693115234,
+      "market_price": 904.280029296875,
+      "entry_date": "2026-07-22T17:56:21.875579",
+      "highest_price": 904.7321693115234,
+      "signal": 0.48779139875494215,
+      "cost": 905.7321693115234,
+      "reason": "uptrend",
+      "stop_loss_pct": 0.08,
+      "atr": 75.9951776168348,
+      "partial_exit_done": false,
+      "entry_ml_score": null,
+      "fill_type": "close",
+      "current_price": 904.280029296875
     }
   },
   "trade_history": [
@@ -221,11 +237,27 @@
       "pnl_pct": 0.08311853467559924,
       "date": "2026-07-22T15:29:05.581022",
       "reason": "take_profit"
+    },
+    {
+      "action": "BUY",
+      "symbol": "MU",
+      "shares": 1,
+      "price": 904.280029296875,
+      "fill_price": 904.7321693115234,
+      "fill_type": "close",
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "cost": 905.7321693115234,
+      "date": "2026-07-22T17:56:21.875587",
+      "reason": "uptrend",
+      "atr": 75.9951776168348,
+      "stop_loss_pct": 0.08,
+      "entry_ml_score": null
     }
   ],
   "daily_realized_pnl": 8.603061696623627,
   "daily_loss_limit": 200.0,
   "last_reset_date": "2026-07-22",
   "_halt_trading": false,
-  "saved_at": "2026-07-22T15:29:06.235305"
+  "saved_at": "2026-07-22T17:56:22.350022"
 }
