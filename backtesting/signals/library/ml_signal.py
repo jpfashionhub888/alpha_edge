@@ -175,7 +175,7 @@ class MLSignal(BaseSignal):
             logger.warning('MLSignal: no valid training segments at %s', date.date())
             return False
 
-        panel = pd.concat(segments, axis=0)
+        panel = pd.concat(segments, axis=0).reset_index(drop=True)
 
         feature_names = engine.get_feature_names()
         if not feature_names:

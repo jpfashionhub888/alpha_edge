@@ -69,7 +69,7 @@ if not segments:
     print("ERROR: no training data — check DataLoader and FeatureEngine")
     sys.exit(1)
 
-panel = pd.concat(segments, axis=0)
+panel = pd.concat(segments, axis=0).reset_index(drop=True)
 feat_names = engine.get_feature_names()
 avail_feats = [c for c in feat_names if c in panel.columns]
 X = panel[avail_feats].replace([np.inf, -np.inf], np.nan).dropna(axis=1)
