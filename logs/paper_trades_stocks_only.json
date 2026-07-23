@@ -48,7 +48,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 203.75999450683594
+      "current_price": 210.8353607254028
     },
     "MU": {
       "shares": 1,
@@ -289,5 +289,5 @@
   "daily_loss_limit": 200.0,
   "last_reset_date": "2026-07-23",
   "_halt_trading": false,
-  "saved_at": "2026-07-23T18:02:25.678884"
+  "saved_at": "2026-07-23T21:34:46.131960"
 }
