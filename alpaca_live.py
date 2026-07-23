@@ -50,6 +50,34 @@ MARKET_CLOSE        = dtime(16, 0)
 # ─────────────────────────────────────────────────────────────────────
 
 
+def _atomic_json_dump(path: str, obj) -> None:
+    """
+    Crash-safe JSON write: mkstemp -> dump -> fsync -> os.replace.
+
+    Fixes two observed failure modes of the previous inline pattern:
+      1. No fsync before rename: a VPS crash after rename but before data
+         writeback leaves a NUL-padded target file (seen on kill_switch.json).
+      2. No cleanup on dump failure: tmp files accumulated in logs/
+         (46 orphaned logs/tmp*.tmp were found committed to the repo).
+    """
+    import json as _json, tempfile as _tf
+    d = os.path.dirname(path) or '.'
+    os.makedirs(d, exist_ok=True)
+    tmp_fd, tmp_path = _tf.mkstemp(dir=d, suffix='.tmp')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            _json.dump(obj, f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, path)
+    except Exception:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
+
+
 def _seconds_until_next_scan() -> float:
     """
     Fix 2.3: Calculate seconds until the next 16:15 ET scan window.
@@ -663,11 +691,7 @@ class AlpacaLiveTrader:
                     key=lambda x: x[1].get('combined', 0), reverse=True
                 )
             }
-            tmp_fd, tmp_path = tempfile.mkstemp(dir='logs', suffix='.tmp')
-            with os.fdopen(tmp_fd, 'w') as f:
-                import json as _json
-                _json.dump(signals_out, f, indent=2)
-            os.replace(tmp_path, 'logs/latest_signals.json')
+            _atomic_json_dump('logs/latest_signals.json', signals_out)
             logger.info(f'Saved {len(signals_out)} signals to logs/latest_signals.json')
         except Exception as e:
             logger.warning(f'Signal save failed (non-critical): {e}')
@@ -676,12 +700,7 @@ class AlpacaLiveTrader:
         # sector_scores returned by sector_analyzer.analyze() above.
         # Dashboard SECTORS tab reads logs/sectors.json — save it now.
         try:
-            import tempfile as _tf
-            tmp_fd, tmp_path = _tf.mkstemp(dir='logs', suffix='.tmp')
-            with os.fdopen(tmp_fd, 'w') as f:
-                import json as _json
-                _json.dump(sector_scores, f, indent=2)
-            os.replace(tmp_path, 'logs/sectors.json')
+            _atomic_json_dump('logs/sectors.json', sector_scores)
             logger.info(f'Saved {len(sector_scores)} sectors to logs/sectors.json')
         except Exception as e:
             logger.warning(f'Sectors save failed (non-critical): {e}')
@@ -690,12 +709,7 @@ class AlpacaLiveTrader:
         # earnings_soon fetched by get_earnings_calendar() above.
         # Dashboard EARNINGS tab reads logs/earnings.json — save it now.
         try:
-            import tempfile as _tf
-            tmp_fd, tmp_path = _tf.mkstemp(dir='logs', suffix='.tmp')
-            with os.fdopen(tmp_fd, 'w') as f:
-                import json as _json
-                _json.dump(earnings_soon, f, indent=2)
-            os.replace(tmp_path, 'logs/earnings.json')
+            _atomic_json_dump('logs/earnings.json', earnings_soon)
             logger.info(f'Saved {len(earnings_soon)} earnings entries to logs/earnings.json')
         except Exception as e:
             logger.warning(f'Earnings save failed (non-critical): {e}')
@@ -795,10 +809,7 @@ class AlpacaLiveTrader:
                 'date'      : datetime.now(MARKET_TZ).isoformat(),
             })
             state['saved_at'] = datetime.now(MARKET_TZ).isoformat()
-            tmp_fd, tmp_path = _tf.mkstemp(dir='logs', suffix='.tmp')
-            with os.fdopen(tmp_fd, 'w') as f:
-                _json.dump(state, f, indent=2)
-            os.replace(tmp_path, trade_file)
+            _atomic_json_dump(trade_file, state)
             logger.info(f'{symbol}: BUY recorded to state (shares={shares} @ ${price:.2f})')
         except Exception as e:
             logger.warning(f'Could not record BUY to state for {symbol}: {e}')
@@ -808,10 +819,7 @@ class AlpacaLiveTrader:
         try:
             import json as _json, tempfile as _tf
             os.makedirs('logs', exist_ok=True)
-            tmp_fd, tmp_path = _tf.mkstemp(dir='logs', suffix='.tmp')
-            with os.fdopen(tmp_fd, 'w') as f:
-                _json.dump(self.managed_positions, f, indent=2)
-            os.replace(tmp_path, 'logs/managed_positions.json')
+            _atomic_json_dump('logs/managed_positions.json', self.managed_positions)
         except Exception as e:
             logger.warning(f'Could not save managed_positions: {e}')
 
@@ -841,10 +849,7 @@ class AlpacaLiveTrader:
                 'commission'  : 0.0,
                 'slippage_pct': 0.0,
             })
-            tmp_fd, tmp_path = _tf.mkstemp(dir='logs', suffix='.tmp')
-            with os.fdopen(tmp_fd, 'w') as f:
-                _json.dump(state, f, indent=2)
-            os.replace(tmp_path, trade_file)
+            _atomic_json_dump(trade_file, state)
             logger.info(f'{symbol}: exit recorded to JSON (reason={reason}, pnl=${pnl:+.2f})')
         except Exception as e:
             logger.warning(f'Could not record exit to JSON for {symbol}: {e}')

@@ -51,4 +51,12 @@ config/secrets.env
 
 # ── Temp / debug files ────────────────────────────────────────────────
 test_predictor.py
-find_si
+find_signal_logic.py
+
+# -- Orphaned atomic-write temp files + runtime state --------------
+logs/tmp*.tmp
+logs/*.tmp
+logs/kill_switch.json
+logs/model_auc.json
+logs/audits/
+logs/*.corrupt.*

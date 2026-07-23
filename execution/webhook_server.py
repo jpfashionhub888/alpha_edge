@@ -254,14 +254,37 @@ KILL_SWITCH_FILE = 'logs/kill_switch.json'
 
 
 def _load_kill_switch_state() -> tuple[bool, str]:
+    # FAIL CLOSED: a kill switch file that exists but cannot be parsed is
+    # treated as ACTIVE. The alternative (return False on parse error) means
+    # a corrupted file — e.g. NUL-padded after a VPS crash mid-write —
+    # silently disables the emergency halt, which is the worst possible
+    # failure mode. Missing file = never activated = False is still fine.
+    if not os.path.exists(KILL_SWITCH_FILE):
+        return False, ''
     try:
-        if os.path.exists(KILL_SWITCH_FILE):
-            with open(KILL_SWITCH_FILE, 'r') as f:
-                data = json.load(f)
-            return bool(data.get('active', False)), str(data.get('reason', ''))
+        with open(KILL_SWITCH_FILE, 'r') as f:
+            data = json.load(f)
+        return bool(data.get('active', False)), str(data.get('reason', ''))
     except Exception as e:
-        logger.error(f'Failed to load kill switch state: {e}')
-    return False, ''
+        # AUTO-RECOVERY of the FILE, not the halt. The kill switch is an
+        # operator decision with no broker-side source of truth, so a corrupt
+        # file cannot safely recover to "off" — that would silently resume
+        # trading if the switch was active when the crash hit. Instead:
+        # quarantine the corrupt file, write a clean valid one with
+        # active=True, and clear it with one POST /kill-switch/reset.
+        # This only gates webhook signals; the daily scan is unaffected.
+        ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+        quarantine = f'{KILL_SWITCH_FILE}.corrupt.{ts}'
+        try:
+            os.replace(KILL_SWITCH_FILE, quarantine)
+        except OSError as move_err:
+            logger.error(f'Could not quarantine corrupt kill switch file: {move_err}')
+            quarantine = f'<quarantine failed: {move_err}>'
+        reason = (f'state file was corrupt ({e}) — quarantined to {quarantine}, '
+                  f'recovered as ACTIVE; POST /kill-switch/reset to clear')
+        _save_kill_switch_state(True, reason)
+        logger.critical(f'kill_switch.json unreadable — {reason}')
+        return True, reason
 
 
 def _save_kill_switch_state(active: bool, reason: str) -> None:
@@ -274,6 +297,11 @@ def _save_kill_switch_state(active: bool, reason: str) -> None:
                 'reason': reason,
                 'updated': datetime.now().isoformat(),
             }, f, indent=2)
+            # fsync BEFORE rename: os.replace is atomic w.r.t. the directory
+            # entry but not the data — a crash between rename and writeback
+            # leaves a zero/NUL-filled file (observed on the VPS).
+            f.flush()
+            os.fsync(f.fileno())
         os.replace(tmp_path, KILL_SWITCH_FILE)
     except Exception as e:
         logger.error(f'Failed to persist kill switch state: {e}')

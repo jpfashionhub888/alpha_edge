@@ -66,8 +66,46 @@ class RiskCircuitBreaker:
             data.setdefault('trigger_value', None)
             data.setdefault('peak_value', None)
             return data
-        except Exception:
-            return {}
+        except Exception as e:
+            # AUTO-RECOVERY (operator-approved): quarantine the corrupt file
+            # and rebuild a fresh state. Baselines (daily/weekly/starting
+            # capital) re-seed from current portfolio value on the next
+            # check(), so loss limits re-arm immediately. Known cost:
+            # a triggered flag and the all-time peak are lost, so the
+            # peak-drawdown limit restarts from the current value.
+            quarantined = self._quarantine_corrupt_file(e)
+            logger.critical(
+                f'{CIRCUIT_BREAKER_FILE} was unreadable ({e}) — '
+                f'quarantined to {quarantined} and rebuilt fresh state. '
+                f'Loss limits re-arm from current portfolio value; '
+                f'peak-drawdown history was lost.'
+            )
+            return {
+                'triggered'       : False,
+                'trigger_reason'  : None,
+                'trigger_date'    : None,
+                'trigger_value'   : None,
+                'peak_value'      : None,
+                'daily_start'     : None,
+                'daily_start_val' : None,
+                'weekly_start'    : None,
+                'weekly_start_val': None,
+                # One-shot flag: first check() with a telegram handle sends
+                # a recovery alert, then clears this.
+                'recovered_from_corrupt': datetime.now().isoformat(),
+            }
+
+    @staticmethod
+    def _quarantine_corrupt_file(err) -> str:
+        """Move the unreadable state file aside so it can be inspected."""
+        ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+        dest = f'{CIRCUIT_BREAKER_FILE}.corrupt.{ts}'
+        try:
+            os.replace(CIRCUIT_BREAKER_FILE, dest)
+            return dest
+        except OSError as move_err:
+            logger.error(f'Could not quarantine corrupt state file: {move_err}')
+            return f'<quarantine failed: {move_err}>'
 
     def _save_state(self):
         import tempfile, shutil
@@ -80,6 +118,11 @@ class RiskCircuitBreaker:
         try:
             with os.fdopen(tmp_fd, 'w') as f:
                 json.dump(self.state, f, indent=2)
+                # fsync BEFORE rename: rename is atomic for the directory
+                # entry, not the data — crash mid-writeback leaves a
+                # NUL-filled file that would previously fail-open.
+                f.flush()
+                os.fsync(f.fileno())
             # shutil.move handles cross-device moves (os.replace raises EXDEV)
             shutil.move(tmp_path, target)
         except Exception:
@@ -95,6 +138,21 @@ class RiskCircuitBreaker:
         Returns True if trading should STOP.
         """
         now = datetime.now()
+
+        # One-shot recovery alert: state was rebuilt after a corrupt file.
+        if self.state.get('recovered_from_corrupt'):
+            if telegram:
+                try:
+                    telegram.send_message(
+                        '⚠️ Circuit breaker state file was corrupt — '
+                        'quarantined and rebuilt. Loss limits re-armed from '
+                        'current portfolio value; peak-drawdown history lost. '
+                        f'(corruption detected {self.state["recovered_from_corrupt"]})'
+                    )
+                except Exception as tg_err:
+                    logger.warning(f'Recovery alert failed: {tg_err}')
+            self.state.pop('recovered_from_corrupt', None)
+            self._save_state()
 
         # Update peak value (all-time high tracking)
         peak = self.state.get('peak_value')
@@ -121,7 +179,9 @@ class RiskCircuitBreaker:
         # Check if already triggered — only reset on recovery, not time
         # ----------------------------------------------------------------
         if self.state.get('triggered'):
-            trigger_value = self.state.get('trigger_value', starting_capital)
+            # `or` (not dict default): key may exist with value None,
+            # e.g. after a fail-closed load from a corrupt state file.
+            trigger_value = self.state.get('trigger_value') or starting_capital
             trigger_date  = self.state.get('trigger_date', '')
             # Recovery check: current value must be >= trigger_value * (1 + threshold)
             recovery_target = trigger_value * (1 + RECOVERY_THRESHOLD)
