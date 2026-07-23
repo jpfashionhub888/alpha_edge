@@ -1,5 +1,5 @@
 {
-  "capital": 8122.834248956436,
+  "capital": 7620.643776513809,
   "starting_capital": 10000.0,
   "positions": {
     "AXP": {
@@ -48,7 +48,7 @@
       "partial_exit_done": false,
       "entry_ml_score": null,
       "fill_type": "close",
-      "current_price": 210.8353607254028
+      "current_price": 203.75999450683594
     },
     "MU": {
       "shares": 1,
@@ -65,6 +65,22 @@
       "entry_ml_score": null,
       "fill_type": "close",
       "current_price": 853.2000122070312
+    },
+    "AMD": {
+      "shares": 1,
+      "entry_price": 501.1904724426269,
+      "market_price": 500.94000244140625,
+      "entry_date": "2026-07-23T18:02:25.028801",
+      "highest_price": 501.1904724426269,
+      "signal": 0.3784416237229074,
+      "cost": 502.1904724426269,
+      "reason": "uptrend",
+      "stop_loss_pct": 0.08,
+      "atr": 38.080714634486604,
+      "partial_exit_done": false,
+      "entry_ml_score": null,
+      "fill_type": "close",
+      "current_price": 500.94000244140625
     }
   },
   "trade_history": [
@@ -251,11 +267,27 @@
       "pnl_pct": -0.017909649947599818,
       "date": "2026-07-23T15:41:40.660941",
       "reason": "trailing_stop"
+    },
+    {
+      "action": "BUY",
+      "symbol": "AMD",
+      "shares": 1,
+      "price": 500.94000244140625,
+      "fill_price": 501.1904724426269,
+      "fill_type": "close",
+      "slippage_pct": 0.0005,
+      "commission": 1.0,
+      "cost": 502.1904724426269,
+      "date": "2026-07-23T18:02:25.028808",
+      "reason": "uptrend",
+      "atr": 38.080714634486604,
+      "stop_loss_pct": 0.08,
+      "entry_ml_score": null
     }
   ],
   "daily_realized_pnl": -5.986493416146288,
   "daily_loss_limit": 200.0,
   "last_reset_date": "2026-07-23",
   "_halt_trading": false,
-  "saved_at": "2026-07-23T15:41:41.103436"
+  "saved_at": "2026-07-23T18:02:25.678884"
 }
