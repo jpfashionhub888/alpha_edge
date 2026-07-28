@@ -1,11 +1,31 @@
 name: AlphaEdge Daily Scan
 
+# ── Architecture note ──────────────────────────────────────────────────────
+# All scanning runs on VPS (67.207.82.11) via alphaedge.service.
+# Data is pushed to GitHub by alphaedge-data-sync.timer at 14:05, 16:50,
+# 20:35 UTC after each scan window.
+#
+# This workflow no longer runs cloud_scan.py. Reasons:
+#   - GH Actions runner has no trained ML model → signals are always {}
+#   - Competing git pushes from GH Actions + VPS cause constant conflicts
+#   - Legacy main.py sent misleading "BUY signals: None" Telegram messages
+#
+# Trigger manually (workflow_dispatch) if you need to force a data sync
+# or run a one-off diagnostic. For normal operations, the VPS handles
+# everything automatically.
+# ──────────────────────────────────────────────────────────────────────────
+
 on:
-  schedule:
-    - cron: '45 13 * * 1-5'
-    - cron: '30 16 * * 1-5'
-    - cron: '15 20 * * 1-5'
   workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to run'
+        required: false
+        default: 'status'
+        type: choice
+        options:
+          - status
+          - force-data-sync
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -13,8 +33,8 @@ env:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    
+    timeout-minutes: 10
+
     permissions:
       contents: write
 
@@ -24,114 +44,44 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
+      - name: Status
         run: |
-          pip install yfinance pandas numpy scikit-learn
-          pip install xgboost lightgbm catboost
-          pip install ccxt requests beautifulsoup4 ta
-          pip install plotly dash python-dotenv schedule
-          pip install transformers feedparser flask
-          pip install alpaca-trade-api groq
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install "websockets>=12.0" --force-reinstall
+          echo "================================================"
+          echo "  AlphaEdge — GitHub Actions (passive mode)"
+          echo "================================================"
+          echo ""
+          echo "  Live runtime: VPS 67.207.82.11"
+          echo "  Service:      alphaedge.service (alpaca_live.py)"
+          echo "  Data sync:    alphaedge-data-sync.timer"
+          echo "                → fires 14:05, 16:50, 20:35 UTC Mon-Fri"
+          echo ""
+          echo "  docs/data/ last updated:"
+          ls -lh docs/data/ || echo "  (no docs/data/)"
+          echo ""
+          echo "  To restart the VPS service:"
+          echo "    ssh root@67.207.82.11 'systemctl restart alphaedge.service'"
+          echo ""
+          echo "  To force an immediate data sync:"
+          echo "    ssh root@67.207.82.11 'bash /root/alpha_edge/scripts/sync_vps_data.sh'"
 
-      - name: List files
+      - name: Force data sync (pull latest VPS commit)
+        if: ${{ github.event.inputs.action == 'force-data-sync' }}
         run: |
-          ls -la
-          ls -la data/ || echo "data missing"
-          ls -la models/ || echo "models missing"
+          echo "Latest docs/data contents:"
+          cat docs/data/latest_signals.json | python3 -c "
+          import sys, json
+          d = json.load(sys.stdin)
+          print(f'  Symbols: {len(d)}')
+          if d:
+              sample = next(iter(d.items()))
+              print(f'  Sample ({sample[0]}): signal={sample[1].get(\"signal\")}, saved_at={sample[1].get(\"saved_at\")}')
+          " 2>/dev/null || echo "  (empty or invalid)"
 
-      - name: Run daily scan
-        env:
-          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
-          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          # webhook_server.py now requires ALPHAEDGE_WEBHOOK_SECRET (no hardcoded fallback)
-          ALPHAEDGE_WEBHOOK_SECRET: ${{ secrets.ALPHAEDGE_WEBHOOK_SECRET || secrets.WEBHOOK_SECRET }}
-          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
-        run: |
-          echo "Token starts with: ${TELEGRAM_BOT_TOKEN:0:10}"
-          echo "Chat ID: $TELEGRAM_CHAT_ID"
-          python cloud_scan.py
-
-      - name: Save trading state and generate dashboard
-        if: always()
-        run: |
-          git config --global user.email "alphaedge-bot@github.com"
-          git config --global user.name "AlphaEdge Bot"
-          mkdir -p logs
-          mkdir -p docs
-          mkdir -p docs/data
-          python generate_dashboard.py || true
-
-          # ── Publish live data to docs/data/ for PWA (GitHub Pages) ──
-          # Copy supporting state files from the cloud scan output
-          for f in paper_trades.json paper_trades_stocks_only.json \
-                   closed_trades.json circuit_breaker.json model_auc.json scan_info.json; do
-            [ -f "logs/$f" ] && cp "logs/$f" "docs/data/$f" || true
-          done
-
-          # latest_signals.json is owned exclusively by the VPS scan (alpaca_live.py).
-          # cloud_scan.py (main.py legacy) writes {} when no model is available,
-          # which would overwrite real VPS signal data. Only copy if it has real content
-          # (> 500 bytes). The VPS sync script (scripts/sync_vps_data.sh) handles this.
-          if [ -f "logs/latest_signals.json" ] && [ "$(wc -c < logs/latest_signals.json)" -gt 500 ]; then
-            cp "logs/latest_signals.json" "docs/data/latest_signals.json"
-          fi
-
-          # ── Git staging ──
-          git add -f docs/index.html || true
-          git add -f docs/app.html   || true
-          git add -f docs/data/      || true
-          git diff --staged --quiet || git commit -m "Auto: Trading state + PWA data update $(date -u '+%Y-%m-%d %H:%M UTC')"
-
-          # Push with retry: if the remote has moved on since checkout (the
-          # same "fetch first" rejection seen repeatedly on manual pushes),
-          # pull and retry instead of silently giving up. Previously this
-          # was `git push origin main || true` — any failure, for any
-          # reason, was swallowed with no retry and no visible failure,
-          # meaning trading state from that run could silently never reach
-          # GitHub while Telegram had already reported it as done.
-          push_ok=false
-          for attempt in 1 2 3; do
-            if git push origin main; then
-              push_ok=true
-              break
-            fi
-            echo "Push attempt $attempt failed — pulling and retrying..."
-            git pull --no-edit --strategy-option=ours origin main || true
-            sleep 5
-          done
-
-          if [ "$push_ok" != "true" ]; then
-            echo "::error::Failed to push trading state after 3 attempts — state from this run may not be reflected on GitHub"
-            exit 1
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload logs as backup
+      - name: Upload docs/data as artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: trading-logs
-          path: logs/
-          retention-days: 30
+          name: docs-data-snapshot-${{ github.run_number }}
+          path: docs/data/
+          retention-days: 14
           if-no-files-found: ignore
-
-      - name: Notify on failure
-        if: failure()
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-            -d "chat_id=${TELEGRAM_CHAT_ID}" \
-            -d "text=🚨 AlphaEdge Daily Scan FAILED%0ARun: #${{ github.run_number }}%0ACommit: ${{ github.sha }}%0ACheck: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true
