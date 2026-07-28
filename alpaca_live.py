@@ -925,13 +925,3 @@ class AlpacaLiveTrader:
 if __name__ == '__main__':
     trader = AlpacaLiveTrader()
     trader.start()
-{sym}: {pos["shares"]} shares | '
-                    f'entry=${pos["entry_price"]:.2f} | '
-                    f'current=${pos["current_price"]:.2f} | '
-                    f'PnL=${pos["pnl"]:+.2f} ({pos["pnl_pct"]:.1%})'
-                )
-
-
-if __name__ == '__main__':
-    trader = AlpacaLiveTrader()
-    trader.start()

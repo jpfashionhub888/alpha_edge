@@ -95,4 +95,3 @@ class RegimeDetector:
         logger.info("Regime detection complete — dominant: %s", dominant)
 
         return df
- df
