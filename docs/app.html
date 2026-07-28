@@ -1481,34 +1481,87 @@ var STATIC_ALERTS = [
    time:'Today'}
 ];
 
-function renderAlerts() {
-  var unreadCount = STATIC_ALERTS.filter(function(a){return a.unread;}).length;
-  // Update all badge elements
-  var badges = ['snav-badge'];
-  badges.forEach(function(id){
-    var el = document.getElementById(id);
-    if(el) el.textContent = unreadCount;
+// ===== ALERTS READ STATE =====
+function updateAlertBadges() {
+  var count = STATIC_ALERTS.filter(function(a){ return a.unread; }).length;
+  // Header bell badge
+  document.querySelectorAll('.notif-badge').forEach(function(el){
+    el.textContent = count;
+    el.style.display = count > 0 ? '' : 'none';
   });
-  document.querySelectorAll('.notif-badge').forEach(function(el){ el.textContent = unreadCount; });
-  // Update screen header badge
-  var hdr = document.querySelector('#screen-alerts .badge-sell');
-  if(hdr) hdr.textContent = unreadCount + ' new';
-
-  document.getElementById('alerts-list').innerHTML = STATIC_ALERTS.map(function(a,i){
-    return '<div class="alert-item '+(a.unread?'alert-unread':'')+'" data-type="'+a.type+'">' +
-      '<div class="alert-icon '+a.iconCls+'">'+a.icon+'</div>' +
-      '<div style="flex:1;"><div class="alert-title">'+a.title+'</div>' +
-      '<div class="alert-body">'+a.body+'</div>' +
-      '<div class="alert-time">'+a.time+(a.unread?' <span style="color:var(--primary);font-size:9px;font-family:var(--font-mono);margin-left:6px;">&#9679; UNREAD</span>':'')+'</div></div>' +
-    '</div>';
-  }).join('');
+  // Sidebar badge
+  var sb = document.getElementById('snav-badge');
+  if (sb) { sb.textContent = count; sb.style.display = count > 0 ? '' : 'none'; }
+  // Bottom nav badge
+  var nb = document.getElementById('alerts-nav-badge');
+  if (nb) { nb.textContent = count; nb.style.display = count > 0 ? '' : 'none'; }
 }
 
-function filterAlerts(type,btn){
+function markAlertRead(idx) {
+  if (idx < 0 || idx >= STATIC_ALERTS.length) return;
+  if (!STATIC_ALERTS[idx].unread) return; // already read
+  STATIC_ALERTS[idx].unread = false;
+  updateAlertBadges();
+  // Update the DOM item without full re-render
+  var items = document.querySelectorAll('#alerts-list .alert-item');
+  if (items[idx]) {
+    items[idx].classList.remove('alert-unread');
+    items[idx].style.transition = 'opacity 0.3s';
+    items[idx].style.opacity = '0.7';
+    setTimeout(function(){ items[idx].style.opacity = '1'; }, 300);
+    var dot = items[idx].querySelector('.unread-dot');
+    if (dot) dot.remove();
+  }
+}
 
-  document.querySelectorAll('#screen-alerts .tab-pill').forEach(function(b){b.classList.remove('active');});
+function markAllRead() {
+  STATIC_ALERTS.forEach(function(a){ a.unread = false; });
+  updateAlertBadges();
+  document.querySelectorAll('#alerts-list .alert-item').forEach(function(el){
+    el.classList.remove('alert-unread');
+    var dot = el.querySelector('.unread-dot');
+    if (dot) dot.remove();
+  });
+  var markAllBtn = document.getElementById('mark-all-read-btn');
+  if (markAllBtn) markAllBtn.style.display = 'none';
+}
+
+function renderAlerts() {
+  updateAlertBadges();
+  var unreadCount = STATIC_ALERTS.filter(function(a){ return a.unread; }).length;
+
+  // Build header with mark-all button
+  var headerHtml = unreadCount > 0
+    ? '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+        '<span class="text-xs muted">' + unreadCount + ' unread notification' + (unreadCount>1?'s':'') + '</span>' +
+        '<button id="mark-all-read-btn" onclick="markAllRead()" style="font-size:11px;background:rgba(0,212,170,0.1);border:1px solid rgba(0,212,170,0.3);color:var(--primary);padding:4px 10px;border-radius:20px;cursor:pointer;">Mark all read</button>' +
+      '</div>'
+    : '<div style="text-align:center;padding:8px 0 14px;"><span class="text-xs" style="color:var(--primary);">&#10003; All caught up</span></div>';
+
+  document.getElementById('alerts-list').innerHTML = headerHtml +
+    STATIC_ALERTS.map(function(a, i){
+      return '<div class="alert-item ' + (a.unread ? 'alert-unread' : '') + '" data-type="' + a.type + '" ' +
+        'onclick="markAlertRead(' + i + ')" style="cursor:pointer;" ' +
+        'title="' + (a.unread ? 'Click to mark as read' : 'Already read') + '">' +
+        '<div class="alert-icon ' + a.iconCls + '">' + a.icon + '</div>' +
+        '<div style="flex:1;">' +
+          '<div class="alert-title">' + a.title + '</div>' +
+          '<div class="alert-body">' + a.body + '</div>' +
+          '<div class="alert-time">' + a.time +
+            (a.unread ? '<span class="unread-dot" style="color:var(--primary);font-size:9px;font-family:var(--font-mono);margin-left:6px;">&#9679; UNREAD — tap to dismiss</span>' : '') +
+          '</div>' +
+        '</div>' +
+        (a.unread ? '<div style="width:6px;height:6px;border-radius:50%;background:var(--primary);margin-top:4px;flex-shrink:0;"></div>' : '') +
+      '</div>';
+    }).join('');
+}
+
+function filterAlerts(type, btn){
+  document.querySelectorAll('#screen-alerts .tab-pill').forEach(function(b){ b.classList.remove('active'); });
   btn.classList.add('active');
-  document.querySelectorAll('#alerts-list .alert-item').forEach(function(el){el.style.display=(type==='all'||el.dataset.type===type)?'':'none';});
+  document.querySelectorAll('#alerts-list .alert-item').forEach(function(el){
+    el.style.display = (type === 'all' || el.dataset.type === type) ? '' : 'none';
+  });
 }
 
 // ===== CHARTS =====
