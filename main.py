@@ -799,8 +799,12 @@ def run_daily_scan():
             'pnl_pct'      : pnl_pct,
         }
 
-    telegram.alert_daily_summary(total_value, total_pnl, total_pct,
-                                  positions_with_pnl, dashboard_signals)
+    # Only send if scan produced real signals — cloud_scan.py on GitHub Actions
+    # has no trained model so dashboard_signals is {}, which would send a
+    # misleading "BUY signals: None" message. VPS health_report.py handles alerts.
+    if dashboard_signals:
+        telegram.alert_daily_summary(total_value, total_pnl, total_pct,
+                                     positions_with_pnl, dashboard_signals)
 
     print("\n" + "✅" * 25)
     print("ALPHA EDGE V4 SCAN COMPLETE")
