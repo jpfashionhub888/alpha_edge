@@ -142,7 +142,6 @@
     .market-clock { font-family:var(--font-mono); font-size:11px; padding:3px 10px; border-radius:var(--radius-pill); border:1px solid var(--border); display:none; white-space:nowrap; }
     .market-clock.open  { color:var(--primary); border-color:var(--primary); }
     .market-clock.closed{ color:var(--text-muted); }
-    .date-chip { font-family:var(--font-mono); font-size:11px; color:var(--text-muted); padding:2px 8px; background:var(--surface-hi); border-radius:var(--radius-pill); white-space:nowrap; display:none; }
     .icon-btn { background:none; border:none; color:var(--text-dim); cursor:pointer; padding:6px; border-radius:var(--radius-sm); transition:all .2s; line-height:1; }
     .icon-btn:hover { color:var(--primary); background:rgba(0,212,170,.08); }
     .icon-btn svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; display:block; }
@@ -242,8 +241,8 @@
     .data-table td { padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
     .data-table tr:hover td { background:rgba(0,212,170,.03); }
     .data-table tr:last-child td { border-bottom:none; }
-    .sort-asc::after  { content:' ↑'; }
-    .sort-desc::after { content:' ↓'; }
+    .sort-asc::after  { content:' Γåæ'; }
+    .sort-desc::after { content:' Γåô'; }
 
     /* === ALERT ITEM === */
     .alert-item { display:flex; gap:12px; padding:13px; border-radius:var(--radius-sm); margin-bottom:8px; background:var(--bg-card2); border:1px solid var(--border); }
@@ -354,7 +353,6 @@
       .bottom-nav { display:none; }
       .header-logo { display:none; }
       .market-clock { display:inline-flex; }
-      .date-chip { display:inline-flex; }
       .screen { padding:24px; max-width:1200px; }
       .desktop-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
       .desktop-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
@@ -450,7 +448,6 @@
         </div>
       </div>
       <div class="header-right">
-        <div class="date-chip" id="live-date-chip"></div>
         <div class="market-clock" id="market-clock-badge">-- --:--</div>
         <div class="live-badge"><span class="live-dot"></span>LIVE</div>
         <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">
@@ -481,7 +478,7 @@
             </div>
             <div class="text-right">
               <div class="badge badge-open" id="dash-status">PAPER TRADING</div>
-              <div class="text-xs muted mono mt8" id="dash-updated">Loading...</div>
+              <div class="text-xs muted mono mt8" id="dash-updated">Just now</div>
             </div>
           </div>
         </div>
@@ -998,27 +995,17 @@ function toggleTheme() {
 // ===== MARKET CLOCK =====
 function updateMarketClock() {
   var now = new Date();
-  var etStr = now.toLocaleString('en-US',{timeZone:'America/New_York'});
-  var et = new Date(etStr);
-  var h = et.getHours(), m = et.getMinutes(), day = et.getDay();
-  var isWeekday = day>=1 && day<=5;
-  var isOpen = isWeekday && ((h===9&&m>=30)||(h>9&&h<16));
+  var isWeekday = [1,2,3,4,5].indexOf(new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'})).getDay()) >= 0;
+  var etHour = parseInt(now.toLocaleString('en-US',{hour:'numeric',hour12:false,timeZone:'America/New_York'}));
+  var etMin  = parseInt(now.toLocaleString('en-US',{minute:'numeric',timeZone:'America/New_York'}));
+  var isOpen = isWeekday && ((etHour===9&&etMin>=30)||(etHour>9&&etHour<16));
   var timeStr = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'America/New_York'});
   var dateStr = now.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
-
-  var clockEl = document.getElementById('market-clock-badge');
-  var dateEl  = document.getElementById('live-date-chip');
-  var sideEl  = document.getElementById('sidebar-clock-display');
-
-  if (clockEl) {
-    clockEl.textContent = (isOpen ? 'OPEN ' : 'CLOSED ') + timeStr + ' ET';
-    clockEl.className = 'market-clock ' + (isOpen ? 'open' : 'closed');
-  }
-  if (dateEl) {
-    dateEl.textContent = dateStr;
-    dateEl.style.display = 'inline-flex';
-  }
-  if (sideEl) sideEl.textContent = (isOpen ? 'Market OPEN' : 'Market CLOSED') + ' | ' + timeStr + ' ET';
+  var status  = isOpen ? 'OPEN' : 'CLOSED';
+  var el = document.getElementById('market-clock-badge');
+  var sideEl = document.getElementById('sidebar-clock-display');
+  if (el) { el.textContent = status+' '+timeStr+' ET'; el.className='market-clock '+(isOpen?'open':'closed'); }
+  if (sideEl) sideEl.textContent = dateStr+' | '+timeStr+' ET';
 }
 
 // ===== NAVIGATION =====
@@ -1078,12 +1065,11 @@ function renderDashboard() {
   }
   document.getElementById('dash-open-pos').textContent = posKeys.length+' / 5';
   var savedAt = (trades&&trades.saved_at) ? new Date(trades.saved_at) : null;
-  var updEl = document.getElementById('dash-updated');
   if (savedAt) {
     var diffH = Math.floor((Date.now()-savedAt.getTime())/3600000);
-    var diffLabel = diffH < 1 ? 'Just now' : diffH < 24 ? diffH+'h ago' : Math.floor(diffH/24)+'d ago';
-    updEl.textContent = 'Bot run: '+diffLabel+' ('+fmtDate(savedAt)+')';
-  } else { updEl.textContent = 'No data yet'; }
+    var rel = diffH < 1 ? 'Just now' : diffH < 24 ? diffH+'h ago' : Math.floor(diffH/24)+'d ago';
+    document.getElementById('dash-updated').textContent = 'Bot: '+rel+' · '+fmtDate(savedAt);
+  } else { document.getElementById('dash-updated').textContent = 'No data'; }
 
   var cb = DATA.circuit, cbEl = document.getElementById('dash-circuit');
   if (cb&&cb.active){ cbEl.textContent='TRIPPED'; cbEl.className='text-xs red mono'; }
