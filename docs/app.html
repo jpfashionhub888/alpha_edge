@@ -21,7 +21,7 @@
   <style>
     /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        ALPHA EDGE TERMINAL â€” DESIGN SYSTEM
-       Cyber-Glassmorphism Â· Dark Mode Â· Space Grotesk
+       Cyber-Glassmorphism Â&middot; Dark Mode Â&middot; Space Grotesk
     â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     :root {
       --bg:           #0a0e1a;
@@ -959,7 +959,7 @@ function renderDashboard() {
         <div class="pos-info">
           <div class="pos-symbol">${sym}</div>
           <div class="pos-name">${COMPANY_NAMES[sym]||''}</div>
-          <div class="pos-price mono">${pos.shares} sh Â· Entry ${fmt$(pos.entry_price)}</div>
+          <div class="pos-price mono">${pos.shares} sh Â&middot; Entry ${fmt$(pos.entry_price)}</div>
         </div>
         <div class="pos-right">
           <div class="pos-pct ${color}">${arrow} ${fmtPct(pct)}</div>
@@ -1078,7 +1078,7 @@ function renderSignalsList(list) {
       <div class="signal-header">
         <div>
           <div class="signal-symbol">${s.sym}</div>
-          <div class="signal-company">${COMPANY_NAMES[s.sym]||''} Â· ${s.sector||'Market'}</div>
+          <div class="signal-company">${COMPANY_NAMES[s.sym]||''} Â&middot; ${s.sector||'Market'}</div>
         </div>
         <div class="text-right">
           <span class="badge ${bdg}">${sig}</span>
@@ -1147,7 +1147,7 @@ function renderPositions() {
           </div>
         </div>
         ${pos.partial_exit_done ? '<div class="badge badge-partial text-xs mt8">âš¡ Partial Exit Done</div>' : ''}
-        <div class="text-xs muted mono mt8">${pos.shares} shares Â· SL ${(pos.stop_loss_pct*100).toFixed(1)}% ATR Â· ${fmtDate(pos.entry_date)}</div>
+        <div class="text-xs muted mono mt8">${pos.shares} shares Â&middot; SL ${(pos.stop_loss_pct*100).toFixed(1)}% ATR Â&middot; ${fmtDate(pos.entry_date)}</div>
       </div>`;
     }).join('');
   }
@@ -1162,7 +1162,7 @@ function renderPositions() {
       <div class="pos-info">
         <div class="pos-symbol">${t.symbol}</div>
         <div class="pos-name">${icon} ${(t.reason||'').replace(/_/g,' ')}</div>
-        <div class="pos-price mono">${t.shares} sh Â· ${fmtDate(t.exit_time||t.entry_time)}</div>
+        <div class="pos-price mono">${t.shares} sh Â&middot; ${fmtDate(t.exit_time||t.entry_time)}</div>
       </div>
       <div class="pos-right">
         <div class="pos-pct ${color}">${t.pnl_usd>=0?'+':''}${fmt$(t.pnl_usd)}</div>
@@ -1198,7 +1198,7 @@ function renderDetail({ sym, pos }) {
   const chEl = document.getElementById('detail-change');
   chEl.textContent = (pnl>=0?'â–² +':'â–¼ ')+fmt$(pnl)+' ('+fmtPct(pct)+')';
   chEl.className = 'text-sm mono mt8 ' + color;
-  document.getElementById('detail-entry-info').textContent = 'Entry ' + fmt$(pos.entry_price) + ' Â· ' + daysSince(pos.entry_date) + ' days held';
+  document.getElementById('detail-entry-info').textContent = 'Entry ' + fmt$(pos.entry_price) + ' Â&middot; ' + daysSince(pos.entry_date) + ' days held';
 
   // Metric grid
   const slPrice = pos.entry_price * (1 - (pos.stop_loss_pct||0.05));
@@ -1314,8 +1314,8 @@ function renderAlerts() {
     const type = isBuy ? 'trade' : isPartial ? 'trade' : 'trade';
     const title = isBuy ? `BUY â€” ${t.symbol}` : isPartial ? `PARTIAL EXIT â€” ${t.symbol}` : `SELL â€” ${t.symbol}`;
     const body = isBuy
-      ? `${t.shares} shares at ${fmt$(t.fill_price||t.price)} Â· ${t.reason||''}`
-      : `${t.shares} shares at ${fmt$(t.fill_price||t.price)} Â· P&L: ${t.pnl>=0?'+':''}${fmt$(t.pnl||0)}`;
+      ? `${t.shares} shares at ${fmt$(t.fill_price||t.price)} Â&middot; ${t.reason||''}`
+      : `${t.shares} shares at ${fmt$(t.fill_price||t.price)} Â&middot; P&L: ${t.pnl>=0?'+':''}${fmt$(t.pnl||0)}`;
     return { icon, iconCls, title, body, time: fmtDate(t.date), type };
   });
 
