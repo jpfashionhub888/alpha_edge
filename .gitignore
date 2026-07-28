@@ -51,4 +51,5 @@ config/secrets.env
 
 # ── Temp / debug files ────────────────────────────────────────────────
 test_predictor.py
-find_si
+find_si*.bak
+*.bak_*
