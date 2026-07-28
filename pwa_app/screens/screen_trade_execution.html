@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AlphaEdge - Confirm Trade</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-secondary-fixed-variant": "#4f2dd2",
+                        "surface-dim": "#0a0e1a",
+                        "on-primary": "#005745",
+                        "inverse-on-surface": "#515463",
+                        "secondary-dim": "#7459f7",
+                        "error-container": "#9f0519",
+                        "surface-variant": "#202537",
+                        "inverse-primary": "#006c55",
+                        "tertiary-fixed": "#ff9470",
+                        "on-secondary-fixed": "#3200a7",
+                        "secondary-fixed-dim": "#c6bbff",
+                        "primary-fixed": "#49f4c8",
+                        "on-surface": "#e2e4f6",
+                        "error": "#ff716c",
+                        "on-error-container": "#ffa8a3",
+                        "on-primary-container": "#004132",
+                        "on-tertiary-fixed": "#330900",
+                        "primary": "#49f4c8",
+                        "on-secondary": "#1e0070",
+                        "surface-container-low": "#0e1320",
+                        "tertiary-container": "#fe6a34",
+                        "on-tertiary-fixed-variant": "#6c1e00",
+                        "surface": "#0a0e1a",
+                        "primary-container": "#00d4aa",
+                        "on-primary-fixed-variant": "#00624d",
+                        "on-primary-fixed": "#004334",
+                        "background": "#0a0e1a",
+                        "secondary-fixed": "#d4cbff",
+                        "secondary": "#9f8eff",
+                        "primary-dim": "#33e5ba",
+                        "outline": "#717584",
+                        "tertiary-fixed-dim": "#ff7d50",
+                        "tertiary": "#ff8257",
+                        "on-tertiary": "#4e1300",
+                        "on-tertiary-container": "#370b00",
+                        "secondary-container": "#441cc8",
+                        "inverse-surface": "#faf8ff",
+                        "tertiary-dim": "#ff7442",
+                        "surface-container-lowest": "#000000",
+                        "surface-container-highest": "#202537",
+                        "surface-bright": "#252b3f",
+                        "error-dim": "#d7383b",
+                        "primary-fixed-dim": "#33e5ba",
+                        "on-background": "#e2e4f6",
+                        "surface-tint": "#49f4c8",
+                        "on-secondary-container": "#d3caff",
+                        "surface-container-high": "#1a1f2f",
+                        "on-surface-variant": "#a7aabb",
+                        "outline-variant": "#444756",
+                        "on-error": "#490006",
+                        "surface-container": "#141928"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    },
+                    fontFamily: {
+                        headline: ["Space Grotesk", "sans-serif"],
+                        display: ["Space Grotesk", "sans-serif"],
+                        body: ["Inter", "sans-serif"],
+                        label: ["Geist Mono", "monospace"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .cyber-glass {
+            background: rgba(10, 14, 26, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glow-primary {
+            box-shadow: 0 0 15px rgba(0, 212, 170, 0.4);
+        }
+        .glow-text-primary {
+            text-shadow: 0 0 10px rgba(0, 212, 170, 0.5);
+        }
+        .glow-error {
+            box-shadow: 0 0 15px rgba(255, 113, 108, 0.3);
+        }
+        .pulse-primary {
+            animation: pulse-primary 2s infinite;
+        }
+        @keyframes pulse-primary {
+            0% { box-shadow: 0 0 0 0 rgba(0, 212, 170, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 212, 170, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 212, 170, 0); }
+        }
+        /* Custom range slider styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #00d4aa;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(0, 212, 170, 0.8);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #202537;
+            border-radius: 2px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body antialiased min-h-screen flex items-center justify-center p-4">
+<!-- Full-screen backdrop -->
+<div class="fixed inset-0 bg-surface-lowest/80 backdrop-blur-sm z-40"></div>
+<!-- Modal Container -->
+<div class="cyber-glass w-full max-w-2xl rounded-xl z-50 overflow-hidden flex flex-col shadow-2xl relative">
+<!-- Subtle grid overlay -->
+<div class="absolute inset-0 pointer-events-none opacity-[0.03]" style="background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 20px 20px;"></div>
+<!-- Header -->
+<div class="flex justify-between items-center p-6 border-b border-white/10 relative z-10">
+<h2 class="font-headline text-xl font-bold tracking-tight text-on-surface">CONFIRM TRADE</h2>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Scrollable Content -->
+<div class="p-6 overflow-y-auto max-h-[618px] space-y-6 relative z-10">
+<!-- Stock Header Section -->
+<div class="flex items-start justify-between">
+<div>
+<h1 class="font-headline text-4xl font-bold tracking-tighter text-white">NVDA</h1>
+<div class="flex items-center gap-2 mt-1">
+<span class="font-label text-2xl text-on-surface">$875.20</span>
+<span class="font-label text-sm text-primary">+2.4%</span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<div class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full flex items-center gap-2 pulse-primary glow-primary border border-primary/50">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+<span class="font-label font-bold text-xs uppercase tracking-wider">0.82 Strong Buy</span>
+</div>
+<span class="text-xs text-on-surface-variant mt-2 font-label">Confidence Score</span>
+</div>
+</div>
+<!-- Signal Breakdown Grid -->
+<div class="bg-surface-container-high rounded-lg p-4 border border-white/5">
+<h3 class="font-headline text-sm text-on-surface-variant mb-4 uppercase tracking-widest">Signal Breakdown</h3>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+<div class="flex items-center gap-2 text-sm">
+<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+<span class="text-on-surface">ML Ensemble</span>
+</div>
+<div class="flex items-center gap-2 text-sm">
+<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+<span class="text-on-surface">Market Regime</span>
+</div>
+<div class="flex items-center gap-2 text-sm">
+<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+<span class="text-on-surface">MTF</span>
+</div>
+<div class="flex items-center gap-2 text-sm">
+<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+<span class="text-on-surface">Sector</span>
+</div>
+<div class="flex items-center gap-2 text-sm">
+<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+<span class="text-on-surface">Correlation</span>
+</div>
+<div class="flex items-center gap-2 text-sm">
+<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+<span class="text-on-surface">Insider <span class="font-label text-xs ml-1">+0.08</span></span>
+</div>
+<div class="flex items-center gap-2 text-sm">
+<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+<span class="text-on-surface">Earnings Safe</span>
+</div>
+<div class="flex items-center gap-2 text-sm">
+<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+<span class="text-on-surface">ATR Stop</span>
+</div>
+<div class="flex items-center gap-2 text-sm">
+<span class="material-symbols-outlined text-secondary text-[18px]">memory</span>
+<span class="text-secondary font-medium">AI Veto APP</span>
+</div>
+</div>
+</div>
+<!-- Position Sizing -->
+<div class="bg-surface-container-high rounded-lg p-5 border border-white/5 relative overflow-hidden">
+<!-- Decorative gradient -->
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -mr-16 -mt-16"></div>
+<h3 class="font-headline text-sm text-on-surface-variant mb-4 uppercase tracking-widest flex items-center justify-between">
+<span>Position Sizing (Kelly)</span>
+<span class="font-label text-primary">18.4%</span>
+</h3>
+<div class="grid grid-cols-3 gap-4 mb-6">
+<div>
+<div class="text-xs text-on-surface-variant mb-1">Win Prob</div>
+<div class="font-label text-lg">82%</div>
+</div>
+<div>
+<div class="text-xs text-on-surface-variant mb-1">R/R Ratio</div>
+<div class="font-label text-lg">1.6x</div>
+</div>
+<div>
+<div class="text-xs text-on-surface-variant mb-1">Rec. Size</div>
+<div class="font-label text-lg text-primary glow-text-primary">$1,847</div>
+<div class="text-xs text-on-surface-variant">~2 shares</div>
+</div>
+</div>
+<!-- Slider -->
+<div class="flex items-center gap-4">
+<button class="w-8 h-8 rounded bg-surface-bright flex items-center justify-center hover:bg-white/10 transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">remove</span>
+</button>
+<div class="flex-1 relative">
+<input class="w-full" max="100" min="1" type="range" value="18"/>
+<!-- Custom track fill -->
+<div class="absolute top-[6px] left-0 h-1 bg-primary rounded-l pointer-events-none" style="width: 18%;"></div>
+</div>
+<button class="w-8 h-8 rounded bg-surface-bright flex items-center justify-center hover:bg-white/10 transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+<!-- Risk Parameters -->
+<div class="grid grid-cols-3 gap-4">
+<div class="bg-surface-container-high rounded-lg p-4 border border-error/20 relative overflow-hidden">
+<div class="absolute inset-0 bg-error/5"></div>
+<h4 class="text-xs text-on-surface-variant mb-2 relative z-10">Stop Loss</h4>
+<div class="font-label text-error mb-1 relative z-10 glow-error inline-block rounded">$831.44</div>
+<div class="font-label text-xs text-error/70 relative z-10">-5.0%</div>
+</div>
+<div class="bg-surface-container-high rounded-lg p-4 border border-primary/20 relative overflow-hidden">
+<div class="absolute inset-0 bg-primary/5"></div>
+<h4 class="text-xs text-on-surface-variant mb-2 relative z-10">Partial Exit</h4>
+<div class="font-label text-primary mb-1 relative z-10">$918.96</div>
+<div class="font-label text-xs text-primary/70 relative z-10">+5.0%</div>
+</div>
+<div class="bg-surface-container-high rounded-lg p-4 border border-primary/20 relative overflow-hidden">
+<div class="absolute inset-0 bg-primary/5"></div>
+<h4 class="text-xs text-on-surface-variant mb-2 relative z-10">Take Profit</h4>
+<div class="font-label text-primary mb-1 relative z-10 glow-text-primary font-bold">$945.22</div>
+<div class="font-label text-xs text-primary/70 relative z-10">+8.0%</div>
+</div>
+</div>
+<div class="flex justify-center">
+<span class="bg-surface-bright px-3 py-1 rounded-full text-xs font-label text-on-surface-variant border border-white/5">Risk/Reward: 1:1.6</span>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="p-6 border-t border-white/10 bg-surface-container/50 relative z-10">
+<div class="flex gap-4">
+<button class="flex-1 py-3 px-4 rounded-lg font-headline font-semibold text-on-surface border border-outline-variant hover:bg-white/5 hover:border-outline transition-all uppercase tracking-wide">
+                    Cancel
+                </button>
+<button class="flex-1 py-3 px-4 rounded-lg font-headline font-bold text-on-primary-container bg-gradient-to-r from-primary to-primary-dim glow-primary hover:brightness-110 active:scale-[0.98] transition-all uppercase tracking-wide flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">rocket_launch</span>
+                    Execute Trade
+                </button>
+</div>
+<div class="text-center mt-4">
+<span class="text-[10px] text-on-surface-variant flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-[14px]">info</span>
+                    Paper Trading Mode — No real money at risk
+                </span>
+</div>
+</div>
+</div>
+</body></html>

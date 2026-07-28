@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AlphaEdge - AI Signals</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&amp;family=Inter:wght@100..900&amp;family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#ff7d50",
+                        "on-primary-fixed": "#004334",
+                        "on-primary": "#005745",
+                        "surface-container-highest": "#202537",
+                        "tertiary-dim": "#ff7442",
+                        "secondary-container": "#441cc8",
+                        "surface-container-high": "#1a1f2f",
+                        "outline": "#717584",
+                        "on-secondary-fixed-variant": "#4f2dd2",
+                        "error-dim": "#d7383b",
+                        "surface-variant": "#202537",
+                        "on-primary-fixed-variant": "#00624d",
+                        "on-error-container": "#ffa8a3",
+                        "secondary-fixed-dim": "#c6bbff",
+                        "surface-container": "#141928",
+                        "surface": "#0a0e1a",
+                        "primary-fixed-dim": "#33e5ba",
+                        "surface-tint": "#49f4c8",
+                        "primary-fixed": "#49f4c8",
+                        "tertiary-fixed": "#ff9470",
+                        "on-primary-container": "#004132",
+                        "secondary-fixed": "#d4cbff",
+                        "error": "#ff716c",
+                        "primary-dim": "#33e5ba",
+                        "primary": "#49f4c8",
+                        "tertiary": "#ff8257",
+                        "on-tertiary": "#4e1300",
+                        "on-background": "#e2e4f6",
+                        "surface-dim": "#0a0e1a",
+                        "inverse-surface": "#faf8ff",
+                        "surface-container-lowest": "#000000",
+                        "background": "#000000", /* Pure black */
+                        "inverse-on-surface": "#515463",
+                        "primary-container": "#00d4aa",
+                        "outline-variant": "#444756",
+                        "on-tertiary-fixed": "#330900",
+                        "error-container": "#9f0519",
+                        "on-tertiary-container": "#370b00",
+                        "on-tertiary-fixed-variant": "#6c1e00",
+                        "on-secondary-container": "#d3caff",
+                        "inverse-primary": "#006c55",
+                        "tertiary-container": "#fe6a34",
+                        "on-secondary-fixed": "#3200a7",
+                        "on-surface-variant": "#a7aabb",
+                        "surface-bright": "#252b3f",
+                        "surface-container-low": "#0e1320",
+                        "secondary-dim": "#7459f7",
+                        "on-surface": "#e2e4f6",
+                        "on-secondary": "#1e0070",
+                        "secondary": "#9f8eff",
+                        "on-error": "#490006"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": ["Space Grotesk", "sans-serif"],
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Geist Mono", "monospace"]
+                    },
+                    "fontSize": {}
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.5); /* #11182780 equivalent in rgb */
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glow-teal {
+            box-shadow: 0 0 15px rgba(73, 244, 200, 0.2);
+            border-color: rgba(73, 244, 200, 0.3);
+        }
+        .glow-amber {
+            box-shadow: 0 0 15px rgba(255, 186, 10, 0.2); /* Approximate amber */
+            border-color: rgba(255, 186, 10, 0.3);
+        }
+        .text-gradient {
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-image: linear-gradient(to right, #00D4AA, #7459f7);
+        }
+        .progress-gradient {
+            background-image: linear-gradient(to right, #00D4AA, #7459f7);
+        }
+        
+        /* Utility for material symbols */
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        body {
+            background-color: #000000;
+            color: #e2e4f6;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        
+        /* Hide scrollbar for clean UI */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body antialiased min-h-screen flex flex-col pb-32 md:pb-16 md:flex-row md:pl-20">
+<!-- Desktop Side Nav (Hidden on Mobile) -->
+<nav class="hidden md:flex flex-col items-center justify-between w-20 h-screen fixed left-0 top-0 bg-surface-container/80 backdrop-blur-xl border-r border-white/10 z-50 py-6">
+<div class="flex flex-col items-center gap-8">
+<span class="material-symbols-outlined text-primary text-3xl font-headline font-bold">signal_cellular_alt</span>
+<div class="flex flex-col gap-4 w-full px-2">
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-all p-3 rounded-xl active:scale-90 duration-150 group" href="#">
+<span class="material-symbols-outlined text-2xl group-hover:scale-110 transition-transform">dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-all p-3 rounded-xl active:scale-90 duration-150 group" href="#">
+<span class="material-symbols-outlined text-2xl group-hover:scale-110 transition-transform">account_balance_wallet</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary bg-primary/10 rounded-xl px-3 py-3 shadow-[0_0_10px_rgba(73,244,200,0.2)] active:scale-90 duration-150 group" href="#">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">fitbit_jumping_jacks</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-all p-3 rounded-xl active:scale-90 duration-150 group" href="#">
+<span class="material-symbols-outlined text-2xl group-hover:scale-110 transition-transform">insights</span>
+</a>
+</div>
+</div>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-all p-3 rounded-xl active:scale-90 duration-150 group" href="#">
+<span class="material-symbols-outlined text-2xl group-hover:rotate-45 transition-transform">settings</span>
+</a>
+</nav>
+<!-- Top App Bar (Mobile Only - Based on Shared Component Logic) -->
+<header class="md:hidden fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl border-b border-white/10 shadow-[0_0_15px_rgba(73,244,200,0.1)] flex justify-between items-center px-4 h-16">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">signal_cellular_alt</span>
+<span class="text-xl font-headline font-bold text-primary tracking-tighter">AlphaEdge</span>
+</div>
+<div class="text-primary font-bold font-label text-xs uppercase tracking-widest px-2 py-1 bg-primary/10 rounded">LIVE</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 w-full max-w-4xl mx-auto px-4 pt-20 md:pt-8 flex flex-col gap-6">
+<!-- Header Section -->
+<section class="flex flex-col gap-4 mt-4">
+<div>
+<h1 class="font-headline text-4xl md:text-5xl font-bold tracking-tight text-gradient mb-1">AI Signals</h1>
+<p class="text-on-surface-variant font-body text-sm">3 Active Signals</p>
+</div>
+<!-- Filters -->
+<div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+<button class="px-4 py-1.5 rounded-full bg-primary/20 text-primary border border-primary/30 font-label text-xs uppercase tracking-wider font-semibold whitespace-nowrap">All</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant border border-white/10 font-label text-xs uppercase tracking-wider hover:bg-white/5 transition-colors whitespace-nowrap">Buy</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant border border-white/10 font-label text-xs uppercase tracking-wider hover:bg-white/5 transition-colors whitespace-nowrap">Sell</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant border border-white/10 font-label text-xs uppercase tracking-wider hover:bg-white/5 transition-colors whitespace-nowrap">Hold</button>
+</div>
+</section>
+<!-- Active Signals List -->
+<section class="flex flex-col gap-6">
+<!-- SIGNAL CARD 1 (BUY) -->
+<article class="glass-panel rounded-xl p-4 md:p-6 glow-teal relative overflow-hidden group">
+<!-- Decorative background elements -->
+<div class="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-colors duration-500"></div>
+<div class="flex flex-col gap-5 relative z-10">
+<!-- Top Row: Symbol & Status -->
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-lg bg-surface flex items-center justify-center border border-white/10 shadow-inner">
+<span class="font-headline text-xl font-bold text-white">NVDA</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label text-xl text-white font-medium tracking-tight">$875.20</span>
+<div class="flex items-center gap-1.5 text-xs">
+<span class="text-on-surface-variant font-body">Target:</span>
+<span class="font-label text-primary">$945 (+8%)</span>
+</div>
+</div>
+</div>
+<div class="px-2 py-1 rounded bg-primary/20 text-primary border border-primary/30 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+<span class="font-label text-xs font-bold tracking-widest uppercase">Buy</span>
+</div>
+</div>
+<!-- ML Score & Progress -->
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between items-center text-xs">
+<span class="text-on-surface-variant font-body">ML Ensemble Score</span>
+<span class="font-label text-secondary">0.82</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full progress-gradient w-[82%] rounded-full shadow-[0_0_8px_rgba(116,89,247,0.5)]"></div>
+</div>
+</div>
+<!-- AI Filter Badges -->
+<div class="flex flex-wrap gap-2">
+<div class="px-2 py-1 rounded-md bg-secondary/10 border border-secondary/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px] text-secondary">check</span>
+<span class="font-label text-[10px] text-secondary-fixed uppercase tracking-wider">ML Ensemble</span>
+</div>
+<div class="px-2 py-1 rounded-md bg-secondary/10 border border-secondary/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px] text-secondary">check</span>
+<span class="font-label text-[10px] text-secondary-fixed uppercase tracking-wider">Market Regime</span>
+</div>
+<div class="px-2 py-1 rounded-md bg-secondary/10 border border-secondary/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px] text-secondary">check</span>
+<span class="font-label text-[10px] text-secondary-fixed uppercase tracking-wider">MTF</span>
+</div>
+<div class="px-2 py-1 rounded-md bg-secondary/10 border border-secondary/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px] text-secondary">check</span>
+<span class="font-label text-[10px] text-secondary-fixed uppercase tracking-wider">Sector</span>
+</div>
+<div class="px-2 py-1 rounded-md bg-secondary/10 border border-secondary/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px] text-secondary">check</span>
+<span class="font-label text-[10px] text-secondary-fixed uppercase tracking-wider">Correlation</span>
+</div>
+<div class="px-2 py-1 rounded-md bg-secondary/10 border border-secondary/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px] text-secondary">check</span>
+<span class="font-label text-[10px] text-secondary-fixed uppercase tracking-wider">Insider</span>
+</div>
+<div class="px-2 py-1 rounded-md bg-secondary/10 border border-secondary/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px] text-secondary">check</span>
+<span class="font-label text-[10px] text-secondary-fixed uppercase tracking-wider">Earnings</span>
+</div>
+<div class="px-2 py-1 rounded-md bg-secondary/10 border border-secondary/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px] text-secondary">check</span>
+<span class="font-label text-[10px] text-secondary-fixed uppercase tracking-wider">ATR Stop</span>
+</div>
+<div class="px-2 py-1 rounded-md bg-secondary/10 border border-secondary/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px] text-secondary">check</span>
+<span class="font-label text-[10px] text-secondary-fixed uppercase tracking-wider">AI Veto</span>
+</div>
+</div>
+<!-- Trade Details & Action -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mt-2 gap-4 border-t border-white/10 pt-4">
+<div class="flex gap-4">
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant font-label uppercase tracking-widest">Entry</span>
+<span class="font-label text-sm text-white">$875.20</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant font-label uppercase tracking-widest">Stop Loss</span>
+<span class="font-label text-sm text-error">$836.50</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant font-label uppercase tracking-widest">Target</span>
+<span class="font-label text-sm text-primary">$945.00</span>
+</div>
+</div>
+<div class="flex items-center gap-3 w-full sm:w-auto">
+<div class="px-2 py-1 rounded bg-surface border border-white/10">
+<span class="text-[10px] text-on-surface-variant font-label mr-1">R:R</span>
+<span class="font-label text-xs text-white">1:1.86</span>
+</div>
+<button class="flex-1 sm:flex-none px-6 py-2 bg-primary text-on-primary font-label text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-primary-dim hover:shadow-[0_0_20px_rgba(73,244,200,0.4)] transition-all active:scale-95 text-center">
+                                Enter Trade
+                            </button>
+</div>
+</div>
+</div>
+</article>
+<!-- SIGNAL CARD 2 (BUY) -->
+<article class="glass-panel rounded-xl p-4 md:p-6 glow-teal relative overflow-hidden group">
+<div class="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-colors duration-500"></div>
+<div class="flex flex-col gap-5 relative z-10">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-lg bg-surface flex items-center justify-center border border-white/10 shadow-inner">
+<span class="font-headline text-xl font-bold text-white">AAPL</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label text-xl text-white font-medium tracking-tight">$192.40</span>
+<div class="flex items-center gap-1.5 text-xs">
+<span class="text-on-surface-variant font-body">Target:</span>
+<span class="font-label text-primary">$207 (+7.6%)</span>
+</div>
+</div>
+</div>
+<div class="px-2 py-1 rounded bg-primary/20 text-primary border border-primary/30 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+<span class="font-label text-xs font-bold tracking-widest uppercase">Buy</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between items-center text-xs">
+<span class="text-on-surface-variant font-body">ML Ensemble Score</span>
+<span class="font-label text-secondary">0.71</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full progress-gradient w-[71%] rounded-full shadow-[0_0_8px_rgba(116,89,247,0.5)]"></div>
+</div>
+</div>
+<!-- AI Filter Badges (Simplified for brevity, assuming all pass based on prompt) -->
+<div class="flex flex-wrap gap-2">
+<div class="px-2 py-1 rounded-md bg-secondary/10 border border-secondary/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px] text-secondary">check</span>
+<span class="font-label text-[10px] text-secondary-fixed uppercase tracking-wider">All 9 Filters Passed</span>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mt-2 gap-4 border-t border-white/10 pt-4">
+<div class="flex gap-4">
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant font-label uppercase tracking-widest">Entry</span>
+<span class="font-label text-sm text-white">$192.40</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant font-label uppercase tracking-widest">Stop</span>
+<span class="font-label text-sm text-error">$184.20</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant font-label uppercase tracking-widest">Target</span>
+<span class="font-label text-sm text-primary">$207.00</span>
+</div>
+</div>
+<div class="flex items-center gap-3 w-full sm:w-auto">
+<div class="px-2 py-1 rounded bg-surface border border-white/10">
+<span class="text-[10px] text-on-surface-variant font-label mr-1">R:R</span>
+<span class="font-label text-xs text-white">1:1.78</span>
+</div>
+<button class="flex-1 sm:flex-none px-6 py-2 bg-primary text-on-primary font-label text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-primary-dim hover:shadow-[0_0_20px_rgba(73,244,200,0.4)] transition-all active:scale-95 text-center">
+                                Enter Trade
+                            </button>
+</div>
+</div>
+</div>
+</article>
+<!-- SIGNAL CARD 3 (HOLD) -->
+<article class="glass-panel rounded-xl p-4 md:p-6 glow-amber relative overflow-hidden group opacity-80">
+<div class="flex flex-col gap-5 relative z-10">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-lg bg-surface flex items-center justify-center border border-white/10 shadow-inner">
+<span class="font-headline text-xl font-bold text-white/50">TSLA</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label text-xl text-white/70 font-medium tracking-tight">$248.60</span>
+<div class="flex items-center gap-1.5 text-xs">
+<span class="text-on-surface-variant font-body">Status:</span>
+<span class="font-label text-[rgba(255,186,10,1)]">Wait for setup</span>
+</div>
+</div>
+</div>
+<div class="px-2 py-1 rounded bg-[rgba(255,186,10,0.1)] text-[rgba(255,186,10,1)] border border-[rgba(255,186,10,0.3)] flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">horizontal_rule</span>
+<span class="font-label text-xs font-bold tracking-widest uppercase">Hold</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between items-center text-xs">
+<span class="text-on-surface-variant font-body">ML Ensemble Score</span>
+<span class="font-label text-white/50">0.48</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-outline w-[48%] rounded-full"></div>
+</div>
+</div>
+<!-- Failed Filters -->
+<div class="flex flex-col gap-2">
+<div class="flex flex-wrap gap-2">
+<div class="px-2 py-1 rounded-md bg-error/10 border border-error/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px] text-error">close</span>
+<span class="font-label text-[10px] text-error uppercase tracking-wider">AI Veto</span>
+</div>
+<div class="px-2 py-1 rounded-md bg-error/10 border border-error/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px] text-error">close</span>
+<span class="font-label text-[10px] text-error uppercase tracking-wider">Market Regime</span>
+</div>
+</div>
+<div class="text-xs text-on-surface-variant font-body mt-1">
+<span class="text-error font-medium">Reason:</span> Elevated volatility, earnings in 3 days.
+                        </div>
+</div>
+<div class="flex justify-end mt-2 border-t border-white/10 pt-4">
+<button class="w-full sm:w-auto px-6 py-2 bg-transparent border border-[rgba(255,186,10,0.5)] text-[rgba(255,186,10,1)] font-label text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-[rgba(255,186,10,0.1)] transition-all active:scale-95 text-center">
+                            Skip Setup
+                        </button>
+</div>
+</div>
+</article>
+</section>
+</main>
+<!-- Market Intelligence Bar -->
+<div class="fixed bottom-[88px] md:bottom-6 left-0 md:left-20 right-0 z-40 px-4 max-w-4xl mx-auto pointer-events-none w-full">
+<div class="glass-panel rounded-lg py-2 px-4 flex justify-between md:justify-start md:gap-8 items-center pointer-events-auto border-t border-white/5 text-[10px] sm:text-xs font-label uppercase tracking-widest whitespace-nowrap overflow-x-auto scrollbar-hide">
+<div class="flex items-center gap-2">
+<span class="text-on-surface-variant">SPY Regime:</span>
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary shadow-[0_0_5px_rgba(73,244,200,0.8)]"></span>
+<span class="text-white">BULLISH</span>
+</div>
+</div>
+<div class="w-px h-3 bg-white/10 hidden md:block"></div>
+<div class="flex items-center gap-2">
+<span class="text-on-surface-variant">VIX:</span>
+<span class="text-white">18.2</span>
+</div>
+<div class="w-px h-3 bg-white/10 hidden md:block"></div>
+<div class="flex items-center gap-2">
+<span class="text-on-surface-variant">F&amp;G:</span>
+<span class="text-white">54</span>
+</div>
+<div class="w-px h-3 bg-white/10 hidden md:block"></div>
+<div class="flex items-center gap-2 ml-auto md:ml-0">
+<span class="text-on-surface-variant hidden sm:inline">Market:</span>
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary shadow-[0_0_5px_rgba(73,244,200,0.8)] animate-pulse"></span>
+<span class="text-white">OPEN</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Nav Bar (Mobile Only - Based on Shared Components) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container/80 backdrop-blur-xl border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex justify-around items-center px-2 py-3">
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-all active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined mb-1 text-xl">dashboard</span>
+<span class="font-label text-[10px] uppercase tracking-widest">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-all active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined mb-1 text-xl">account_balance_wallet</span>
+<span class="font-label text-[10px] uppercase tracking-widest">Positions</span>
+</a>
+<!-- Active Tab -->
+<a class="flex flex-col items-center justify-center text-primary bg-primary/10 rounded-xl px-3 py-1 shadow-[0_0_10px_rgba(73,244,200,0.2)] active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined mb-1 text-xl" style="font-variation-settings: 'FILL' 1;">fitbit_jumping_jacks</span>
+<span class="font-label text-[10px] uppercase tracking-widest">Signals</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-all active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined mb-1 text-xl">insights</span>
+<span class="font-label text-[10px] uppercase tracking-widest">Analytics</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-all active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined mb-1 text-xl">settings</span>
+<span class="font-label text-[10px] uppercase tracking-widest">Settings</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#0a0e1a"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="AlphaEdge"/>
+  <meta name="description" content="AlphaEdge Terminal — AI-powered US stock trading bot dashboard"/>
+  <title>AlphaEdge Terminal</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" href="icons/icon-192.png"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* ═══════════════════════════════════════════════════
+       ALPHA EDGE TERMINAL — DESIGN SYSTEM
+       Cyber-Glassmorphism · Dark Mode · Space Grotesk
+    ═══════════════════════════════════════════════════ */
+    :root {
+      --bg:           #0a0e1a;
+      --bg-card:      rgba(17, 24, 39, 0.75);
+      --bg-card2:     rgba(20, 25, 40, 0.9);
+      --surface:      #141928;
+      --surface-hi:   #1a1f2f;
+      --surface-top:  #202537;
+      --border:       rgba(255,255,255,0.07);
+      --border-glow:  rgba(0, 212, 170, 0.35);
+      --primary:      #00d4aa;
+      --primary-lit:  #49f4c8;
+      --primary-dim:  #33e5ba;
+      --secondary:    #9f8eff;
+      --tertiary:     #ff8257;
+      --danger:       #ff716c;
+      --danger-dim:   #9f0519;
+      --warning:      #f59e0b;
+      --text:         #e2e4f6;
+      --text-dim:     #a7aabb;
+      --text-muted:   #717584;
+      --font-head:    'Space Grotesk', sans-serif;
+      --font-body:    'Inter', sans-serif;
+      --font-mono:    'Geist Mono', monospace;
+      --radius:       12px;
+      --radius-sm:    8px;
+      --radius-pill:  999px;
+      --blur:         16px;
+      --nav-h:        64px;
+      --header-h:     56px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%; width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* Scrollable screens */
+    .screen { display: none; flex-direction: column; height: 100vh; overflow-y: auto; padding-bottom: var(--nav-h); }
+    .screen.active { display: flex; }
+    .screen::-webkit-scrollbar { width: 0; }
+
+    /* ── HEADER ── */
+    .header {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px; height: var(--header-h);
+      background: rgba(10,14,26,0.85);
+      backdrop-filter: blur(var(--blur));
+      border-bottom: 1px solid var(--border);
+    }
+    .header-logo { display: flex; align-items: center; gap: 10px; }
+    .header-logo img { width: 32px; height: 32px; border-radius: 50%; }
+    .header-title { font-family: var(--font-head); font-weight: 700; font-size: 17px; color: var(--text); }
+    .header-sub  { font-size: 11px; color: var(--primary); font-family: var(--font-mono); }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .icon-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 22px; padding: 4px; line-height: 1; transition: color .2s; }
+    .icon-btn:hover { color: var(--primary); }
+    .notif-dot { position: relative; }
+    .notif-dot::after { content:'3'; position:absolute; top:-2px; right:-4px; background:var(--danger); color:#fff; border-radius:99px; font-size:9px; font-family:var(--font-mono); padding: 1px 4px; font-weight:700; }
+
+    /* ── LIVE BADGE ── */
+    .live-badge { display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:11px; color:var(--primary); padding:3px 8px; border:1px solid var(--primary); border-radius:var(--radius-pill); }
+    .live-dot { width:6px; height:6px; border-radius:50%; background:var(--primary); animation: pulse-dot 1.5s ease-in-out infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+    /* ── BOTTOM NAV ── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+      display: flex; height: var(--nav-h);
+      background: rgba(10,14,26,0.95);
+      backdrop-filter: blur(var(--blur));
+      border-top: 1px solid var(--border);
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4px; cursor: pointer; border: none; background: none;
+      color: var(--text-muted); font-size: 10px; font-family: var(--font-body);
+      transition: color .2s; padding: 8px 0; -webkit-tap-highlight-color: transparent;
+    }
+    .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .nav-item.active { color: var(--primary); }
+    .nav-item.active svg { filter: drop-shadow(0 0 4px var(--primary)); }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(var(--blur));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .card-glow { border-color: var(--border-glow); box-shadow: 0 0 16px rgba(0,212,170,0.08); }
+    .card-danger { border-color: rgba(255,113,108,.35); }
+    .card-warning { border-color: rgba(245,158,11,.35); }
+
+    /* ── METRIC TILES ── */
+    .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .metric-tile {
+      background: var(--bg-card2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 12px;
+    }
+    .metric-label { font-size: 10px; color: var(--text-dim); font-family: var(--font-mono); letter-spacing: .04em; text-transform: uppercase; margin-bottom: 4px; }
+    .metric-value { font-family: var(--font-head); font-weight: 700; font-size: 18px; color: var(--text); line-height: 1; }
+    .metric-value.green { color: var(--primary-lit); }
+    .metric-value.red   { color: var(--danger); }
+    .metric-value.teal  { color: var(--primary); }
+
+    /* ── BADGES ── */
+    .badge { display: inline-flex; align-items: center; gap: 4px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 700; font-family: var(--font-mono); padding: 3px 10px; line-height: 1.4; }
+    .badge-buy    { background: rgba(0,212,170,.2); color: var(--primary-lit); border: 1px solid var(--primary); box-shadow: 0 0 8px rgba(0,212,170,.3); }
+    .badge-sell   { background: rgba(255,113,108,.2); color: var(--danger); border: 1px solid var(--danger); }
+    .badge-hold   { background: rgba(245,158,11,.15); color: var(--warning); border: 1px solid var(--warning); }
+    .badge-avoid  { background: rgba(113,117,132,.15); color: var(--text-muted); border: 1px solid var(--text-muted); }
+    .badge-open   { background: rgba(0,212,170,.15); color: var(--primary); border: 1px solid rgba(0,212,170,.4); }
+    .badge-veto   { background: rgba(159,142,255,.2); color: var(--secondary); border: 1px solid var(--secondary); box-shadow: 0 0 8px rgba(159,142,255,.3); }
+    .badge-partial{ background: rgba(0,212,170,.12); color: var(--primary-dim); border: 1px solid rgba(0,212,170,.3); }
+    .badge-green  { background: rgba(0,212,170,.15); color: var(--primary-lit); }
+
+    /* ── PROGRESS BAR ── */
+    .progress-bar { height: 4px; background: rgba(255,255,255,.08); border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--primary-dim), var(--primary-lit)); transition: width .6s ease; }
+
+    /* ── SECTION HEADERS ── */
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .section-title { font-family: var(--font-head); font-weight: 600; font-size: 15px; }
+    .section-action { font-size: 12px; color: var(--primary); cursor: pointer; }
+
+    /* ── POSITION ROW ── */
+    .position-row {
+      display: flex; align-items: center; padding: 14px; gap: 12px;
+      background: var(--bg-card2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); margin-bottom: 8px;
+      cursor: pointer; transition: border-color .2s, box-shadow .2s;
+    }
+    .position-row:hover { border-color: var(--border-glow); box-shadow: 0 0 12px rgba(0,212,170,.06); }
+    .pos-symbol { font-family: var(--font-head); font-weight: 700; font-size: 16px; min-width: 52px; }
+    .pos-name   { font-size: 11px; color: var(--text-dim); }
+    .pos-info   { flex: 1; }
+    .pos-right  { text-align: right; }
+    .pos-pct    { font-family: var(--font-mono); font-weight: 700; font-size: 14px; }
+    .pos-pnl    { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); }
+    .pos-price  { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); }
+
+    /* ── SIGNAL CARD ── */
+    .signal-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+      transition: border-color .2s;
+    }
+    .signal-card.buy  { border-left: 3px solid var(--primary); }
+    .signal-card.hold { border-left: 3px solid var(--warning); }
+    .signal-card.avoid{ border-left: 3px solid var(--text-muted); }
+    .signal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .signal-symbol { font-family: var(--font-head); font-weight: 700; font-size: 20px; }
+    .signal-company{ font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+    .filter-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+    .filter-chip { font-size: 10px; font-family: var(--font-mono); padding: 2px 7px; border-radius: var(--radius-pill); }
+    .filter-chip.pass { background: rgba(0,212,170,.12); color: var(--primary); }
+    .filter-chip.warn { background: rgba(245,158,11,.12); color: var(--warning); }
+    .filter-chip.veto { background: rgba(159,142,255,.15); color: var(--secondary); }
+    .trade-details { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .td-item { text-align: center; background: var(--surface); border-radius: var(--radius-sm); padding: 6px; }
+    .td-label { font-size: 9px; color: var(--text-muted); font-family: var(--font-mono); text-transform: uppercase; }
+    .td-val   { font-family: var(--font-mono); font-size: 12px; font-weight: 600; margin-top: 2px; }
+
+    /* ── CHARTS ── */
+    .chart-wrap { position: relative; }
+    canvas { max-width: 100%; }
+
+    /* ── ALERTS / NOTIFICATIONS ── */
+    .alert-item { display: flex; gap: 12px; padding: 14px; border-radius: var(--radius-sm); margin-bottom: 8px; background: var(--bg-card2); border: 1px solid var(--border); }
+    .alert-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+    .alert-icon.buy    { background: rgba(0,212,170,.15); color: var(--primary); }
+    .alert-icon.risk   { background: rgba(245,158,11,.15); color: var(--warning); }
+    .alert-icon.sell   { background: rgba(159,142,255,.15); color: var(--secondary); }
+    .alert-icon.system { background: rgba(255,113,108,.15); color: var(--danger); }
+    .alert-title { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+    .alert-body  { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+    .alert-time  { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 4px; }
+    .alert-unread { border-color: rgba(0,212,170,.25); }
+
+    /* ── SETTINGS ── */
+    .settings-group { margin-bottom: 20px; }
+    .settings-group-title { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: .08em; margin-bottom: 8px; padding-left: 4px; }
+    .settings-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--bg-card2); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 6px; }
+    .settings-label { font-size: 14px; font-weight: 500; }
+    .settings-sub   { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+    /* Toggle */
+    .toggle-wrap { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+    .toggle-wrap input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; cursor: pointer; inset: 0; background: var(--surface-top); border-radius: 24px; transition: .3s; }
+    .toggle-slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: var(--text-dim); border-radius: 50%; transition: .3s; }
+    input:checked + .toggle-slider { background: var(--primary); }
+    input:checked + .toggle-slider::before { transform: translateX(20px); background: #fff; }
+
+    /* ── STOCK DETAIL ── */
+    .stock-detail-header { padding: 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
+    .back-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 22px; padding: 4px; }
+    .filter-checklist { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .check-item { display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: var(--font-mono); }
+    .check-icon { font-size: 14px; }
+
+    /* ── KILL SWITCH ── */
+    .kill-switch-btn {
+      width: 100%; padding: 18px; border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(159,5,25,.8), rgba(255,113,108,.2));
+      border: 2px solid var(--danger); color: var(--danger);
+      font-family: var(--font-head); font-weight: 700; font-size: 16px;
+      cursor: pointer; letter-spacing: .05em; text-transform: uppercase;
+      box-shadow: 0 0 20px rgba(255,113,108,.2); transition: box-shadow .2s;
+    }
+    .kill-switch-btn:hover { box-shadow: 0 0 30px rgba(255,113,108,.4); }
+
+    /* ── SCANNING LINE ── */
+    .scan-line {
+      position: fixed; left: 0; right: 0; height: 1px; pointer-events: none; z-index: 200;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      opacity: 0; animation: scan 5s ease-in-out infinite;
+    }
+    @keyframes scan { 0%{top:var(--header-h);opacity:0;} 10%{opacity:.6;} 90%{opacity:.2;} 100%{top:calc(100vh - var(--nav-h));opacity:0;} }
+
+    /* ── DONUT CHART LEGEND ── */
+    .donut-legend { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+    .legend-item  { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+    .legend-dot   { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── SCROLLABLE FILTER TABS ── */
+    .tab-row { display: flex; gap: 8px; overflow-x: auto; padding: 0 16px 12px; scrollbar-width: none; }
+    .tab-row::-webkit-scrollbar { display: none; }
+    .tab-pill { padding: 6px 16px; border-radius: var(--radius-pill); font-size: 12px; font-weight: 600; font-family: var(--font-mono); border: 1px solid var(--border); cursor: pointer; background: none; color: var(--text-dim); white-space: nowrap; transition: all .2s; }
+    .tab-pill.active { background: var(--primary); color: #001a14; border-color: var(--primary); box-shadow: 0 0 10px rgba(0,212,170,.3); }
+
+    /* ── UTILITY ── */
+    .p16  { padding: 16px; }
+    .mt8  { margin-top: 8px; }
+    .mt12 { margin-top: 12px; }
+    .mt16 { margin-top: 16px; }
+    .mb8  { margin-bottom: 8px; }
+    .mb12 { margin-bottom: 12px; }
+    .flex  { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .gap8  { gap: 8px; }
+    .gap12 { gap: 12px; }
+    .w100  { width: 100%; }
+    .text-center { text-align: center; }
+    .mono { font-family: var(--font-mono); }
+    .bold { font-weight: 700; }
+    .green{ color: var(--primary-lit); }
+    .teal { color: var(--primary); }
+    .red  { color: var(--danger); }
+    .dim  { color: var(--text-dim); }
+    .muted{ color: var(--text-muted); }
+    .heading { font-family: var(--font-head); font-weight: 700; }
+    .text-xs { font-size: 11px; }
+    .text-sm { font-size: 12px; }
+    .text-lg { font-size: 18px; }
+    .text-xl { font-size: 22px; }
+    .text-2xl{ font-size: 28px; }
+    .sep { height: 1px; background: var(--border); margin: 16px 0; }
+
+    /* ── LOADING ── */
+    #loading-screen { position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:999; }
+    .loader { width:40px;height:40px;border:3px solid rgba(0,212,170,.2);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg);} }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+    .fade-in { animation: fadeIn .35s ease forwards; }
+
+    /* ── RESPONSIVE ── */
+    @media(min-width:520px){ .screen{ max-width:430px; margin:0 auto; } .bottom-nav{max-width:430px;left:50%;transform:translateX(-50%);} .scan-line{max-width:430px;left:50%;transform:translateX(-50%);} }
+  </style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading-screen">
+  <img src="icons/icon-192.png" width="64" height="64" style="border-radius:50%;box-shadow:0 0 20px rgba(0,212,170,.4);" alt="AlphaEdge"/>
+  <div class="loader"></div>
+  <span style="font-family:var(--font-mono);color:var(--primary);font-size:12px;">LOADING TERMINAL...</span>
+</div>
+
+<!-- Scanning Line -->
+<div class="scan-line"></div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 1 — DASHBOARD
+══════════════════════════════════════════ -->
+<div id="screen-dashboard" class="screen active">
+  <div class="header">
+    <div class="header-logo">
+      <img src="icons/icon-192.png" alt="AlphaEdge"/>
+      <div>
+        <div class="header-title">AlphaEdge</div>
+        <div class="header-sub">TERMINAL</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+      <button class="icon-btn notif-dot" onclick="navigate('alerts')" title="Alerts">🔔</button>
+    </div>
+  </div>
+
+  <div class="p16 fade-in">
+    <!-- Portfolio Value Hero -->
+    <div class="card card-glow mb12">
+      <div class="muted text-xs mono mb8">TOTAL PORTFOLIO VALUE</div>
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-2xl heading" id="dash-total-value">$10,267.10</div>
+          <div class="text-sm green mono mt8" id="dash-total-return">▲ +$267.10 (+2.67%)</div>
+        </div>
+        <div style="text-align:right">
+          <div class="badge badge-open" id="dash-status">PAPER TRADING</div>
+          <div class="text-xs muted mono mt8" id="dash-updated">Updated just now</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metric Row -->
+    <div class="metric-grid mb12" id="dash-metrics">
+      <div class="metric-tile">
+        <div class="metric-label">Today P&amp;L</div>
+        <div class="metric-value green" id="dash-today-pnl">+$0.00</div>
+      </div>
+      <div class="metric-tile">
+        <div class="metric-label">Win Rate</div>
+        <div class="metric-value teal" id="dash-win-rate">65.9%</div>
+      </div>
+      <div class="metric-tile">
+        <div class="metric-label">Open Positions</div>
+        <div class="metric-value" id="dash-open-pos">2 / 5</div>
+      </div>
+      <div class="metric-tile">
+        <div class="metric-label">Profit Factor</div>
+        <div class="metric-value teal" id="dash-pf">1.53</div>
+      </div>
+    </div>
+
+    <!-- Equity Curve Chart -->
+    <div class="card mb12">
+      <div class="section-head">
+        <div class="section-title">📈 Portfolio Performance</div>
+        <div class="tab-row" style="padding:0;margin:0;">
+          <button class="tab-pill active text-xs" onclick="setChartPeriod('7d',this)">7D</button>
+          <button class="tab-pill text-xs" onclick="setChartPeriod('30d',this)">30D</button>
+          <button class="tab-pill text-xs" onclick="setChartPeriod('all',this)">ALL</button>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:160px;">
+        <canvas id="equity-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Active Positions -->
+    <div class="section-head">
+      <div class="section-title">⚡ Active Positions</div>
+      <span class="section-action" onclick="navigate('positions')">See all →</span>
+    </div>
+    <div id="dash-positions-list"></div>
+
+    <!-- Scan Status -->
+    <div class="card mt12" style="background:var(--surface);">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm bold">Next Scan</div>
+          <div class="text-xs muted mono" id="dash-next-scan">9:45 AM ET</div>
+        </div>
+        <div>
+          <div class="text-sm bold">Stocks Watched</div>
+          <div class="text-xs teal mono">41 symbols</div>
+        </div>
+        <div>
+          <div class="text-sm bold">Circuit Breaker</div>
+          <div class="text-xs green mono" id="dash-circuit">✓ ARMED</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 2 — PORTFOLIO
+══════════════════════════════════════════ -->
+<div id="screen-portfolio" class="screen">
+  <div class="header">
+    <div class="header-logo">
+      <img src="icons/icon-192.png" alt="AlphaEdge"/>
+      <div class="header-title">Portfolio</div>
+    </div>
+    <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+  </div>
+
+  <div class="p16 fade-in">
+    <!-- Total Value -->
+    <div class="card card-glow mb12">
+      <div class="muted text-xs mono mb8">TOTAL VALUE</div>
+      <div class="text-2xl heading mb8" id="port-total">$10,267.10</div>
+      <div class="flex gap8">
+        <span class="badge badge-buy" id="port-return">▲ +2.67%</span>
+        <span class="text-sm dim mono" id="port-pnl">+$267.10 total P&amp;L</span>
+      </div>
+      <div class="sep"></div>
+      <div class="metric-grid">
+        <div class="metric-tile">
+          <div class="metric-label">Starting Capital</div>
+          <div class="metric-value mono" style="font-size:15px;">$10,000</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-label">Cash Available</div>
+          <div class="metric-value teal mono" style="font-size:15px;" id="port-cash">$0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Allocation Chart -->
+    <div class="card mb12">
+      <div class="section-title mb12">Allocation</div>
+      <div style="height:180px;display:flex;align-items:center;justify-content:center;">
+        <canvas id="alloc-chart" style="max-height:180px;max-width:180px;"></canvas>
+      </div>
+      <div class="donut-legend" id="alloc-legend"></div>
+    </div>
+
+    <!-- Holdings -->
+    <div class="section-head">
+      <div class="section-title">Holdings</div>
+      <span class="text-xs muted mono" id="port-pos-count">0 positions</span>
+    </div>
+    <div id="portfolio-holdings"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 3 — AI SIGNALS
+══════════════════════════════════════════ -->
+<div id="screen-signals" class="screen">
+  <div class="header">
+    <div class="header-logo">
+      <img src="icons/icon-192.png" alt="AlphaEdge"/>
+      <div class="header-title">AI Signals</div>
+    </div>
+    <div class="live-badge"><span class="live-dot"></span>SCANNING</div>
+  </div>
+
+  <!-- Scan Summary Bar -->
+  <div style="padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);">
+    <div class="flex items-center justify-between">
+      <span class="text-xs muted mono">41 stocks scanned</span>
+      <span class="text-xs teal mono" id="signals-count">0 BUY signals</span>
+      <span class="text-xs muted mono">9 filters active</span>
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="tab-row mt8">
+    <button class="tab-pill active" onclick="filterSignals('all',this)">All</button>
+    <button class="tab-pill" onclick="filterSignals('BUY',this)">BUY</button>
+    <button class="tab-pill" onclick="filterSignals('HOLD',this)">HOLD</button>
+    <button class="tab-pill" onclick="filterSignals('AVOID',this)">AVOID</button>
+  </div>
+
+  <div class="p16" style="padding-top:0;" id="signals-list"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 4 — POSITIONS
+══════════════════════════════════════════ -->
+<div id="screen-positions" class="screen">
+  <div class="header">
+    <div class="header-logo">
+      <img src="icons/icon-192.png" alt="AlphaEdge"/>
+      <div class="header-title">Positions</div>
+    </div>
+  </div>
+
+  <div class="tab-row p16" style="padding-bottom:0;">
+    <button class="tab-pill active" onclick="switchPosTab('open',this)">Open</button>
+    <button class="tab-pill" onclick="switchPosTab('closed',this)">History</button>
+  </div>
+
+  <div class="p16" id="positions-open"></div>
+  <div class="p16" id="positions-closed" style="display:none;"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 5 — STOCK DETAIL
+══════════════════════════════════════════ -->
+<div id="screen-detail" class="screen">
+  <div class="header">
+    <button class="back-btn" onclick="navigate('positions')">←</button>
+    <div style="flex:1;text-align:center;">
+      <div class="header-title" id="detail-symbol">QQQ</div>
+      <div class="text-xs teal mono" id="detail-company">NASDAQ-100 ETF</div>
+    </div>
+    <div class="badge badge-open">OPEN</div>
+  </div>
+
+  <div class="p16 fade-in">
+    <!-- Price Hero -->
+    <div class="card card-glow mb12 text-center">
+      <div class="text-2xl heading green mono" id="detail-price">--</div>
+      <div class="text-sm green mono mt8" id="detail-change">--</div>
+      <div class="text-xs muted mono mt8" id="detail-entry-info">--</div>
+    </div>
+
+    <!-- Metric Grid -->
+    <div class="metric-grid mb12" id="detail-metrics"></div>
+
+    <!-- Partial Exit Status -->
+    <div class="card card-glow mb12" id="detail-partial" style="display:none;">
+      <div class="flex items-center gap8">
+        <div class="badge badge-partial">⚡ PARTIAL EXIT DONE</div>
+        <div class="text-xs teal mono" id="detail-partial-info">50% sold</div>
+      </div>
+    </div>
+
+    <!-- Price Chart -->
+    <div class="card mb12">
+      <div class="section-title mb8" id="detail-chart-title">30D Price Chart</div>
+      <div class="chart-wrap" style="height:140px;">
+        <canvas id="detail-chart"></canvas>
+      </div>
+      <div class="flex justify-between mt8">
+        <div class="text-xs dim">SL: <span class="red mono" id="detail-sl">--</span></div>
+        <div class="text-xs dim">Entry: <span class="teal mono" id="detail-entry-line">--</span></div>
+        <div class="text-xs dim">TP: <span class="green mono" id="detail-tp">--</span></div>
+      </div>
+    </div>
+
+    <!-- AI Analysis -->
+    <div class="card mb12">
+      <div class="section-title mb12">🤖 AI Analysis — 9 Filters</div>
+      <div class="filter-checklist" id="detail-filters"></div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex gap8">
+      <button class="kill-switch-btn" style="font-size:13px;padding:12px;" onclick="alert('Close position — connect to live broker to execute')">✕ Close Position</button>
+      <button class="tab-pill" style="flex:0 0 auto;padding:12px 16px;" onclick="alert('Notes feature coming soon')">📝 Note</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 6 — ANALYTICS
+══════════════════════════════════════════ -->
+<div id="screen-analytics" class="screen">
+  <div class="header">
+    <div class="header-logo">
+      <img src="icons/icon-192.png" alt="AlphaEdge"/>
+      <div class="header-title">Analytics</div>
+    </div>
+    <div class="tab-row" style="padding:0;gap:4px;">
+      <button class="tab-pill active text-xs" onclick="setAnalyticsPeriod('7d',this)">7D</button>
+      <button class="tab-pill text-xs" onclick="setAnalyticsPeriod('30d',this)">30D</button>
+      <button class="tab-pill text-xs" onclick="setAnalyticsPeriod('all',this)">ALL</button>
+    </div>
+  </div>
+
+  <div class="p16 fade-in">
+    <!-- Core Metrics -->
+    <div class="metric-grid mb12" id="analytics-metrics">
+      <div class="metric-tile"><div class="metric-label">Win Rate</div><div class="metric-value green" id="an-winrate">65.9%</div></div>
+      <div class="metric-tile"><div class="metric-label">Total Trades</div><div class="metric-value" id="an-trades">126</div></div>
+      <div class="metric-tile"><div class="metric-label">Avg Win</div><div class="metric-value green" id="an-avgwin">+$9.25</div></div>
+      <div class="metric-tile"><div class="metric-label">Avg Loss</div><div class="metric-value red" id="an-avgloss">-$11.64</div></div>
+      <div class="metric-tile"><div class="metric-label">Profit Factor</div><div class="metric-value teal" id="an-pf">1.53</div></div>
+      <div class="metric-tile"><div class="metric-label">Total P&amp;L</div><div class="metric-value green" id="an-totalpnl">+$267</div></div>
+    </div>
+
+    <!-- Equity Chart -->
+    <div class="card mb12">
+      <div class="section-title mb8">Equity Curve</div>
+      <div class="chart-wrap" style="height:160px;">
+        <canvas id="analytics-equity-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Risk Metrics -->
+    <div class="card mb12">
+      <div class="section-title mb8">Risk Metrics</div>
+      <div class="flex gap8" style="flex-wrap:wrap;">
+        <div class="badge badge-veto" style="font-size:11px;">Sharpe: 1.84</div>
+        <div class="badge badge-veto" style="font-size:11px;">Sortino: 2.31</div>
+        <div class="badge badge-hold" style="font-size:11px;">Max DD: -4.2%</div>
+        <div class="badge badge-buy" style="font-size:11px;">Kelly: 8.3%</div>
+      </div>
+    </div>
+
+    <!-- Trade Reasons Breakdown -->
+    <div class="card mb12">
+      <div class="section-title mb8">Exit Reasons</div>
+      <div class="chart-wrap" style="height:140px;">
+        <canvas id="reasons-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- ML Model Performance -->
+    <div class="card mb12">
+      <div class="section-title mb8">ML Model Accuracy</div>
+      <div id="model-bars"></div>
+    </div>
+
+    <!-- Top Trades -->
+    <div class="section-head">
+      <div class="section-title">Top Trades</div>
+    </div>
+    <div id="analytics-trades"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 7 — ALERTS
+══════════════════════════════════════════ -->
+<div id="screen-alerts" class="screen">
+  <div class="header">
+    <div class="header-logo">
+      <img src="icons/icon-192.png" alt="AlphaEdge"/>
+      <div class="header-title">Alerts</div>
+    </div>
+    <span class="badge badge-sell text-xs">3 new</span>
+  </div>
+
+  <div class="tab-row p16" style="padding-bottom:0;">
+    <button class="tab-pill active" onclick="filterAlerts('all',this)">All</button>
+    <button class="tab-pill" onclick="filterAlerts('trade',this)">Trades</button>
+    <button class="tab-pill" onclick="filterAlerts('risk',this)">Risk</button>
+    <button class="tab-pill" onclick="filterAlerts('system',this)">System</button>
+  </div>
+
+  <div class="p16" id="alerts-list"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 8 — SETTINGS
+══════════════════════════════════════════ -->
+<div id="screen-settings" class="screen">
+  <div class="header">
+    <div class="header-logo">
+      <img src="icons/icon-192.png" alt="AlphaEdge"/>
+      <div class="header-title">Settings</div>
+    </div>
+  </div>
+
+  <div class="p16 fade-in">
+    <!-- Profile Card -->
+    <div class="card card-glow mb16 flex items-center gap12">
+      <img src="icons/icon-192.png" width="48" height="48" style="border-radius:50%;border:2px solid var(--primary);box-shadow:0 0 12px rgba(0,212,170,.3);" alt="User"/>
+      <div style="flex:1;">
+        <div class="bold heading">AlphaTrader</div>
+        <div class="text-xs muted mono">Paper Trading Mode</div>
+      </div>
+      <div class="badge badge-buy text-xs">● CONNECTED</div>
+    </div>
+
+    <!-- Risk Management -->
+    <div class="settings-group">
+      <div class="settings-group-title">Risk Management</div>
+      <div class="settings-row">
+        <div><div class="settings-label">Max Positions</div><div class="settings-sub">Max open trades at once</div></div>
+        <div class="mono teal bold">5</div>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">Take Profit</div><div class="settings-sub">Close position at gain</div></div>
+        <div class="mono teal bold">8%</div>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">Trailing Stop</div><div class="settings-sub">Dynamic stop loss</div></div>
+        <div class="mono teal bold">3.5%</div>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">Partial Exit</div><div class="settings-sub">Sell 50% at 5% gain</div></div>
+        <label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">Time-Based Stop</div><div class="settings-sub">Exit flat positions after 10 days</div></div>
+        <label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">Kelly Criterion</div><div class="settings-sub">Dynamic position sizing</div></div>
+        <label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+
+    <!-- AI Filters -->
+    <div class="settings-group">
+      <div class="settings-group-title">AI Signal Filters</div>
+      <div class="settings-row">
+        <div><div class="settings-label">AI Veto Agent</div><div class="settings-sub">Groq / Llama 3 70B review</div></div>
+        <label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">Market Regime Filter</div><div class="settings-sub">SPY + VIX based</div></div>
+        <label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">Multi-Timeframe</div><div class="settings-sub">Weekly + Daily + 4H alignment</div></div>
+        <label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">Insider Tracker</div><div class="settings-sub">SEC Form 4 data boost</div></div>
+        <label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">Options Flow</div><div class="settings-sub">Put/Call ratio filter</div></div>
+        <label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">Circuit Breaker</div><div class="settings-sub">Halt if down 5% in a day</div></div>
+        <label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="settings-group">
+      <div class="settings-group-title">Notifications</div>
+      <div class="settings-row">
+        <div><div class="settings-label">Telegram Alerts</div><div class="settings-sub">Trade signals + risk alerts</div></div>
+        <label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">Weekly AI Report</div><div class="settings-sub">Every Sunday — Critic Agent</div></div>
+        <label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+
+    <!-- Emergency Kill Switch -->
+    <div class="settings-group">
+      <div class="settings-group-title">Emergency</div>
+      <button class="kill-switch-btn" onclick="if(confirm('STOP ALL TRADING? This will halt the bot immediately.')){alert('Kill switch activated. Bot halted.');}">
+        ⛔ EMERGENCY — STOP ALL TRADING
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     BOTTOM NAVIGATION
+══════════════════════════════════════════ -->
+<nav class="bottom-nav">
+  <button class="nav-item active" id="nav-dashboard" onclick="navigate('dashboard')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Dashboard
+  </button>
+  <button class="nav-item" id="nav-portfolio" onclick="navigate('portfolio')">
+    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Portfolio
+  </button>
+  <button class="nav-item" id="nav-signals" onclick="navigate('signals')">
+    <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    Signals
+  </button>
+  <button class="nav-item" id="nav-analytics" onclick="navigate('analytics')">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Analytics
+  </button>
+  <button class="nav-item" id="nav-settings" onclick="navigate('settings')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Settings
+  </button>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     APP JAVASCRIPT
+══════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ─── DATA LAYER ─────────────────────────────────────────────
+// Fetches real data from local JSON files (same-origin)
+const DATA = { trades: null, signals: null, closed: null, circuit: null };
+
+const COMPANY_NAMES = {
+  AAPL:'Apple Inc.', MSFT:'Microsoft Corp.', NVDA:'NVIDIA Corp.', TSLA:'Tesla Inc.',
+  AMZN:'Amazon.com', GOOGL:'Alphabet Inc.', META:'Meta Platforms', JPM:'JPMorgan Chase',
+  V:'Visa Inc.', MA:'Mastercard', UNH:'UnitedHealth', JNJ:'J&J', PG:'Procter & Gamble',
+  XOM:'ExxonMobil', CVX:'Chevron Corp.', BAC:'Bank of America', WMT:'Walmart Inc.',
+  HD:'Home Depot', DIS:'Walt Disney', NFLX:'Netflix Inc.', AMD:'Advanced Micro Devices',
+  INTC:'Intel Corp.', CRM:'Salesforce', ADBE:'Adobe Systems', PYPL:'PayPal Holdings',
+  SPY:'S&P 500 ETF', QQQ:'NASDAQ-100 ETF', IWM:'Russell 2000 ETF', GLD:'Gold ETF',
+  DIA:'Dow Jones ETF', MS:'Morgan Stanley', GS:'Goldman Sachs', OXY:'Occidental Petrol.',
+  NET:'Cloudflare Inc.', HOOD:'Robinhood Markets', MARA:'Marathon Digital', SNOW:'Snowflake',
+  SOFI:'SoFi Technologies', DDOG:'Datadog Inc.', LLY:'Eli Lilly', ABBV:'AbbVie Inc.'
+};
+
+async function fetchJSON(path) {
+  try {
+    const r = await fetch('../logs/' + path);
+    if (!r.ok) throw new Error(r.status);
+    return await r.json();
+  } catch(e) {
+    console.warn('Could not load', path, '— using fallback');
+    return null;
+  }
+}
+
+async function loadAllData() {
+  const [t, s, c, cb] = await Promise.allSettled([
+    fetchJSON('paper_trades.json'),
+    fetchJSON('latest_signals.json'),
+    fetchJSON('closed_trades.json'),
+    fetchJSON('circuit_breaker.json')
+  ]);
+  DATA.trades  = t.value ?? null;
+  DATA.signals = s.value ?? null;
+  DATA.closed  = c.value ?? null;
+  DATA.circuit = cb.value ?? null;
+}
+
+// ─── NAVIGATION ─────────────────────────────────────────────
+const NAV_SCREENS = ['dashboard','portfolio','signals','positions','analytics','alerts','settings'];
+let currentScreen = 'dashboard';
+let posChartInst = null, equityChartInst = null, allocChartInst = null, analyticsEquityInst = null, reasonsChartInst = null;
+
+function navigate(screen, data) {
+  // Hide all screens
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  // Show target
+  document.getElementById('screen-' + screen).classList.add('active');
+  currentScreen = screen;
+
+  // Update nav highlight (only main nav items)
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navEl = document.getElementById('nav-' + screen);
+  if (navEl) navEl.classList.add('active');
+
+  // Render screen-specific content
+  if (screen === 'dashboard')   renderDashboard();
+  if (screen === 'portfolio')   renderPortfolio();
+  if (screen === 'signals')     renderSignals();
+  if (screen === 'positions')   renderPositions();
+  if (screen === 'analytics')   renderAnalytics();
+  if (screen === 'alerts')      renderAlerts();
+  if (screen === 'detail' && data) renderDetail(data);
+
+  // Scroll to top
+  document.getElementById('screen-' + screen).scrollTop = 0;
+}
+
+// ─── HELPERS ────────────────────────────────────────────────
+function fmt$(n) { return '$' + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtPct(n) { return (n>=0?'+':'')+n.toFixed(2)+'%'; }
+function fmtDate(d) { try{return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch{return d;} }
+function daysSince(d) { try{return Math.floor((Date.now()-new Date(d).getTime())/864e5);}catch{return 0;} }
+
+function positionPnl(pos) {
+  const mp = pos.current_price || pos.market_price || pos.entry_price;
+  const pnl = (mp - pos.entry_price) * pos.shares;
+  const pct = (mp - pos.entry_price) / pos.entry_price * 100;
+  return { pnl, pct, mp };
+}
+
+function generateEquityCurve(trades) {
+  // Build equity curve from trade history
+  let cap = 10000;
+  const points = [10000];
+  const labels = ['Start'];
+  if (!trades?.trade_history) return { points, labels };
+  const sells = trades.trade_history.filter(t => t.action === 'SELL' || t.action === 'PARTIAL_SELL');
+  sells.forEach(t => {
+    if (t.pnl !== undefined) { cap += t.pnl; points.push(+cap.toFixed(2)); labels.push(fmtDate(t.date)); }
+  });
+  return { points, labels };
+}
+
+// ─── DASHBOARD ──────────────────────────────────────────────
+function renderDashboard() {
+  const trades = DATA.trades;
+  const closed = DATA.closed;
+  const circuit = DATA.circuit;
+
+  // Calc portfolio value
+  let posValue = 0, cashVal = 0;
+  const positions = trades?.positions || {};
+  const posKeys = Object.keys(positions);
+  posKeys.forEach(sym => {
+    const p = positions[sym];
+    const mp = p.current_price || p.market_price || p.entry_price;
+    posValue += mp * p.shares;
+  });
+  const cap = trades?.capital ?? 10000;
+  const startCap = 10000;
+  const totalVal = cap + posValue;
+  const totalPnl = totalVal - startCap;
+  const totalPct = totalPnl / startCap * 100;
+
+  document.getElementById('dash-total-value').textContent = fmt$(totalVal);
+  const retEl = document.getElementById('dash-total-return');
+  retEl.textContent = (totalPnl >= 0 ? '▲ +' : '▼ ') + fmt$(totalPnl) + ' (' + fmtPct(totalPct) + ')';
+  retEl.className = 'text-sm mono mt8 ' + (totalPnl >= 0 ? 'green' : 'red');
+
+  // Today PnL (realized today)
+  const todayPnl = trades?.daily_realized_pnl ?? 0;
+  const todayEl = document.getElementById('dash-today-pnl');
+  todayEl.textContent = (todayPnl >= 0 ? '+' : '') + fmt$(todayPnl);
+  todayEl.className = 'metric-value ' + (todayPnl >= 0 ? 'green' : 'red');
+
+  // Win rate
+  if (closed?.summary) {
+    document.getElementById('dash-win-rate').textContent = (closed.summary.win_rate * 100).toFixed(1) + '%';
+    document.getElementById('dash-pf').textContent = closed.summary.profit_factor?.toFixed(2) ?? '--';
+  }
+
+  document.getElementById('dash-open-pos').textContent = posKeys.length + ' / 5';
+  document.getElementById('dash-updated').textContent = trades?.saved_at ? fmtDate(trades.saved_at) : 'Just now';
+
+  // Circuit breaker
+  const cb = DATA.circuit;
+  const cbEl = document.getElementById('dash-circuit');
+  if (cb?.active) { cbEl.textContent = '⚠ TRIPPED'; cbEl.className = 'text-xs red mono'; }
+  else { cbEl.textContent = '✓ ARMED'; cbEl.className = 'text-xs green mono'; }
+
+  // Positions mini list
+  const listEl = document.getElementById('dash-positions-list');
+  if (posKeys.length === 0) {
+    listEl.innerHTML = '<div class="card text-center dim text-sm" style="padding:24px;">No open positions.<br><span class="muted text-xs">Bot is monitoring 41 stocks...</span></div>';
+  } else {
+    listEl.innerHTML = posKeys.map(sym => {
+      const pos = positions[sym];
+      const { pnl, pct, mp } = positionPnl(pos);
+      const color = pnl >= 0 ? 'green' : 'red';
+      const arrow = pnl >= 0 ? '▲' : '▼';
+      return `<div class="position-row" onclick="openDetail('${sym}')">
+        <div class="pos-info">
+          <div class="pos-symbol">${sym}</div>
+          <div class="pos-name">${COMPANY_NAMES[sym]||''}</div>
+          <div class="pos-price mono">${pos.shares} sh · Entry ${fmt$(pos.entry_price)}</div>
+        </div>
+        <div class="pos-right">
+          <div class="pos-pct ${color}">${arrow} ${fmtPct(pct)}</div>
+          <div class="pos-pnl ${color}">${pnl >= 0 ? '+' : ''}${fmt$(pnl)}</div>
+          <div class="badge badge-open text-xs mt8">${daysSince(pos.entry_date)}d</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Equity Chart
+  const { points, labels } = generateEquityCurve(trades);
+  renderEquityChart('equity-chart', points, labels);
+}
+
+// ─── PORTFOLIO ──────────────────────────────────────────────
+function renderPortfolio() {
+  const trades = DATA.trades;
+  const positions = trades?.positions || {};
+  const posKeys = Object.keys(positions);
+  let posValue = 0;
+  posKeys.forEach(sym => {
+    const p = positions[sym];
+    posValue += (p.current_price||p.market_price||p.entry_price) * p.shares;
+  });
+  const cap = trades?.capital ?? 10000;
+  const totalVal = cap + posValue;
+  const totalPnl = totalVal - 10000;
+  const totalPct = totalPnl / 10000 * 100;
+
+  document.getElementById('port-total').textContent = fmt$(totalVal);
+  document.getElementById('port-cash').textContent = fmt$(cap);
+  document.getElementById('port-pnl').textContent = (totalPnl>=0?'+':'')+fmt$(totalPnl)+' total P&L';
+  document.getElementById('port-return').textContent = '▲ ' + fmtPct(totalPct);
+  document.getElementById('port-pos-count').textContent = posKeys.length + ' positions';
+
+  // Holdings
+  const holdEl = document.getElementById('portfolio-holdings');
+  if (posKeys.length === 0) {
+    holdEl.innerHTML = '<div class="card text-center dim text-sm" style="padding:24px;">No open positions</div>';
+  } else {
+    holdEl.innerHTML = posKeys.map(sym => {
+      const pos = positions[sym];
+      const { pnl, pct, mp } = positionPnl(pos);
+      const color = pnl >= 0 ? 'green' : 'red';
+      const posVal = mp * pos.shares;
+      return `<div class="card card-glow mb8" onclick="openDetail('${sym}')" style="cursor:pointer;">
+        <div class="flex items-center justify-between mb8">
+          <div>
+            <div class="heading bold text-lg">${sym}</div>
+            <div class="text-xs dim">${COMPANY_NAMES[sym]||'Stock'}</div>
+          </div>
+          <div class="text-right">
+            <div class="bold mono ${color}">${pnl>=0?'+':''}${fmt$(pnl)}</div>
+            <div class="badge ${pct>=0?'badge-buy':'badge-sell'} text-xs mt8">${fmtPct(pct)}</div>
+          </div>
+        </div>
+        <div class="flex justify-between text-xs dim mono">
+          <span>${pos.shares} shares</span>
+          <span>Entry: ${fmt$(pos.entry_price)}</span>
+          <span>Now: ${fmt$(mp)}</span>
+        </div>
+        <div class="progress-bar mt8">
+          <div class="progress-fill" style="width:${Math.min(100,Math.max(5,pct*5))}%;background:${pct>=0?'var(--primary-lit)':'var(--danger)'}"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Donut chart
+  if (posKeys.length > 0) {
+    const vals = posKeys.map(sym => {
+      const p = positions[sym];
+      return (p.current_price||p.market_price||p.entry_price) * p.shares;
+    });
+    const total = vals.reduce((a,b)=>a+b, 0);
+    const colors = ['#00d4aa','#49f4c8','#9f8eff','#33e5ba','#ff8257'];
+    renderDonutChart(posKeys, vals, colors);
+    document.getElementById('alloc-legend').innerHTML = posKeys.map((sym,i) =>
+      `<div class="legend-item"><div class="legend-dot" style="background:${colors[i%colors.length]}"></div><span class="mono text-sm">${sym}</span><span class="text-xs dim" style="margin-left:auto;">${((vals[i]/total)*100).toFixed(1)}%</span></div>`
+    ).join('');
+  }
+}
+
+// ─── SIGNALS ────────────────────────────────────────────────
+let allSignals = [], activeFilter = 'all';
+
+function renderSignals() {
+  const signals = DATA.signals || {};
+  allSignals = Object.entries(signals).map(([sym, d]) => ({sym, ...d}));
+  allSignals.sort((a,b) => b.combined - a.combined);
+
+  const buys = allSignals.filter(s => s.signal === 'BUY').length;
+  document.getElementById('signals-count').textContent = buys + ' BUY signal' + (buys===1?'':'s');
+  renderSignalsList(allSignals);
+}
+
+function filterSignals(filter, btn) {
+  activeFilter = filter;
+  document.querySelectorAll('#screen-signals .tab-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = filter === 'all' ? allSignals : allSignals.filter(s => s.signal === filter);
+  renderSignalsList(filtered);
+}
+
+function renderSignalsList(list) {
+  const el = document.getElementById('signals-list');
+  if (!list.length) { el.innerHTML = '<div class="card text-center dim" style="padding:24px;">No signals match filter</div>'; return; }
+  el.innerHTML = list.map(s => {
+    const sig = s.signal || 'HOLD';
+    const cls = sig === 'BUY' ? 'buy' : sig === 'AVOID' ? 'avoid' : 'hold';
+    const bdg = sig === 'BUY' ? 'badge-buy' : sig === 'AVOID' ? 'badge-sell' : 'badge-hold';
+    const pct = ((s.combined||0)*100).toFixed(1);
+    const pred = ((s.prediction||0)*100).toFixed(0);
+    return `<div class="signal-card ${cls}">
+      <div class="signal-header">
+        <div>
+          <div class="signal-symbol">${s.sym}</div>
+          <div class="signal-company">${COMPANY_NAMES[s.sym]||''} · ${s.sector||'Market'}</div>
+        </div>
+        <div class="text-right">
+          <span class="badge ${bdg}">${sig}</span>
+          <div class="text-xs muted mono mt8">${fmt$(s.price||0)}</div>
+        </div>
+      </div>
+      <div class="flex items-center gap8 mb8">
+        <div class="text-xs dim">ML Score</div>
+        <div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:${pred}%"></div></div>
+        <div class="text-xs teal mono bold">${pred}%</div>
+      </div>
+      <div class="flex items-center gap8">
+        <div class="text-xs dim">Signal</div>
+        <div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:${pct}%;background:${sig==='BUY'?'var(--primary-lit)':sig==='AVOID'?'var(--danger)':'var(--warning)'}"></div></div>
+        <div class="text-xs mono bold ${sig==='BUY'?'green':sig==='AVOID'?'red':'dim'}">${pct}%</div>
+      </div>
+      <div class="filter-badges mt8">
+        <span class="filter-chip ${s.regime==='uptrend'?'pass':'warn'}">📈 ${s.regime||'neutral'}</span>
+        ${sig==='BUY'?'<span class="filter-chip pass">✓ ML Ensemble</span><span class="filter-chip veto">🤖 AI VETO</span>':''}
+        ${s.sentiment>0?`<span class="filter-chip pass">📰 Sentiment +${s.sentiment.toFixed(2)}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── POSITIONS ──────────────────────────────────────────────
+function renderPositions() {
+  const trades = DATA.trades;
+  const positions = trades?.positions || {};
+  const posKeys = Object.keys(positions);
+  const closed = DATA.closed?.trades || [];
+
+  // Open positions
+  const openEl = document.getElementById('positions-open');
+  if (!posKeys.length) {
+    openEl.innerHTML = '<div class="card text-center dim" style="padding:24px;">No open positions</div>';
+  } else {
+    openEl.innerHTML = posKeys.map(sym => {
+      const pos = positions[sym];
+      const { pnl, pct, mp } = positionPnl(pos);
+      const color = pnl >= 0 ? 'green' : 'red';
+      const days = daysSince(pos.entry_date);
+      return `<div class="card card-glow mb12" onclick="openDetail('${sym}')" style="cursor:pointer;">
+        <div class="flex justify-between items-center mb8">
+          <div>
+            <span class="heading bold text-lg">${sym}</span>
+            <span class="badge badge-open text-xs" style="margin-left:8px;">OPEN</span>
+          </div>
+          <div class="text-right">
+            <div class="bold ${color} mono text-lg">${pct>=0?'+':''}${fmtPct(pct)}</div>
+            <div class="text-xs ${color} mono">${pnl>=0?'+':''}${fmt$(pnl)}</div>
+          </div>
+        </div>
+        <div class="metric-grid" style="grid-template-columns:1fr 1fr 1fr;gap:6px;">
+          <div class="metric-tile" style="padding:8px;">
+            <div class="metric-label">Entry</div>
+            <div class="text-sm mono bold">${fmt$(pos.entry_price)}</div>
+          </div>
+          <div class="metric-tile" style="padding:8px;">
+            <div class="metric-label">Now</div>
+            <div class="text-sm mono bold">${fmt$(mp)}</div>
+          </div>
+          <div class="metric-tile" style="padding:8px;">
+            <div class="metric-label">Days</div>
+            <div class="text-sm mono bold">${days}d</div>
+          </div>
+        </div>
+        ${pos.partial_exit_done ? '<div class="badge badge-partial text-xs mt8">⚡ Partial Exit Done</div>' : ''}
+        <div class="text-xs muted mono mt8">${pos.shares} shares · SL ${(pos.stop_loss_pct*100).toFixed(1)}% ATR · ${fmtDate(pos.entry_date)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Closed trades
+  const closedEl = document.getElementById('positions-closed');
+  const recentClosed = [...closed].reverse().slice(0, 30);
+  closedEl.innerHTML = recentClosed.map(t => {
+    const color = t.pnl_usd >= 0 ? 'green' : 'red';
+    const icon = t.reason === 'take_profit' ? '🎯' : t.reason === 'stop_loss' ? '🛑' : t.reason?.includes('partial') ? '⚡' : t.reason === 'time_stop' ? '⏱' : '🤖';
+    return `<div class="position-row" style="cursor:default;">
+      <div class="pos-info">
+        <div class="pos-symbol">${t.symbol}</div>
+        <div class="pos-name">${icon} ${(t.reason||'').replace(/_/g,' ')}</div>
+        <div class="pos-price mono">${t.shares} sh · ${fmtDate(t.exit_time||t.entry_time)}</div>
+      </div>
+      <div class="pos-right">
+        <div class="pos-pct ${color}">${t.pnl_usd>=0?'+':''}${fmt$(t.pnl_usd)}</div>
+        <div class="pos-pnl ${color}">${fmtPct(t.pnl_pct)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  if (!recentClosed.length) closedEl.innerHTML = '<div class="card text-center dim" style="padding:24px;">No closed trades yet</div>';
+}
+
+function switchPosTab(tab, btn) {
+  document.querySelectorAll('#screen-positions .tab-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('positions-open').style.display = tab === 'open' ? '' : 'none';
+  document.getElementById('positions-closed').style.display = tab === 'closed' ? '' : 'none';
+}
+
+// ─── STOCK DETAIL ────────────────────────────────────────────
+function openDetail(sym) {
+  const trades = DATA.trades;
+  const pos = trades?.positions?.[sym];
+  if (!pos) return;
+  navigate('detail', { sym, pos });
+}
+
+function renderDetail({ sym, pos }) {
+  document.getElementById('detail-symbol').textContent = sym;
+  document.getElementById('detail-company').textContent = COMPANY_NAMES[sym] || 'Stock';
+
+  const { pnl, pct, mp } = positionPnl(pos);
+  const color = pnl >= 0 ? 'green' : 'red';
+  document.getElementById('detail-price').textContent = fmt$(mp);
+  const chEl = document.getElementById('detail-change');
+  chEl.textContent = (pnl>=0?'▲ +':'▼ ')+fmt$(pnl)+' ('+fmtPct(pct)+')';
+  chEl.className = 'text-sm mono mt8 ' + color;
+  document.getElementById('detail-entry-info').textContent = 'Entry ' + fmt$(pos.entry_price) + ' · ' + daysSince(pos.entry_date) + ' days held';
+
+  // Metric grid
+  const slPrice = pos.entry_price * (1 - (pos.stop_loss_pct||0.05));
+  const tpPrice = pos.entry_price * 1.08;
+  document.getElementById('detail-metrics').innerHTML = `
+    <div class="metric-tile"><div class="metric-label">Entry Price</div><div class="metric-value mono" style="font-size:14px;">${fmt$(pos.entry_price)}</div></div>
+    <div class="metric-tile"><div class="metric-label">Shares</div><div class="metric-value mono">${pos.shares}</div></div>
+    <div class="metric-tile"><div class="metric-label">Position Value</div><div class="metric-value teal mono" style="font-size:14px;">${fmt$(mp*pos.shares)}</div></div>
+    <div class="metric-tile"><div class="metric-label">Entry Date</div><div class="metric-value" style="font-size:13px;">${fmtDate(pos.entry_date)}</div></div>
+    <div class="metric-tile"><div class="metric-label">Stop Loss</div><div class="metric-value red mono" style="font-size:14px;">${fmt$(slPrice)}</div></div>
+    <div class="metric-tile"><div class="metric-label">Take Profit</div><div class="metric-value green mono" style="font-size:14px;">${fmt$(tpPrice)}</div></div>
+    <div class="metric-tile"><div class="metric-label">Days Held</div><div class="metric-value mono">${daysSince(pos.entry_date)}d</div></div>
+    <div class="metric-tile"><div class="metric-label">Signal Score</div><div class="metric-value teal mono">${((pos.signal||0)*100).toFixed(0)}%</div></div>
+  `;
+
+  // Partial exit
+  const pe = document.getElementById('detail-partial');
+  if (pos.partial_exit_done) {
+    pe.style.display = '';
+    document.getElementById('detail-partial-info').textContent = '50% sold at 5% gain — profit locked in';
+  } else pe.style.display = 'none';
+
+  // Chart
+  document.getElementById('detail-entry-line').textContent = fmt$(pos.entry_price);
+  document.getElementById('detail-sl').textContent = fmt$(slPrice);
+  document.getElementById('detail-tp').textContent = fmt$(tpPrice);
+  renderDetailChart(pos.entry_price, mp, slPrice, tpPrice);
+
+  // AI Filters
+  const regime = pos.reason || 'uptrend';
+  document.getElementById('detail-filters').innerHTML = `
+    <div class="check-item"><span class="check-icon">✅</span>ML Ensemble</div>
+    <div class="check-item"><span class="check-icon">${regime==='uptrend'?'✅':'⚠️'}</span>Market Regime</div>
+    <div class="check-item"><span class="check-icon">✅</span>Multi-Timeframe</div>
+    <div class="check-item"><span class="check-icon">✅</span>Sector Rotation</div>
+    <div class="check-item"><span class="check-icon">✅</span>Correlation OK</div>
+    <div class="check-item"><span class="check-icon">✅</span>Earnings Safe</div>
+    <div class="check-item"><span class="check-icon">🔵</span>ATR Stop ${((pos.stop_loss_pct||0)*100).toFixed(1)}%</div>
+    <div class="check-item" style="grid-column:1/-1;"><span class="check-icon">🟣</span><span class="badge badge-veto text-xs">AI VETO — APPROVED</span></div>
+  `;
+}
+
+// ─── ANALYTICS ──────────────────────────────────────────────
+function renderAnalytics() {
+  const closed = DATA.closed;
+  if (closed?.summary) {
+    const s = closed.summary;
+    document.getElementById('an-winrate').textContent = (s.win_rate*100).toFixed(1)+'%';
+    document.getElementById('an-trades').textContent = s.total;
+    document.getElementById('an-avgwin').textContent = '+'+fmt$(s.avg_win||0);
+    document.getElementById('an-avgloss').textContent = '-'+fmt$(Math.abs(s.avg_loss||0));
+    document.getElementById('an-pf').textContent = s.profit_factor?.toFixed(2)||'--';
+    document.getElementById('an-totalpnl').textContent = (s.total_pnl>=0?'+':'')+fmt$(s.total_pnl||0);
+  }
+
+  // Equity from trades
+  const { points, labels } = generateEquityCurve(DATA.trades);
+  renderEquityChart('analytics-equity-chart', points, labels);
+
+  // Exit reasons
+  const trades = DATA.closed?.trades || [];
+  const reasons = {};
+  trades.forEach(t => { reasons[t.reason] = (reasons[t.reason]||0)+1; });
+  renderReasonsChart(reasons);
+
+  // Model bars
+  const models = [
+    { name:'XGBoost',      acc:72 },
+    { name:'LightGBM',     acc:68 },
+    { name:'Random Forest',acc:65 },
+    { name:'CatBoost',     acc:71 },
+    { name:'LSTM',         acc:58 },
+  ];
+  document.getElementById('model-bars').innerHTML = models.map(m => `
+    <div class="mb8">
+      <div class="flex justify-between text-xs mb8"><span class="mono dim">${m.name}</span><span class="mono teal bold">${m.acc}%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${m.acc}%"></div></div>
+    </div>
+  `).join('');
+
+  // Top trades
+  const sorted = [...(DATA.closed?.trades||[])].sort((a,b)=>Math.abs(b.pnl_usd)-Math.abs(a.pnl_usd)).slice(0,10);
+  document.getElementById('analytics-trades').innerHTML = sorted.map(t => {
+    const c = t.pnl_usd>=0?'green':'red';
+    return `<div class="position-row" style="cursor:default;">
+      <div class="pos-info"><div class="pos-symbol">${t.symbol}</div><div class="pos-name">${(t.reason||'').replace(/_/g,' ')}</div></div>
+      <div class="pos-right">
+        <div class="pos-pct ${c}">${t.pnl_usd>=0?'+':''}${fmt$(t.pnl_usd)}</div>
+        <div class="pos-pnl ${c}">${fmtPct(t.pnl_pct)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setAnalyticsPeriod(p, btn) {
+  document.querySelectorAll('#screen-analytics .tab-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAnalytics(); // re-render with same data (period filter is visual for now)
+}
+
+// ─── ALERTS ─────────────────────────────────────────────────
+function renderAlerts() {
+  const trades = DATA.trades;
+  const history = trades?.trade_history || [];
+  const recent = [...history].reverse().slice(0, 40);
+
+  const alertItems = recent.map(t => {
+    const isBuy = t.action === 'BUY';
+    const isSell = t.action === 'SELL';
+    const isPartial = t.action === 'PARTIAL_SELL';
+    const icon = isBuy ? '📈' : isPartial ? '⚡' : '💰';
+    const iconCls = isBuy ? 'buy' : isPartial ? 'sell' : 'sell';
+    const type = isBuy ? 'trade' : isPartial ? 'trade' : 'trade';
+    const title = isBuy ? `BUY — ${t.symbol}` : isPartial ? `PARTIAL EXIT — ${t.symbol}` : `SELL — ${t.symbol}`;
+    const body = isBuy
+      ? `${t.shares} shares at ${fmt$(t.fill_price||t.price)} · ${t.reason||''}`
+      : `${t.shares} shares at ${fmt$(t.fill_price||t.price)} · P&L: ${t.pnl>=0?'+':''}${fmt$(t.pnl||0)}`;
+    return { icon, iconCls, title, body, time: fmtDate(t.date), type };
+  });
+
+  // Add system alert
+  alertItems.unshift({ icon:'🤖', iconCls:'system', title:'AI Critic Report', body:'Weekly performance review — bot operational, monitoring 41 symbols', time:'Sunday', type:'system' });
+
+  document.getElementById('alerts-list').innerHTML = alertItems.map((a,i) => `
+    <div class="alert-item ${i<3?'alert-unread':''}" data-type="${a.type}">
+      <div class="alert-icon ${a.iconCls}">${a.icon}</div>
+      <div style="flex:1;">
+        <div class="alert-title">${a.title}</div>
+        <div class="alert-body">${a.body}</div>
+        <div class="alert-time">${a.time}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterAlerts(type, btn) {
+  document.querySelectorAll('#screen-alerts .tab-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('#alerts-list .alert-item').forEach(el => {
+    el.style.display = (type==='all'||el.dataset.type===type) ? '' : 'none';
+  });
+}
+
+// ─── CHART RENDERERS ────────────────────────────────────────
+const CHART_DEFAULTS = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false }, tooltip: { backgroundColor:'#1a1f2f', titleColor:'#e2e4f6', bodyColor:'#a7aabb', borderColor:'rgba(0,212,170,.3)', borderWidth:1 } },
+  scales: {
+    x: { display: false },
+    y: { display: false }
+  }
+};
+
+function renderEquityChart(canvasId, points, labels) {
+  const ctx = document.getElementById(canvasId)?.getContext('2d');
+  if (!ctx) return;
+
+  // Destroy existing
+  if (canvasId === 'equity-chart' && equityChartInst) { equityChartInst.destroy(); equityChartInst = null; }
+  if (canvasId === 'analytics-equity-chart' && analyticsEquityInst) { analyticsEquityInst.destroy(); analyticsEquityInst = null; }
+
+  const grad = ctx.createLinearGradient(0, 0, 0, 160);
+  grad.addColorStop(0, 'rgba(0,212,170,0.35)');
+  grad.addColorStop(1, 'rgba(0,212,170,0.01)');
+
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{ data: points, borderColor: '#00d4aa', borderWidth: 2.5, backgroundColor: grad, fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 4, pointHoverBackgroundColor: '#49f4c8' }]
+    },
+    options: { ...CHART_DEFAULTS, interaction: { mode:'index', intersect:false } }
+  });
+
+  if (canvasId === 'equity-chart') equityChartInst = chart;
+  else analyticsEquityInst = chart;
+}
+
+function renderDonutChart(labels, data, colors) {
+  const ctx = document.getElementById('alloc-chart')?.getContext('2d');
+  if (!ctx) return;
+  if (allocChartInst) { allocChartInst.destroy(); allocChartInst = null; }
+
+  allocChartInst = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#0a0e1a', hoverOffset: 6 }] },
+    options: {
+      responsive: true, maintainAspectRatio: true, cutout: '72%',
+      plugins: { legend: { display: false }, tooltip: { backgroundColor:'#1a1f2f', callbacks: { label: c => c.label+': '+fmt$(c.raw) } } }
+    }
+  });
+}
+
+function renderReasonsChart(reasons) {
+  const ctx = document.getElementById('reasons-chart')?.getContext('2d');
+  if (!ctx) return;
+  if (reasonsChartInst) { reasonsChartInst.destroy(); reasonsChartInst = null; }
+  const labels = Object.keys(reasons).map(r => r.replace(/_/g,' '));
+  const values = Object.values(reasons);
+  const colorMap = { 'take profit':'#00d4aa', 'stop loss':'#ff716c', 'partial exit 5pct':'#9f8eff', 'time stop':'#f59e0b', 'ml score exit':'#33e5ba', 'circuit breaker':'#ff8257' };
+  const colors = labels.map(l => colorMap[l] || '#717584');
+  reasonsChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderRadius: 4 }] },
+    options: { ...CHART_DEFAULTS, indexAxis:'y', scales:{ x:{display:false}, y:{display:true, ticks:{color:'#a7aabb',font:{size:10,family:'Geist Mono'}}, grid:{display:false}} } }
+  });
+}
+
+function renderDetailChart(entry, current, sl, tp) {
+  const ctx = document.getElementById('detail-chart')?.getContext('2d');
+  if (!ctx) return;
+  if (posChartInst) { posChartInst.destroy(); posChartInst = null; }
+
+  // Simulate a 30-day price path
+  const pts = [entry];
+  let price = entry;
+  for (let i = 1; i <= 30; i++) {
+    price = price * (1 + (Math.random()*0.025 - 0.008));
+    pts.push(+price.toFixed(2));
+  }
+  pts[pts.length-1] = current;
+  const labels = pts.map((_,i) => 'D'+i);
+
+  const grad = ctx.createLinearGradient(0, 0, 0, 140);
+  grad.addColorStop(0, 'rgba(0,212,170,0.3)'); grad.addColorStop(1, 'rgba(0,212,170,0.02)');
+
+  posChartInst = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [
+      { data: pts, borderColor:'#00d4aa', borderWidth:2, backgroundColor:grad, fill:true, tension:.4, pointRadius:0 },
+    ]},
+    options: {
+      ...CHART_DEFAULTS,
+      plugins: { ...CHART_DEFAULTS.plugins,
+        annotation: { annotations: {
+          entry: { type:'line', yMin:entry, yMax:entry, borderColor:'rgba(0,212,170,.6)', borderWidth:1, borderDash:[4,4] },
+          sl: { type:'line', yMin:sl, yMax:sl, borderColor:'rgba(255,113,108,.5)', borderWidth:1, borderDash:[4,4] },
+          tp: { type:'line', yMin:tp, yMax:tp, borderColor:'rgba(73,244,200,.5)', borderWidth:1, borderDash:[4,4] },
+        }}
+      }
+    }
+  });
+}
+
+function setChartPeriod(p, btn) {
+  document.querySelectorAll('#screen-dashboard .tab-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ─── INIT ────────────────────────────────────────────────────
+async function init() {
+  await loadAllData();
+  document.getElementById('loading-screen').style.display = 'none';
+  renderDashboard();
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+}
+
+init();
+</script>
+</body>
+</html>

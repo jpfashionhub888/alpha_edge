@@ -1,0 +1,24 @@
+{
+  "name": "AlphaEdge Terminal",
+  "short_name": "AlphaEdge",
+  "description": "AI-powered US stock trading bot — live signals, portfolio tracking & performance analytics",
+  "start_url": "/alpha_edge/pwa_app/",
+  "scope": "/alpha_edge/pwa_app/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0e1a",
+  "theme_color": "#00d4aa",
+  "categories": ["finance", "productivity"],
+  "lang": "en-US",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "screenshots": [
+    { "src": "screenshots/dashboard.png", "sizes": "780x1826", "type": "image/png", "label": "Dashboard" }
+  ],
+  "shortcuts": [
+    { "name": "AI Signals", "short_name": "Signals", "url": "/alpha_edge/pwa_app/#signals", "icons": [{"src": "icons/icon-192.png", "sizes": "192x192"}] },
+    { "name": "Portfolio",  "short_name": "Portfolio", "url": "/alpha_edge/pwa_app/#portfolio", "icons": [{"src": "icons/icon-192.png", "sizes": "192x192"}] }
+  ]
+}

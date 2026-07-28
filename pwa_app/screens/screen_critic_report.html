@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AlphaEdge - Weekly Critic Report Viewer</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-container": "#fe6a34",
+                        "outline": "#717584",
+                        "on-error-container": "#ffa8a3",
+                        "primary-fixed": "#49f4c8",
+                        "on-primary": "#005745",
+                        "inverse-on-surface": "#515463",
+                        "tertiary-fixed-dim": "#ff7d50",
+                        "secondary-container": "#441cc8",
+                        "inverse-surface": "#faf8ff",
+                        "tertiary-fixed": "#ff9470",
+                        "surface-container-low": "#0e1320",
+                        "surface-tint": "#49f4c8",
+                        "surface-dim": "#0a0e1a",
+                        "tertiary-dim": "#ff7442",
+                        "on-tertiary-container": "#370b00",
+                        "surface-container": "#141928",
+                        "on-primary-fixed-variant": "#00624d",
+                        "on-tertiary-fixed": "#330900",
+                        "surface-container-high": "#1a1f2f",
+                        "on-tertiary": "#4e1300",
+                        "secondary-fixed": "#d4cbff",
+                        "on-surface-variant": "#a7aabb",
+                        "secondary-fixed-dim": "#c6bbff",
+                        "background": "#0a0e1a",
+                        "on-secondary": "#1e0070",
+                        "secondary": "#9f8eff",
+                        "primary-fixed-dim": "#33e5ba",
+                        "on-secondary-fixed": "#3200a7",
+                        "error-dim": "#d7383b",
+                        "surface-variant": "#202537",
+                        "primary": "#49f4c8",
+                        "error-container": "#9f0519",
+                        "surface-bright": "#252b3f",
+                        "on-secondary-container": "#d3caff",
+                        "on-surface": "#e2e4f6",
+                        "secondary-dim": "#7459f7",
+                        "surface-container-lowest": "#000000",
+                        "inverse-primary": "#006c55",
+                        "on-secondary-fixed-variant": "#4f2dd2",
+                        "on-error": "#490006",
+                        "surface-container-highest": "#202537",
+                        "on-tertiary-fixed-variant": "#6c1e00",
+                        "on-background": "#e2e4f6",
+                        "surface": "#0a0e1a",
+                        "on-primary-container": "#004132",
+                        "primary-dim": "#33e5ba",
+                        "tertiary": "#ff8257",
+                        "outline-variant": "#444756",
+                        "on-primary-fixed": "#004334",
+                        "error": "#ff716c",
+                        "primary-container": "#00d4aa"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk", "sans-serif"],
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Geist Mono", "monospace"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glow-violet {
+            box-shadow: 0 0 25px rgba(123, 97, 255, 0.2);
+        }
+        .glow-text-violet {
+            text-shadow: 0 0 15px rgba(123, 97, 255, 0.5);
+        }
+        .glow-teal {
+            box-shadow: 0 0 15px rgba(73, 244, 200, 0.15);
+        }
+        .grid-bg {
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body min-h-screen grid-bg pb-24 md:pb-0">
+<!-- Top Navigation (Web) / Hidden on Mobile -->
+<header class="fixed top-0 w-full z-50 bg-surface-container/80 backdrop-blur-xl border-b border-white/10 shadow-none hidden md:flex justify-between items-center px-4 h-16 max-w-7xl mx-auto left-0 right-0">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">query_stats</span>
+<span class="font-headline text-xl font-bold tracking-tighter text-primary uppercase">AlphaEdge</span>
+</div>
+<nav class="hidden md:flex items-center gap-6">
+<a class="font-label text-sm uppercase text-outline hover:text-on-surface transition-colors" href="#">Dashboard</a>
+<a class="font-label text-sm uppercase text-outline hover:text-on-surface transition-colors" href="#">Positions</a>
+<a class="font-label text-sm uppercase text-outline hover:text-on-surface transition-colors" href="#">Signals</a>
+<a class="font-label text-sm uppercase text-primary font-bold" href="#">Analytics</a>
+<a class="font-label text-sm uppercase text-outline hover:text-on-surface transition-colors" href="#">Settings</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="bg-primary-container/20 text-primary border border-primary/30 px-3 py-1 rounded font-label text-xs uppercase tracking-wider hover:bg-primary-container/30 transition-colors flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                LIVE
+            </button>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 md:pt-24 pb-12">
+<!-- Header Section -->
+<div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+<div>
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-secondary text-3xl" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+<h1 class="font-headline text-3xl md:text-4xl font-bold tracking-tight text-on-surface uppercase">WEEKLY CRITIC REPORT</h1>
+</div>
+<p class="font-label text-outline text-sm uppercase tracking-wider flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">bolt</span>
+                    Powered by Groq Llama3-70B
+                </p>
+</div>
+<div class="bg-surface-container border border-white/10 px-4 py-2 rounded-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-sm">calendar_today</span>
+<span class="font-label text-on-surface text-sm">Week of Jul 21, 2026</span>
+</div>
+</div>
+<!-- Main Content Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Left Column: Score & Grades -->
+<div class="lg:col-span-1 space-y-6">
+<!-- Main Score -->
+<div class="glass-panel rounded-xl p-8 flex flex-col items-center justify-center relative overflow-hidden group">
+<div class="absolute inset-0 bg-secondary/5 opacity-50 transition-opacity group-hover:opacity-100"></div>
+<div class="relative w-48 h-48 flex items-center justify-center mb-4">
+<!-- SVG Circular Gauge -->
+<svg class="absolute inset-0 w-full h-full transform -rotate-90" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="none" r="45" stroke="rgba(255,255,255,0.05)" stroke-width="6"></circle>
+<circle class="transition-all duration-1000 ease-out drop-shadow-[0_0_8px_rgba(123,97,255,0.8)]" cx="50" cy="50" fill="none" r="45" stroke="#7B61FF" stroke-dasharray="283" stroke-dashoffset="113" stroke-width="6"></circle>
+</svg>
+<div class="flex flex-col items-center">
+<span class="font-label text-5xl font-bold text-secondary glow-text-violet">6</span>
+<span class="font-label text-outline text-xl border-t border-white/10 pt-1 mt-1 w-8 text-center">10</span>
+</div>
+</div>
+<h2 class="font-headline text-lg font-bold tracking-widest text-on-surface uppercase mb-1">AI CRITIC SCORE</h2>
+<p class="font-body text-xs text-outline text-center">Based on 142 automated executions</p>
+</div>
+<!-- Grade Cards Grid -->
+<div class="grid grid-cols-2 gap-4">
+<div class="glass-panel rounded-lg p-4 hover:border-white/20 transition-colors">
+<p class="font-headline text-xs text-outline uppercase mb-2">Technical Analysis</p>
+<div class="flex items-end gap-2">
+<span class="font-label text-2xl text-on-surface">7</span>
+<span class="font-label text-xs text-outline pb-1">/10</span>
+</div>
+</div>
+<div class="glass-panel rounded-lg p-4 hover:border-white/20 transition-colors">
+<p class="font-headline text-xs text-outline uppercase mb-2">Risk Mgmt</p>
+<div class="flex items-end gap-2">
+<span class="font-label text-2xl text-on-surface">6</span>
+<span class="font-label text-xs text-outline pb-1">/10</span>
+</div>
+</div>
+<div class="glass-panel rounded-lg p-4 hover:border-white/20 transition-colors">
+<p class="font-headline text-xs text-outline uppercase mb-2">Signal Quality</p>
+<div class="flex items-end gap-2">
+<span class="font-label text-2xl text-tertiary">5</span>
+<span class="font-label text-xs text-outline pb-1">/10</span>
+</div>
+</div>
+<div class="glass-panel rounded-lg p-4 hover:border-white/20 transition-colors border-l-2 border-l-primary/50">
+<p class="font-headline text-xs text-outline uppercase mb-2">Execution</p>
+<div class="flex items-end gap-2">
+<span class="font-label text-2xl text-primary glow-text-teal">8</span>
+<span class="font-label text-xs text-outline pb-1">/10</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Analysis & Actions -->
+<div class="lg:col-span-2 space-y-6">
+<h3 class="font-headline text-xl font-semibold uppercase tracking-wider text-on-surface border-b border-white/10 pb-2">AI Analysis</h3>
+<!-- STRENGTH -->
+<div class="glass-panel rounded-lg p-5 border-l-4 border-l-primary relative overflow-hidden group">
+<div class="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none"></div>
+<div class="flex items-start gap-4">
+<div class="bg-primary/10 p-2 rounded flex-shrink-0">
+<span class="material-symbols-outlined text-primary text-xl">trending_up</span>
+</div>
+<div>
+<h4 class="font-label text-primary text-sm uppercase tracking-widest mb-2 font-semibold">Strength</h4>
+<p class="font-body text-sm text-on-surface-variant leading-relaxed">
+<span class="font-label text-on-surface">OXY</span> trade executed with perfect ATR stop placement. Partial exit at 5% gain captured $37 while position ran to 11.5%
+                            </p>
+</div>
+</div>
+</div>
+<!-- WEAKNESS -->
+<div class="glass-panel rounded-lg p-5 border-l-4 border-l-tertiary relative overflow-hidden">
+<div class="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-tertiary/5 to-transparent pointer-events-none"></div>
+<div class="flex items-start gap-4">
+<div class="bg-tertiary/10 p-2 rounded flex-shrink-0">
+<span class="material-symbols-outlined text-tertiary text-xl">warning</span>
+</div>
+<div>
+<h4 class="font-label text-tertiary text-sm uppercase tracking-widest mb-2 font-semibold">Weakness</h4>
+<p class="font-body text-sm text-on-surface-variant leading-relaxed">
+<span class="font-label text-on-surface">TSLA</span> veto was correct — earnings in 3 days. However, 2 signals missed due to overly aggressive correlation filter. Consider relaxing to 3/sector in bull regime.
+                            </p>
+</div>
+</div>
+</div>
+<!-- ACTION -->
+<div class="glass-panel rounded-lg p-5 border-l-4 border-l-secondary relative overflow-hidden glow-violet">
+<div class="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-secondary/10 to-transparent pointer-events-none"></div>
+<div class="flex items-start gap-4">
+<div class="bg-secondary/20 p-2 rounded flex-shrink-0">
+<span class="material-symbols-outlined text-secondary text-xl">psychology</span>
+</div>
+<div>
+<h4 class="font-label text-secondary text-sm uppercase tracking-widest mb-2 font-bold">Action</h4>
+<p class="font-body text-sm text-on-surface-variant leading-relaxed mb-4">
+                                Recommend enabling ML Score Exit Signal (threshold 0.40) to improve average gain per trade from 3.2% to estimated 4.8%.
+                            </p>
+<button class="bg-secondary/20 hover:bg-secondary/30 text-secondary border border-secondary/30 px-4 py-2 rounded font-label text-xs uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+                                Apply Parameter Update
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Recommendations List -->
+<div class="mt-8 glass-panel rounded-xl p-6 border-t border-white/5">
+<h3 class="font-headline text-lg font-semibold uppercase tracking-wider text-on-surface mb-4">Actionable Recommendations</h3>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-3 bg-surface-container-high/50 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline">tune</span>
+<span class="font-body text-sm text-on-surface-variant">Adjust SPY correlation filter threshold to 0.75</span>
+</div>
+<span class="bg-error-container/20 text-error-dim border border-error-dim/30 px-2 py-1 rounded text-[10px] font-label uppercase tracking-widest">High Priority</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-high/50 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline">history</span>
+<span class="font-body text-sm text-on-surface-variant">Review false positive volume breakouts on small caps</span>
+</div>
+<span class="bg-tertiary-container/10 text-tertiary-dim border border-tertiary-dim/30 px-2 py-1 rounded text-[10px] font-label uppercase tracking-widest">Med Priority</span>
+</div>
+</div>
+</div>
+<!-- Footer Timer -->
+<div class="mt-12 flex flex-col items-center justify-center pb-8 border-t border-white/5 pt-8">
+<span class="material-symbols-outlined text-outline mb-2">schedule</span>
+<p class="font-label text-outline text-xs uppercase tracking-widest mb-1">Next Automated Review</p>
+<p class="font-label text-secondary text-lg">4d 12h 30m</p>
+</div>
+</main>
+<!-- Bottom Navigation (Mobile) / Hidden on Web -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-dim/90 backdrop-blur-2xl border-t border-white/10 shadow-none flex justify-around items-center h-20 px-2 pb-safe md:hidden">
+<a class="flex flex-col items-center justify-center text-outline hover:text-on-surface-variant hover:bg-white/5 transition-all w-16 h-16 rounded-xl" href="#">
+<span class="material-symbols-outlined mb-1">dashboard</span>
+<span class="font-label text-[10px] uppercase tracking-wider">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-outline hover:text-on-surface-variant hover:bg-white/5 transition-all w-16 h-16 rounded-xl" href="#">
+<span class="material-symbols-outlined mb-1">receipt_long</span>
+<span class="font-label text-[10px] uppercase tracking-wider">Positions</span>
+</a>
+<a class="flex flex-col items-center justify-center text-outline hover:text-on-surface-variant hover:bg-white/5 transition-all w-16 h-16 rounded-xl" href="#">
+<span class="material-symbols-outlined mb-1">hub</span>
+<span class="font-label text-[10px] uppercase tracking-wider">Signals</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary bg-primary/10 rounded-xl px-3 py-1 shadow-[0_0_15px_rgba(73,244,200,0.15)] hover:bg-white/5 transition-all w-16 h-16 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">monitoring</span>
+<span class="font-label text-[10px] uppercase tracking-wider">Analytics</span>
+</a>
+<a class="flex flex-col items-center justify-center text-outline hover:text-on-surface-variant hover:bg-white/5 transition-all w-16 h-16 rounded-xl" href="#">
+<span class="material-symbols-outlined mb-1">settings</span>
+<span class="font-label text-[10px] uppercase tracking-wider">Settings</span>
+</a>
+</nav>
+</body></html>

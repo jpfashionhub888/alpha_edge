@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AlphaEdge - Onboarding</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&amp;family=Inter:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-container": "#441cc8",
+                      "on-secondary-fixed": "#3200a7",
+                      "surface-container-high": "#1a1f2f",
+                      "on-tertiary": "#4e1300",
+                      "surface-container-low": "#0e1320",
+                      "on-primary-fixed-variant": "#00624d",
+                      "on-primary-container": "#004132",
+                      "on-primary-fixed": "#004334",
+                      "on-tertiary-fixed": "#330900",
+                      "outline-variant": "#444756",
+                      "on-primary": "#005745",
+                      "primary-container": "#00d4aa",
+                      "on-secondary-fixed-variant": "#4f2dd2",
+                      "primary-dim": "#33e5ba",
+                      "secondary-fixed": "#d4cbff",
+                      "tertiary": "#ff8257",
+                      "tertiary-fixed-dim": "#ff7d50",
+                      "secondary-dim": "#7459f7",
+                      "primary-fixed-dim": "#33e5ba",
+                      "primary-fixed": "#49f4c8",
+                      "surface-container-lowest": "#000000",
+                      "on-surface": "#e2e4f6",
+                      "surface": "#0a0e1a",
+                      "on-error-container": "#ffa8a3",
+                      "secondary-fixed-dim": "#c6bbff",
+                      "surface-variant": "#202537",
+                      "on-surface-variant": "#a7aabb",
+                      "surface-dim": "#0a0e1a",
+                      "on-background": "#e2e4f6",
+                      "on-secondary": "#1e0070",
+                      "error-dim": "#d7383b",
+                      "on-secondary-container": "#d3caff",
+                      "inverse-surface": "#faf8ff",
+                      "surface-container": "#141928",
+                      "surface-bright": "#252b3f",
+                      "background": "#0a0e1a",
+                      "error-container": "#9f0519",
+                      "secondary": "#9f8eff",
+                      "primary": "#49f4c8",
+                      "outline": "#717584",
+                      "tertiary-dim": "#ff7442",
+                      "error": "#ff716c",
+                      "tertiary-container": "#fe6a34",
+                      "on-error": "#490006",
+                      "surface-tint": "#49f4c8",
+                      "surface-container-highest": "#202537",
+                      "tertiary-fixed": "#ff9470",
+                      "on-tertiary-fixed-variant": "#6c1e00",
+                      "inverse-on-surface": "#515463",
+                      "inverse-primary": "#006c55",
+                      "on-tertiary-container": "#370b00"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": [
+                              "Space Grotesk", "sans-serif"
+                      ],
+                      "display": [
+                              "Space Grotesk", "sans-serif"
+                      ],
+                      "body": [
+                              "Inter", "sans-serif"
+                      ],
+                      "label": [
+                              "Geist Mono", "monospace"
+                      ]
+              }
+            },
+          }
+        }
+    </script>
+<style>
+        body {
+            background-color: #0A0E1A;
+            color: #e2e4f6;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 32px 32px;
+            background-position: center;
+        }
+        
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.5);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .input-glass {
+            background: rgba(10, 14, 26, 0.7);
+            border: 1px solid rgba(68, 71, 86, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .input-glass:focus {
+            border-color: #00d4aa;
+            box-shadow: 0 0 15px rgba(0, 212, 170, 0.2);
+            outline: none;
+        }
+
+        .neon-text-glow {
+            text-shadow: 0 0 10px rgba(0, 212, 170, 0.5);
+        }
+
+        .neon-box-glow {
+            box-shadow: 0 0 20px rgba(0, 212, 170, 0.3);
+        }
+        
+        .logo-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 212, 170, 0.3);
+            animation: pulse-ring 4s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+        }
+        
+        .logo-ring-2 {
+            animation-delay: 1s;
+        }
+        
+        .logo-ring-3 {
+            animation-delay: 2s;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body min-h-screen flex flex-col items-center justify-center p-4 md:p-8 relative overflow-x-hidden">
+<!-- Decorative Top Gradient -->
+<div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary-container/10 to-transparent pointer-events-none"></div>
+<main class="w-full max-w-md z-10 flex flex-col gap-8">
+<!-- Header Section -->
+<header class="flex flex-col items-center text-center">
+<div class="relative w-24 h-24 mb-6 flex items-center justify-center">
+<div class="absolute inset-0 bg-primary-container/20 rounded-full blur-xl"></div>
+<div class="logo-ring w-full h-full"></div>
+<div class="logo-ring logo-ring-2 w-full h-full"></div>
+<div class="logo-ring logo-ring-3 w-full h-full"></div>
+<div class="relative z-10 w-16 h-16 rounded-full bg-surface-container flex items-center justify-center border border-primary-container/50 shadow-[0_0_15px_rgba(0,212,170,0.4)]">
+<span class="font-headline font-bold text-2xl text-primary-container neon-text-glow">AE</span>
+</div>
+</div>
+<h1 class="font-headline font-bold text-4xl tracking-tight text-on-surface mb-2">ALPHAEDGE</h1>
+<p class="font-body text-on-surface-variant text-sm">Your AI Trading Empire</p>
+</header>
+<!-- Feature Highlights -->
+<div class="grid grid-cols-3 gap-3">
+<div class="glass-panel rounded-xl p-3 flex flex-col items-center justify-center text-center gap-2">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">security</span>
+<span class="text-[10px] font-medium text-on-surface uppercase tracking-wider leading-tight">AI-Powered Signal Filtering</span>
+</div>
+<div class="glass-panel rounded-xl p-3 flex flex-col items-center justify-center text-center gap-2">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">public</span>
+<span class="text-[10px] font-medium text-on-surface uppercase tracking-wider leading-tight">3 Markets Covered</span>
+</div>
+<div class="glass-panel rounded-xl p-3 flex flex-col items-center justify-center text-center gap-2">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">trending_up</span>
+<span class="text-[10px] font-medium text-on-surface uppercase tracking-wider leading-tight">Real-time P&amp;L Tracking</span>
+</div>
+</div>
+<!-- Stats Strip -->
+<div class="glass-panel rounded-xl py-4 px-6 flex justify-between items-center border border-outline-variant/30">
+<div class="flex flex-col items-center">
+<span class="font-label text-primary-container text-lg neon-text-glow">54%</span>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">Win Rate</span>
+</div>
+<div class="h-8 w-px bg-outline-variant/30"></div>
+<div class="flex flex-col items-center">
+<span class="font-label text-primary-container text-lg neon-text-glow">+1.67%</span>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">Return</span>
+</div>
+<div class="h-8 w-px bg-outline-variant/30"></div>
+<div class="flex flex-col items-center">
+<span class="font-label text-primary-container text-lg neon-text-glow">3</span>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">Signals</span>
+</div>
+</div>
+<div class="w-full h-px bg-gradient-to-r from-transparent via-outline-variant/50 to-transparent my-2"></div>
+<!-- Setup Section -->
+<section class="flex flex-col gap-5">
+<h2 class="font-label text-xs text-on-surface-variant uppercase tracking-widest pl-1">Quick Connect</h2>
+<div class="space-y-4">
+<div class="flex flex-col gap-1.5">
+<label class="text-xs font-medium text-on-surface/80 pl-1">Telegram Chat ID</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant text-sm">chat</span>
+<input class="w-full input-glass rounded-lg py-3 pl-10 pr-4 text-sm font-label text-on-surface placeholder:text-on-surface-variant/50 focus:ring-0" type="text" value="8616636381"/>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="text-xs font-medium text-on-surface/80 pl-1">Alpaca API Key</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant text-sm">key</span>
+<input class="w-full input-glass rounded-lg py-3 pl-10 pr-4 text-sm font-label text-on-surface placeholder:text-on-surface-variant/50 focus:ring-0" placeholder="PK****************" type="password"/>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="text-xs font-medium text-on-surface/80 pl-1">GROQ API Key</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant text-sm">memory</span>
+<input class="w-full input-glass rounded-lg py-3 pl-10 pr-4 text-sm font-label text-on-surface placeholder:text-on-surface-variant/50 focus:ring-0" placeholder="gsk_****************" type="password"/>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-4 mt-2">
+<button class="w-full bg-primary-container text-on-primary-container font-headline font-bold text-sm tracking-wide py-4 rounded-lg uppercase transition-all duration-300 hover:bg-primary-dim hover:scale-[1.02] active:scale-95 neon-box-glow">
+                    Get Started
+                </button>
+<a class="text-center text-xs font-medium text-on-surface-variant hover:text-primary-container transition-colors" href="#">
+                    Try Demo Mode (No API needed)
+                </a>
+</div>
+</section>
+<!-- Safety Badge -->
+<div class="mt-4 flex items-center justify-center gap-2 text-on-primary-container bg-primary-container/10 border border-primary-container/20 rounded-full py-2 px-4 w-fit mx-auto backdrop-blur-sm">
+<span class="material-symbols-outlined text-[16px] text-primary-container">format_image_left</span>
+<span class="text-[10px] font-medium tracking-wide">Paper Trading Mode — No real money at risk</span>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AlphaEdge - Signal History</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                            "secondary-dim": "#7459f7",
+                            "on-primary-fixed": "#004334",
+                            "on-error-container": "#ffa8a3",
+                            "on-primary-fixed-variant": "#00624d",
+                            "background": "#0a0e1a",
+                            "on-primary": "#005745",
+                            "on-background": "#e2e4f6",
+                            "surface-variant": "#202537",
+                            "on-tertiary-fixed": "#330900",
+                            "outline": "#717584",
+                            "tertiary-container": "#fe6a34",
+                            "on-surface": "#e2e4f6",
+                            "error-dim": "#d7383b",
+                            "error-container": "#9f0519",
+                            "inverse-surface": "#faf8ff",
+                            "on-error": "#490006",
+                            "surface-bright": "#252b3f",
+                            "error": "#ff716c",
+                            "primary-container": "#00d4aa",
+                            "tertiary-fixed": "#ff9470",
+                            "tertiary": "#ff8257",
+                            "surface-container-high": "#1a1f2f",
+                            "inverse-primary": "#006c55",
+                            "on-tertiary": "#4e1300",
+                            "tertiary-dim": "#ff7442",
+                            "surface-container-lowest": "#000000",
+                            "surface-tint": "#49f4c8",
+                            "tertiary-fixed-dim": "#ff7d50",
+                            "outline-variant": "#444756",
+                            "surface-dim": "#0a0e1a",
+                            "on-secondary": "#1e0070",
+                            "secondary-fixed-dim": "#c6bbff",
+                            "primary": "#49f4c8",
+                            "secondary": "#9f8eff",
+                            "on-tertiary-container": "#370b00",
+                            "on-secondary-container": "#d3caff",
+                            "inverse-on-surface": "#515463",
+                            "on-secondary-fixed": "#3200a7",
+                            "primary-fixed-dim": "#33e5ba",
+                            "secondary-container": "#441cc8",
+                            "on-primary-container": "#004132",
+                            "surface": "#0a0e1a",
+                            "on-secondary-fixed-variant": "#4f2dd2",
+                            "primary-dim": "#33e5ba",
+                            "on-surface-variant": "#a7aabb",
+                            "surface-container-highest": "#202537",
+                            "surface-container-low": "#0e1320",
+                            "on-tertiary-fixed-variant": "#6c1e00",
+                            "primary-fixed": "#49f4c8",
+                            "secondary-fixed": "#d4cbff",
+                            "surface-container": "#141928"
+                    },
+                    "borderRadius": {
+                            "DEFAULT": "0.25rem",
+                            "lg": "0.5rem",
+                            "xl": "0.75rem",
+                            "full": "9999px"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                            "headline": [
+                                    "Space Grotesk", "sans-serif"
+                            ],
+                            "display": [
+                                    "Space Grotesk", "sans-serif"
+                            ],
+                            "body": [
+                                    "Inter", "sans-serif"
+                            ],
+                            "label": [
+                                    "Geist Mono", "monospace"
+                            ]
+                    },
+                    "fontSize": {}
+                },
+            },
+        }
+    </script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-headline { font-family: 'Space Grotesk', sans-serif; }
+        .font-label { font-family: 'Geist Mono', monospace; }
+        /* Geist Mono fallback if not available on google fonts easily, but we'll stick to a standard monospace in the stack */
+        
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.5); /* #11182780 */
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glow-primary {
+            box-shadow: 0 0 15px rgba(73, 244, 200, 0.2);
+        }
+        
+        .glow-error {
+            box-shadow: 0 0 15px rgba(215, 56, 59, 0.2);
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background antialiased pb-24 selection:bg-primary/30 min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-xl border-b border-white/10 shadow-[0_0_15px_rgba(73,244,200,0.1)] flex justify-between items-center px-4 h-16 transition-all duration-200">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary dark:text-primary">signal_cellular_alt</span>
+<span class="text-xl font-headline font-bold text-primary dark:text-primary tracking-tighter">AlphaEdge</span>
+</div>
+<!-- Desktop Nav -->
+<nav class="hidden md:flex gap-6 absolute left-1/2 transform -translate-x-1/2">
+<a class="text-on-surface-variant hover:bg-white/5 transition-colors px-3 py-1.5 rounded-lg active:scale-95 duration-200" href="#">Dashboard</a>
+<a class="text-on-surface-variant hover:bg-white/5 transition-colors px-3 py-1.5 rounded-lg active:scale-95 duration-200" href="#">Positions</a>
+<a class="text-primary font-bold hover:bg-white/5 transition-colors px-3 py-1.5 rounded-lg active:scale-95 duration-200" href="#">Signals</a>
+<a class="text-on-surface-variant hover:bg-white/5 transition-colors px-3 py-1.5 rounded-lg active:scale-95 duration-200" href="#">Analytics</a>
+<a class="text-on-surface-variant hover:bg-white/5 transition-colors px-3 py-1.5 rounded-lg active:scale-95 duration-200" href="#">Settings</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+<span class="hidden md:block font-label text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded">LIVE</span>
+</div>
+</header>
+<main class="pt-20 px-4 md:px-8 max-w-7xl mx-auto space-y-6">
+<div class="flex items-center justify-between mt-4">
+<h1 class="font-headline text-2xl font-bold tracking-tight">SIGNAL HISTORY</h1>
+</div>
+<!-- Filters Row -->
+<div class="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+<button class="px-4 py-1.5 rounded-full text-sm font-medium bg-primary text-background flex-shrink-0 transition-all">All</button>
+<button class="px-4 py-1.5 rounded-full text-sm font-medium border border-white/10 hover:border-primary/50 text-on-surface-variant hover:text-primary flex-shrink-0 transition-all">BUY</button>
+<button class="px-4 py-1.5 rounded-full text-sm font-medium border border-white/10 hover:border-error-dim/50 text-on-surface-variant hover:text-error-dim flex-shrink-0 transition-all">SELL</button>
+<button class="px-4 py-1.5 rounded-full text-sm font-medium border border-white/10 hover:border-primary/50 text-on-surface-variant hover:text-primary flex-shrink-0 transition-all">Profitable</button>
+<button class="px-4 py-1.5 rounded-full text-sm font-medium border border-white/10 hover:border-error-dim/50 text-on-surface-variant hover:text-error-dim flex-shrink-0 transition-all">Failed</button>
+</div>
+<!-- Summary Stats Bar -->
+<div class="glass-panel rounded-xl p-4 md:p-6 grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
+<div class="flex flex-col">
+<span class="text-xs text-on-surface-variant uppercase tracking-wider mb-1">Total Signals</span>
+<span class="font-label text-2xl font-bold text-on-surface">47</span>
+</div>
+<div class="flex flex-col border-l border-white/5 pl-4">
+<span class="text-xs text-on-surface-variant uppercase tracking-wider mb-1">Win Rate</span>
+<span class="font-label text-2xl font-bold text-primary">54%</span>
+</div>
+<div class="flex flex-col md:border-l border-white/5 md:pl-4">
+<span class="text-xs text-on-surface-variant uppercase tracking-wider mb-1">Total P&amp;L</span>
+<span class="font-label text-2xl font-bold text-primary glow-primary">+$420</span>
+</div>
+<div class="flex flex-col border-l border-white/5 pl-4">
+<span class="text-xs text-on-surface-variant uppercase tracking-wider mb-1">Best Performer</span>
+<div class="flex items-baseline gap-2">
+<span class="font-headline font-bold text-on-surface">OXY</span>
+<span class="font-label text-sm text-primary">+11.5%</span>
+</div>
+</div>
+</div>
+<!-- Timeline Signal List -->
+<div class="space-y-4">
+<!-- Signal 1: NVDA -->
+<div class="glass-panel rounded-xl p-5 relative overflow-hidden group">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary/50 group-hover:bg-primary transition-colors glow-primary"></div>
+<div class="flex flex-col md:flex-row justify-between gap-4">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high border border-white/10 flex items-center justify-center font-headline font-bold text-lg">
+                            NVDA
+                        </div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs text-on-surface-variant">Oct 24, 09:30</span>
+<span class="text-[10px] bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 rounded font-label font-bold">BUY</span>
+<div class="flex gap-1 ml-2">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-dim shadow-[0_0_5px_#7459f7]"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-dim shadow-[0_0_5px_#7459f7]"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-dim shadow-[0_0_5px_#7459f7]"></span>
+</div>
+</div>
+<div class="flex items-center gap-3 font-label text-sm">
+<span class="text-on-surface-variant">Entry: <span class="text-on-surface">$820.00</span></span>
+<span class="material-symbols-outlined text-white/20 text-sm">arrow_right_alt</span>
+<span class="text-on-surface-variant">Exit: <span class="text-on-surface">$875.00</span></span>
+</div>
+</div>
+</div>
+<div class="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center">
+<div class="text-right">
+<div class="font-label text-lg font-bold text-primary glow-primary">+6.7%</div>
+<div class="font-label text-xs text-primary/80">+$134 PROFIT</div>
+</div>
+<div class="text-xs text-on-surface-variant mt-1">Held 3 Days</div>
+</div>
+</div>
+</div>
+<!-- Signal 2: OXY -->
+<div class="glass-panel rounded-xl p-5 relative overflow-hidden group">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary/30 group-hover:bg-primary transition-colors"></div>
+<div class="flex flex-col md:flex-row justify-between gap-4">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high border border-white/10 flex items-center justify-center font-headline font-bold text-lg">
+                            OXY
+                        </div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs text-on-surface-variant">Oct 15, 14:15</span>
+<span class="text-[10px] bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 rounded font-label font-bold">BUY</span>
+<div class="flex gap-1 ml-2">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-dim shadow-[0_0_5px_#7459f7]"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-dim shadow-[0_0_5px_#7459f7]"></span>
+</div>
+</div>
+<div class="flex items-center gap-3 font-label text-sm">
+<span class="text-on-surface-variant">Entry: <span class="text-on-surface">$61.20</span></span>
+<span class="material-symbols-outlined text-white/20 text-sm">arrow_right_alt</span>
+<span class="text-on-surface-variant">Exit: <span class="text-on-surface">$68.20</span></span>
+</div>
+</div>
+</div>
+<div class="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center">
+<div class="text-right">
+<div class="font-label text-lg font-bold text-primary">+11.5%</div>
+<div class="font-label text-xs text-primary/80">+$74 PROFIT</div>
+</div>
+<div class="text-xs text-on-surface-variant mt-1">Held 8 Days</div>
+</div>
+</div>
+</div>
+<!-- Signal 3: TSLA (Blocked) -->
+<div class="glass-panel rounded-xl p-5 relative overflow-hidden opacity-75 grayscale-[50%]">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-tertiary-dim/50"></div>
+<div class="flex flex-col md:flex-row justify-between gap-4">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high border border-white/10 flex items-center justify-center font-headline font-bold text-lg">
+                            TSLA
+                        </div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs text-on-surface-variant">Oct 10, 10:00</span>
+<span class="text-[10px] bg-error-dim/20 text-error-dim border border-error-dim/30 px-2 py-0.5 rounded font-label font-bold">SELL</span>
+<span class="text-[10px] bg-tertiary-dim/20 text-tertiary-dim border border-tertiary-dim/30 px-2 py-0.5 rounded font-label font-bold ml-2">AI BLOCKED</span>
+</div>
+<div class="flex items-center gap-3 font-label text-sm">
+<span class="text-on-surface-variant">Entry condition met, trade aborted due to macro filters.</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Signal 4: WMT -->
+<div class="glass-panel rounded-xl p-5 relative overflow-hidden group">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-error-dim/50 group-hover:bg-error-dim transition-colors glow-error"></div>
+<div class="flex flex-col md:flex-row justify-between gap-4">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high border border-white/10 flex items-center justify-center font-headline font-bold text-lg">
+                            WMT
+                        </div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs text-on-surface-variant">Oct 05, 11:45</span>
+<span class="text-[10px] bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 rounded font-label font-bold">BUY</span>
+</div>
+<div class="flex items-center gap-3 font-label text-sm">
+<span class="text-on-surface-variant">Entry: <span class="text-on-surface">$89.50</span></span>
+<span class="material-symbols-outlined text-white/20 text-sm">arrow_right_alt</span>
+<span class="text-on-surface-variant">Exit: <span class="text-on-surface">$88.10</span></span>
+</div>
+</div>
+</div>
+<div class="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center">
+<div class="text-right">
+<div class="font-label text-lg font-bold text-error-dim glow-error">-1.6%</div>
+<div class="font-label text-xs text-error-dim/80">-$11 LOSS</div>
+</div>
+<div class="text-xs text-on-surface-variant mt-1">Held 5 Days</div>
+</div>
+</div>
+</div>
+<!-- Signal 5: QQQ (Open) -->
+<div class="glass-panel rounded-xl p-5 relative overflow-hidden group border-primary/30">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary glow-primary"></div>
+<div class="absolute top-2 right-2 flex space-x-1">
+<span class="flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+</span>
+</div>
+<div class="flex flex-col md:flex-row justify-between gap-4">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high border border-primary/30 flex items-center justify-center font-headline font-bold text-lg text-primary">
+                            QQQ
+                        </div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs text-on-surface-variant">Today, 09:45</span>
+<span class="text-[10px] bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 rounded font-label font-bold">BUY</span>
+<span class="text-[10px] bg-secondary-dim/20 text-secondary-dim border border-secondary-dim/30 px-2 py-0.5 rounded font-label font-bold ml-2">OPEN</span>
+</div>
+<div class="flex items-center gap-3 font-label text-sm">
+<span class="text-on-surface-variant">Entry: <span class="text-on-surface">$460.00</span></span>
+<span class="material-symbols-outlined text-white/20 text-sm">arrow_right_alt</span>
+<span class="text-on-surface-variant">Current: <span class="text-primary glow-primary">$493.12</span></span>
+</div>
+</div>
+</div>
+<div class="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center">
+<div class="text-right">
+<div class="font-label text-lg font-bold text-primary glow-primary">+7.2%</div>
+<div class="font-label text-xs text-primary/80">Unrealized</div>
+</div>
+<div class="text-xs text-on-surface-variant mt-1">Active</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Backtest Replay Section -->
+<div class="mt-8">
+<h2 class="font-headline text-lg font-bold tracking-tight mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary-dim">query_stats</span>
+                BACKTEST REPLAY
+            </h2>
+<div class="glass-panel rounded-xl p-1 overflow-hidden">
+<!-- Mock Chart Area with Gradient -->
+<div class="h-48 w-full rounded-t-lg bg-gradient-to-t from-primary/20 via-surface to-surface relative border-b border-white/5 flex items-end">
+<!-- SVG Chart line placeholder -->
+<svg class="w-full h-full absolute bottom-0 left-0" preserveaspectratio="none" viewbox="0 0 100 100">
+<path class="text-primary drop-shadow-[0_0_10px_rgba(73,244,200,0.5)]" d="M0,80 Q10,75 20,60 T40,50 T60,30 T80,20 T100,5" fill="none" stroke="currentColor" stroke-width="2"></path>
+<!-- Gradient Fill under path (simulated) -->
+<path d="M0,80 Q10,75 20,60 T40,50 T60,30 T80,20 T100,5 L100,100 L0,100 Z" fill="url(#chart-gradient)" opacity="0.2"></path>
+<defs>
+<lineargradient id="chart-gradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#49f4c8"></stop>
+<stop offset="100%" stop-color="transparent"></stop>
+</lineargradient>
+</defs>
+</svg>
+<div class="absolute top-4 left-4">
+<span class="text-xs text-on-surface-variant uppercase tracking-wider block">90-Day Equity Growth</span>
+<div class="font-label text-2xl font-bold text-on-surface flex items-baseline gap-2">
+                            $10,000 <span class="material-symbols-outlined text-sm text-primary">trending_up</span> <span class="text-primary glow-primary">$10,847</span>
+</div>
+</div>
+</div>
+<!-- Metrics Row -->
+<div class="grid grid-cols-3 divide-x divide-white/5 p-4 bg-surface-container-high/50 rounded-b-lg">
+<div class="text-center px-2">
+<span class="text-[10px] text-on-surface-variant uppercase tracking-widest block mb-1">Sharpe Ratio</span>
+<span class="font-label text-lg font-bold text-on-surface">1.23</span>
+</div>
+<div class="text-center px-2">
+<span class="text-[10px] text-on-surface-variant uppercase tracking-widest block mb-1">Max Drawdown</span>
+<span class="font-label text-lg font-bold text-error-dim">-3.2%</span>
+</div>
+<div class="text-center px-2">
+<span class="text-[10px] text-on-surface-variant uppercase tracking-widest block mb-1">Profit Factor</span>
+<span class="font-label text-lg font-bold text-primary">1.87</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Spacer for Bottom Nav -->
+<div class="h-8"></div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container/80 dark:bg-surface-container/80 backdrop-blur-xl border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex justify-around items-center px-2 py-3">
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-all active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label text-[10px] uppercase tracking-widest mt-1">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-all active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span class="font-label text-[10px] uppercase tracking-widest mt-1">Positions</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary bg-primary/10 rounded-xl px-3 py-1 shadow-[0_0_10px_rgba(73,244,200,0.2)] active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">fitbit_jumping_jacks</span>
+<span class="font-label text-[10px] uppercase tracking-widest mt-1">Signals</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-all active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">insights</span>
+<span class="font-label text-[10px] uppercase tracking-widest mt-1">Analytics</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-all active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label text-[10px] uppercase tracking-widest mt-1">Settings</span>
+</a>
+</nav>
+</body></html>

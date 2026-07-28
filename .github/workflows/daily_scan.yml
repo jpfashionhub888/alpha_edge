@@ -68,15 +68,21 @@ jobs:
           git config --global user.name "AlphaEdge Bot"
           mkdir -p logs
           mkdir -p docs
+          mkdir -p docs/data
           python generate_dashboard.py || true
-          git add -f logs/paper_trades_stocks_only.json || true
-          git add -f logs/latest_signals.json || true
-          git add -f logs/sectors.json || true
-          git add -f logs/earnings.json || true
-          git add -f logs/model_auc.json || true
+
+          # ── Publish live data to docs/data/ for PWA (GitHub Pages) ──
+          # Only copy files that exist so the app always has fresh data
+          for f in paper_trades.json paper_trades_stocks_only.json latest_signals.json \
+                   closed_trades.json circuit_breaker.json model_auc.json scan_info.json; do
+            [ -f "logs/$f" ] && cp "logs/$f" "docs/data/$f" || true
+          done
+
+          # ── Git staging ──
           git add -f docs/index.html || true
-          git add -f model_cache/ || true
-          git diff --staged --quiet || git commit -m "Auto: Trading state + dashboard update $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git add -f docs/app.html   || true
+          git add -f docs/data/      || true
+          git diff --staged --quiet || git commit -m "Auto: Trading state + PWA data update $(date -u '+%Y-%m-%d %H:%M UTC')"
 
           # Push with retry: if the remote has moved on since checkout (the
           # same "fetch first" rejection seen repeatedly on manual pushes),
