@@ -1131,6 +1131,13 @@ def main():
         print('\nPosting GitHub issue (if GITHUB_TOKEN set)...')
         post_github_issue(issue_body, score)
 
+    # IC tracking — snapshot predictions and compute forward IC
+    try:
+        from monitoring.ic_tracker import run as ic_run
+        ic_run()
+    except Exception as _ic_err:
+        print(f'IC tracker failed (non-critical): {_ic_err}')
+
     # Exit code reflects health: non-zero if any P0
     p0_count = len([f for f in findings if f['priority'] == 'P0'])
     sys.exit(1 if p0_count > 0 else 0)
