@@ -906,38 +906,7 @@
 // ===== DATA =====
 // ===== DATA (hardcoded defaults = real portfolio, overridden by live fetch) =====
 var DATA = {
-  trades: {
-    capital: 8689.48367778015,
-    starting_capital: 10000,
-    daily_realized_pnl: 17.77,
-    saved_at: '2026-07-28T05:04:33',
-    positions: {
-      MS: {
-        shares: 3, entry_price: 193.1265137786865,
-        market_price: 208.0, current_price: 208.0,
-        highest_price: 208.0, entry_date: '2026-05-15T19:14:00',
-        stop_loss_pct: 0.05, signal: 0.394, partial_exit_done: false, regime: 'uptrend'
-      },
-      UNH: {
-        shares: 2, entry_price: 388.66423622131344,
-        market_price: 388.47, current_price: 388.47,
-        highest_price: 400.0, entry_date: '2026-05-25T21:41:33',
-        stop_loss_pct: 0.05, signal: 0.421, partial_exit_done: false, regime: 'neutral'
-      }
-    },
-    trade_history: [
-      {action:'BUY',symbol:'MS',shares:3,fill_price:193.13,date:'2026-05-15',reason:'ml_signal'},
-      {action:'BUY',symbol:'UNH',shares:2,fill_price:388.66,date:'2026-05-25',reason:'ml_signal'},
-      {action:'SELL',symbol:'NVDA',shares:2,fill_price:485.20,date:'2026-05-28',reason:'take_profit'},
-      {action:'PARTIAL_SELL',symbol:'AAPL',shares:5,fill_price:201.30,date:'2026-05-20',reason:'partial_exit_5pct'},
-      {action:'SELL',symbol:'AAPL',shares:5,fill_price:198.70,date:'2026-05-22',reason:'time_stop'},
-      {action:'BUY',symbol:'NVDA',shares:2,fill_price:460.80,date:'2026-05-18',reason:'ml_signal'},
-      {action:'SELL',symbol:'JPM',shares:4,fill_price:245.10,date:'2026-05-12',reason:'stop_loss'},
-      {action:'BUY',symbol:'JPM',shares:4,fill_price:252.40,date:'2026-05-08',reason:'ml_signal'},
-      {action:'BUY',symbol:'GS',shares:2,fill_price:520.00,date:'2026-05-05',reason:'ml_signal'}
-    ]
-  },
-  signals: null, closed: null, circuit: null
+  trades: null, signals: null, closed: null, circuit: null
 };
 var CHARTS = {};
 

@@ -1,5 +1,5 @@
-// AlphaEdge Terminal - Service Worker v3
-const CACHE_NAME = 'alphaedge-v3';
+// AlphaEdge Terminal - Service Worker v4
+const CACHE_NAME = 'alphaedge-v4';
 const PRECACHE = [
   '/alpha_edge/app.html',
   '/alpha_edge/manifest.json',
