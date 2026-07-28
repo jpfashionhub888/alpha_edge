@@ -1,5 +1,5 @@
-// AlphaEdge Terminal - Service Worker v2
-const CACHE_NAME = 'alphaedge-v2';
+// AlphaEdge Terminal - Service Worker v3
+const CACHE_NAME = 'alphaedge-v3';
 const PRECACHE = [
   '/alpha_edge/app.html',
   '/alpha_edge/manifest.json',
@@ -8,7 +8,7 @@ const PRECACHE = [
   '/alpha_edge/icon-512.png'
 ];
 
-// Install: pre-cache the app shell
+// Install: pre-cache the app shell only
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
@@ -16,35 +16,43 @@ self.addEventListener('install', event => {
   );
 });
 
-// Activate: remove old caches
+// Activate: remove ALL old caches immediately
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => {
+        console.log('[SW] Deleting old cache:', k);
+        return caches.delete(k);
+      }))
     ).then(() => self.clients.claim())
   );
 });
 
-// Fetch: network-first for JSON data, cache-first for app shell
+// Fetch strategy:
+// - JSON data files → ALWAYS network (never cached, always fresh)
+// - App shell       → cache-first with network fallback
 self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
+  const url = event.request.url;
 
-  // Always fetch live data from network
-  if (url.pathname.includes('/data/') || url.pathname.includes('.json')) {
+  // NEVER cache data files - always fetch fresh from network
+  if (url.includes('/data/') || url.includes('.json')) {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
+      fetch(event.request, { cache: 'no-store' })
+        .catch(() => new Response('{"error":"offline"}', {
+          headers: { 'Content-Type': 'application/json' }
+        }))
     );
     return;
   }
 
-  // App shell: cache-first with network fallback
+  // App shell: cache-first
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
       return fetch(event.request).then(response => {
-        if (response.ok) {
+        if (response && response.ok) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
         }
         return response;
       });
