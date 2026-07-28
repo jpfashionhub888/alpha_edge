@@ -314,9 +314,9 @@ class AlpacaLiveTrader:
             logger.warning(f'Regime detect error: {e}')
             market_regime = {'can_trade': True, 'regime': 'unknown', 'reason': ''}
 
-        if not market_regime.get('can_trade', True):
-            print(f'  CASH MODE — {market_regime.get("reason")}')
-            return
+        cash_mode = not market_regime.get('can_trade', True)
+        if cash_mode:
+            print(f'  CASH MODE — {market_regime.get("reason")} — scoring all symbols for dashboard')
 
         # ── Check position limit ──────────────────────────────────
         current_positions = self.broker.get_positions()

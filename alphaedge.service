@@ -3,6 +3,8 @@ Description=AlphaEdge Stock Trading System (Alpaca)
 Documentation=https://github.com/jpfashionhub888/alpha_edge
 After=network-online.target
 Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
 
 [Service]
 Type=simple
@@ -25,8 +27,6 @@ ExecStart=/root/alpha_edge/venv/bin/python alpaca_live.py
 # Restart on crash, back off up to 5 min between retries
 Restart=on-failure
 RestartSec=30
-StartLimitIntervalSec=300
-StartLimitBurst=5
 
 # Route stdout/stderr to journald
 StandardOutput=journal
