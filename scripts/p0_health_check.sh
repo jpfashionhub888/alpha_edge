@@ -4,10 +4,10 @@
 # Covers P0-4 (VPS health verification) and P0-5 (crontab audit).
 # Output is pass/fail for each check so issues are obvious at a glance.
 
-set -euo pipefail
+set -uo pipefail
 PASS=0; FAIL=0
-ok()   { echo "  [PASS] $*"; ((PASS++)); }
-fail() { echo "  [FAIL] $*"; ((FAIL++)); }
+ok()   { echo "  [PASS] $*"; PASS=$((PASS+1)); }
+fail() { echo "  [FAIL] $*"; FAIL=$((FAIL+1)); }
 hdr()  { echo ""; echo "── $* ──────────────────────────────────────"; }
 
 echo "╔══════════════════════════════════════════════╗"
