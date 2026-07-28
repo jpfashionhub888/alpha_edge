@@ -415,7 +415,7 @@
       <button class="sidebar-item" id="snav-alerts" onclick="navigate('alerts')">
         <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         Alerts
-        <span class="sidebar-badge" id="snav-badge">3</span>
+        <span class="sidebar-badge" id="snav-badge">0</span>
       </button>
       <div class="sidebar-section-label" style="margin-top:8px;">System</div>
       <button class="sidebar-item" id="snav-settings" onclick="navigate('settings')">
@@ -448,7 +448,7 @@
       </div>
       <div class="header-right">
         <div class="market-clock" id="market-clock-badge">-- --:--</div>
-        <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+        <div class="live-badge" id="live-badge"><span class="live-dot" id="live-dot"></span><span id="live-badge-text">LIVE</span></div>
         <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">
           <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
@@ -456,7 +456,7 @@
           <button class="icon-btn" onclick="navigate('alerts')" title="Alerts">
             <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           </button>
-          <span class="notif-badge">3</span>
+          <span class="notif-badge" id="header-notif-badge">0</span>
         </div>
       </div>
     </div>
@@ -599,7 +599,7 @@
           <div class="flex items-center justify-between">
             <span class="text-xs muted mono">41 stocks scanned</span>
             <span class="text-xs teal mono bold" id="signals-count">0 BUY signals</span>
-            <span class="text-xs muted mono">9 filters active</span>
+            <span class="text-xs muted mono" id="signals-scan-time">9 filters active</span>
           </div>
         </div>
 
@@ -685,7 +685,7 @@
           </div>
           <div>
             <div class="card mb12">
-              <div class="section-title mb8">30D Price Chart</div>
+              <div class="section-title mb8">Position Chart (Entry → Current)</div>
               <div style="height:140px;position:relative;"><canvas id="detail-chart"></canvas></div>
               <div class="flex justify-between mt8" style="display:flex;justify-content:space-between;">
                 <div class="text-xs dim">SL: <span class="red mono" id="detail-sl">--</span></div>
@@ -698,7 +698,7 @@
               <div class="check-grid" id="detail-filters"></div>
             </div>
             <div style="display:flex;gap:8px;">
-              <button class="kill-switch-btn" style="font-size:13px;padding:12px;" onclick="alert('Connect to live broker to execute')">Close Position</button>
+              <button class="kill-switch-btn" style="font-size:13px;padding:12px;" id="close-pos-btn" onclick="this.textContent='⚠️ Paper mode — no execution';this.disabled=true;setTimeout(()=>{this.textContent='Close Position';this.disabled=false;},3000)">Close Position</button>
               <button class="tab-pill" style="flex:0 0 auto;padding:12px 16px;" onclick="alert('Notes coming soon')">Note</button>
             </div>
           </div>
@@ -720,7 +720,7 @@
         <div class="metric-grid mb12">
           <div class="metric-tile"><div class="metric-label">Win Rate</div><div class="metric-value green" id="an-winrate">--</div></div>
           <div class="metric-tile"><div class="metric-label">Profit Factor</div><div class="metric-value teal" id="an-pf">--</div></div>
-          <div class="metric-tile"><div class="metric-label">Sharpe Ratio</div><div class="metric-value purple" id="an-sharpe">--</div></div>
+          <div class="metric-tile"><div class="metric-label">Per-Trade Sharpe</div><div class="metric-value purple" id="an-sharpe">--</div></div>
           <div class="metric-tile"><div class="metric-label">Max Drawdown</div><div class="metric-value red" id="an-maxdd">--</div></div>
           <div class="metric-tile"><div class="metric-label">Total Trades</div><div class="metric-value" id="an-trades">--</div></div>
           <div class="metric-tile"><div class="metric-label">Total P&amp;L</div><div class="metric-value green" id="an-totalpnl">--</div></div>
@@ -770,6 +770,21 @@
           <div id="model-bars"></div>
         </div>
 
+        <!-- IC Tracking -->
+        <div class="card mb12">
+          <div class="section-title mb8">IC Tracking</div>
+          <div class="flex gap8" style="flex-wrap:wrap;">
+            <div class="metric-tile" style="flex:1;min-width:140px;">
+              <div class="metric-label">Backtest IC</div>
+              <div class="metric-value teal" style="font-size:16px;">0.058</div>
+            </div>
+            <div class="metric-tile" style="flex:2;min-width:200px;">
+              <div class="metric-label">Live IC Tracking</div>
+              <div class="text-sm mono dim" style="margin-top:4px;">Started Jul 28, 2026 &mdash; First reading ~Aug 4, 2026</div>
+            </div>
+          </div>
+        </div>
+
         <!-- Top trades -->
         <div class="section-head">
           <div class="section-title">Top Trades</div>
@@ -781,7 +796,7 @@
       <div id="screen-alerts" class="screen">
         <div class="flex justify-between items-center mb12" style="display:flex;justify-content:space-between;align-items:center;">
           <div class="section-title">Alerts &amp; Notifications</div>
-          <span class="badge badge-sell text-xs">3 new</span>
+          <span class="badge badge-sell text-xs" id="alerts-heading-badge">0 new</span>
         </div>
         <div class="tab-row mb12">
           <button class="tab-pill active" onclick="filterAlerts('all',this)">All</button>
@@ -810,9 +825,9 @@
               <div class="settings-row"><div><div class="settings-label">Max Positions</div><div class="settings-sub">Max open trades at once</div></div><div class="mono teal bold">5</div></div>
               <div class="settings-row"><div><div class="settings-label">Take Profit</div><div class="settings-sub">Close position at gain</div></div><div class="mono teal bold">8%</div></div>
               <div class="settings-row"><div><div class="settings-label">Trailing Stop</div><div class="settings-sub">ATR-based dynamic stop</div></div><div class="mono teal bold">3.5%</div></div>
-              <div class="settings-row"><div><div class="settings-label">Partial Exit</div><div class="settings-sub">Sell 50% at 5% gain</div></div><label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
-              <div class="settings-row"><div><div class="settings-label">Time-Based Stop</div><div class="settings-sub">Exit flat positions after 10 days</div></div><label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
-              <div class="settings-row"><div><div class="settings-label">Kelly Criterion</div><div class="settings-sub">Dynamic position sizing</div></div><label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
+              <div class="settings-row"><div><div class="settings-label">Partial Exit</div><div class="settings-sub">Sell 50% at 5% gain</div></div><label class="toggle-wrap"><input type="checkbox" checked onchange="showToast('Settings are display-only in paper mode')"/><span class="toggle-slider"></span></label></div>
+              <div class="settings-row"><div><div class="settings-label">Time-Based Stop</div><div class="settings-sub">Exit flat positions after 10 days</div></div><label class="toggle-wrap"><input type="checkbox" checked onchange="showToast('Settings are display-only in paper mode')"/><span class="toggle-slider"></span></label></div>
+              <div class="settings-row"><div><div class="settings-label">Kelly Criterion</div><div class="settings-sub">Dynamic position sizing</div></div><label class="toggle-wrap"><input type="checkbox" checked onchange="showToast('Settings are display-only in paper mode')"/><span class="toggle-slider"></span></label></div>
             </div>
 
             <div class="settings-group">
@@ -827,17 +842,17 @@
           <div>
             <div class="settings-group">
               <div class="settings-group-title">AI Signal Filters</div>
-              <div class="settings-row"><div><div class="settings-label">AI Veto Agent</div><div class="settings-sub">Groq / Llama 3 70B review</div></div><label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
-              <div class="settings-row"><div><div class="settings-label">Market Regime Filter</div><div class="settings-sub">SPY + VIX based</div></div><label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
-              <div class="settings-row"><div><div class="settings-label">Multi-Timeframe</div><div class="settings-sub">Weekly + Daily + 4H alignment</div></div><label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
-              <div class="settings-row"><div><div class="settings-label">Insider Tracker</div><div class="settings-sub">SEC Form 4 data boost</div></div><label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
-              <div class="settings-row"><div><div class="settings-label">Circuit Breaker</div><div class="settings-sub">Halt if down 5% in a day</div></div><label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
+              <div class="settings-row"><div><div class="settings-label">AI Veto Agent</div><div class="settings-sub">Groq / Llama 3 70B review</div></div><label class="toggle-wrap"><input type="checkbox" checked onchange="showToast('Settings are display-only in paper mode')"/><span class="toggle-slider"></span></label></div>
+              <div class="settings-row"><div><div class="settings-label">Market Regime Filter</div><div class="settings-sub">SPY + VIX based</div></div><label class="toggle-wrap"><input type="checkbox" checked onchange="showToast('Settings are display-only in paper mode')"/><span class="toggle-slider"></span></label></div>
+              <div class="settings-row"><div><div class="settings-label">Multi-Timeframe</div><div class="settings-sub">Weekly + Daily + 4H alignment</div></div><label class="toggle-wrap"><input type="checkbox" checked onchange="showToast('Settings are display-only in paper mode')"/><span class="toggle-slider"></span></label></div>
+              <div class="settings-row"><div><div class="settings-label">Insider Tracker</div><div class="settings-sub">SEC Form 4 data boost</div></div><label class="toggle-wrap"><input type="checkbox" checked onchange="showToast('Settings are display-only in paper mode')"/><span class="toggle-slider"></span></label></div>
+              <div class="settings-row"><div><div class="settings-label">Circuit Breaker</div><div class="settings-sub">Halt if down 5% in a day</div></div><label class="toggle-wrap"><input type="checkbox" checked onchange="showToast('Settings are display-only in paper mode')"/><span class="toggle-slider"></span></label></div>
             </div>
 
             <div class="settings-group">
               <div class="settings-group-title">Notifications</div>
-              <div class="settings-row"><div><div class="settings-label">Telegram Alerts</div><div class="settings-sub">Trade signals + risk alerts</div></div><label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
-              <div class="settings-row"><div><div class="settings-label">Weekly AI Report</div><div class="settings-sub">Every Sunday - Critic Agent</div></div><label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
+              <div class="settings-row"><div><div class="settings-label">Telegram Alerts</div><div class="settings-sub">Trade signals + risk alerts</div></div><label class="toggle-wrap"><input type="checkbox" checked onchange="showToast('Settings are display-only in paper mode')"/><span class="toggle-slider"></span></label></div>
+              <div class="settings-row"><div><div class="settings-label">Weekly AI Report</div><div class="settings-sub">Every Sunday - Critic Agent</div></div><label class="toggle-wrap"><input type="checkbox" checked onchange="showToast('Settings are display-only in paper mode')"/><span class="toggle-slider"></span></label></div>
             </div>
 
             <div class="settings-group">
@@ -848,7 +863,7 @@
 
             <div class="settings-group">
               <div class="settings-group-title">Emergency</div>
-              <button class="kill-switch-btn" onclick="if(confirm('STOP ALL TRADING?')){alert('Kill switch activated.')}">
+              <button class="kill-switch-btn" id="kill-switch-btn" onclick="killSwitchStep()">
                 EMERGENCY &mdash; STOP ALL TRADING
               </button>
             </div>
@@ -986,24 +1001,24 @@ async function fetchJSON(path) {
     if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
     // Strip leading whitespace/newlines (PowerShell ConvertTo-Json quirk)
     text = text.trim();
-    // If object content is missing opening brace, add it
-    if (text.length > 0 && text[0] === '"') text = '{' + text;
     return JSON.parse(text);
   } catch(e) { console.warn('fetchJSON failed:', path, e.message); return null; }
 }
 
 async function loadAllData() {
-  var [t,s,c,cb,sec,auc] = await Promise.allSettled([
-    fetchJSON('paper_trades.json'), fetchJSON('latest_signals.json'),
+  var [t,s,c,cb,sec,auc,mp] = await Promise.allSettled([
+    fetchJSON('paper_trades_stocks_only.json'), fetchJSON('latest_signals.json'),
     fetchJSON('closed_trades.json'), fetchJSON('circuit_breaker.json'),
-    fetchJSON('sectors.json'),       fetchJSON('model_auc.json')
+    fetchJSON('sectors.json'),       fetchJSON('model_auc.json'),
+    fetchJSON('managed_positions.json')
   ]);
-  DATA.trades   = t.status==='fulfilled'   ? t.value   : null;
-  DATA.signals  = s.status==='fulfilled'   ? s.value   : null;
-  DATA.closed   = c.status==='fulfilled'   ? c.value   : null;
-  DATA.circuit  = cb.status==='fulfilled'  ? cb.value  : null;
-  DATA.sectors  = sec.status==='fulfilled' ? sec.value : null;
-  DATA.modelAuc = auc.status==='fulfilled' ? auc.value : null;
+  DATA.trades            = t.status==='fulfilled'   ? t.value   : null;
+  DATA.signals           = s.status==='fulfilled'   ? s.value   : null;
+  DATA.closed            = c.status==='fulfilled'   ? c.value   : null;
+  DATA.circuit           = cb.status==='fulfilled'  ? cb.value  : null;
+  DATA.sectors           = sec.status==='fulfilled' ? sec.value : null;
+  DATA.modelAuc          = auc.status==='fulfilled' ? auc.value : null;
+  DATA.managed_positions = mp.status==='fulfilled'  ? mp.value  : null;
 }
 
 // ===== HELPERS =====
@@ -1019,10 +1034,11 @@ function positionPnl(pos) {
 }
 
 function generateEquityCurve(trades) {
-  var cap = 10000, pts = [10000], labels = ['Start'];
+  var startCap = (trades && trades.starting_capital) || 10000;
+  var cap = startCap, pts = [startCap], labels = ['Start'];
   if (!trades || !trades.trade_history) return {pts:pts, labels:labels};
   trades.trade_history.filter(function(t){ return t.action==='SELL'||t.action==='PARTIAL_SELL'; })
-    .forEach(function(t){ if(t.pnl!=null){ cap+=t.pnl; pts.push(+cap.toFixed(2)); labels.push(fmtDateShort(t.date)); } });
+    .forEach(function(t){ if(t.pnl_usd!=null){ cap+=t.pnl_usd; pts.push(+cap.toFixed(2)); labels.push(fmtDateShort(t.date)); } });
   return {pts:pts, labels:labels};
 }
 
@@ -1099,8 +1115,9 @@ function renderDashboard() {
   posKeys.forEach(function(sym){ var p=positions[sym]; posValue+=(p.current_price||p.market_price||p.entry_price)*p.shares; });
   var cap = (trades&&trades.capital!=null)?trades.capital:10000;
   var totalVal = cap + posValue;
-  var totalPnl = totalVal - 10000;
-  var totalPct = totalPnl/10000*100;
+  var startCap4d = (DATA.trades && DATA.trades.starting_capital) || 10000;
+  var totalPnl = totalVal - startCap4d;
+  var totalPct = totalPnl/startCap4d*100;
 
   document.getElementById('dash-total-value').textContent = fmt$(totalVal);
   var retEl = document.getElementById('dash-total-return');
@@ -1192,7 +1209,8 @@ function renderPortfolio() {
   var posValue=0;
   posKeys.forEach(function(sym){var p=positions[sym];posValue+=(p.current_price||p.market_price||p.entry_price)*p.shares;});
   var cap=(trades&&trades.capital!=null)?trades.capital:10000;
-  var totalVal=cap+posValue, totalPnl=totalVal-10000, totalPct=totalPnl/10000*100;
+  var startCap4p = (DATA.trades && DATA.trades.starting_capital) || 10000;
+  var totalVal=cap+posValue, totalPnl=totalVal-startCap4p, totalPct=totalPnl/startCap4p*100;
 
   document.getElementById('port-total').textContent=fmt$(totalVal);
   document.getElementById('port-cash').textContent=fmt$(cap);
@@ -1230,10 +1248,12 @@ function renderPortfolio() {
 var allSignals=[], currentSignalFilter='all';
 function renderSignals() {
   var signals=DATA.signals||{};
-  allSignals=Object.entries(signals).map(function(e){return Object.assign({sym:e[0]},e[1]);});
+  allSignals=Object.entries(signals).filter(function(e){return e[0]!=='saved_at';}).map(function(e){return Object.assign({sym:e[0]},e[1]);});
   allSignals.sort(function(a,b){return b.combined-a.combined;});
   var buys=allSignals.filter(function(s){return s.signal==='BUY';}).length;
   document.getElementById('signals-count').textContent=buys+' BUY signal'+(buys===1?'':'s');
+  var _scanEl=document.getElementById('signals-scan-time');
+  if(_scanEl&&signals.saved_at){var _mAgo=Math.floor((Date.now()-new Date(signals.saved_at).getTime())/60000);_scanEl.textContent='Last scan: '+(_mAgo<1?'just now':_mAgo+' min ago');}
   renderSignalsList(allSignals);
   renderEarnings();
 }
@@ -1264,7 +1284,7 @@ function renderSignalsList(list) {
     var pct=((s.combined||0)*100).toFixed(1), pred=((s.prediction||0)*100).toFixed(0);
     return '<div class="signal-card '+cls+'">' +
       '<div class="flex items-center justify-between mb8">' +
-        '<div><div class="signal-symbol">'+s.sym+'</div><div class="signal-co">'+(COMPANY[s.sym]||'')+'&middot;'+(SECTOR[s.sym]||'Market')+'</div></div>' +
+        '<div><div class="signal-symbol">'+s.sym+'</div><div class="signal-co">'+(COMPANY[s.sym]||'')+'&middot;'+((s.sector&&s.sector!=='Unknown')?s.sector:(SECTOR[s.sym]||'Market'))+'</div></div>' +
         '<div class="text-right"><span class="badge '+bdg+'">'+sig+'</span><div class="text-xs muted mono mt8">'+fmt$(s.price||0)+'</div></div>' +
       '</div>' +
       '<div class="flex items-center gap8 mb8"><div class="text-xs dim">ML</div><div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:'+pred+'%"></div></div><div class="text-xs teal mono bold">'+pred+'%</div></div>' +
@@ -1414,7 +1434,7 @@ function calcAnalyticsMetrics(trades) {
   var mean = returns.reduce(function(a,b){return a+b;},0) / n;
   var variance = returns.reduce(function(a,r){return a+Math.pow(r-mean,2);},0) / n;
   var stddev = Math.sqrt(variance);
-  var sharpe = stddev > 0 ? (mean / stddev) * Math.sqrt(252) : 0;
+  var sharpe = stddev > 0 ? (mean / stddev) : 0;
 
   // Sortino (only downside deviation)
   var downReturns = returns.filter(function(r){return r < 0;});
@@ -1423,7 +1443,8 @@ function calcAnalyticsMetrics(trades) {
   var sortino = downDev > 0 ? (mean / downDev) * Math.sqrt(252) : 0;
 
   // Max Drawdown on cumulative P&L
-  var cum = 10000, peak = 10000, maxdd = 0;
+  var startCapA = (DATA.trades && DATA.trades.starting_capital) || 10000;
+  var cum = startCapA, peak = startCapA, maxdd = 0;
   trades.forEach(function(t){
     cum += (t.pnl_usd || 0);
     if (cum > peak) peak = cum;
@@ -1453,7 +1474,7 @@ function renderAnalytics() {
   var wr_dec = s.win_rate || 0;
   var avgW   = Math.abs(s.avg_win  || 9.25);
   var avgL   = Math.abs(s.avg_loss || 11.64);
-  var kelly  = avgL > 0 ? ((wr_dec - (1-wr_dec) * (avgL/avgW)) * 100) : 0;
+  var kelly  = avgL > 0 ? ((wr_dec - (1-wr_dec) * (avgW/avgL)) * 100) : 0;
   kelly = Math.max(0, Math.min(25, kelly)); // cap between 0-25%
 
   var expectancy = wr_dec * avgW - (1-wr_dec) * avgL;
@@ -1497,11 +1518,7 @@ function renderAnalytics() {
   var trainVal = auc ? Math.round((auc.training_auc || 0.97) * 100) : 97;
   var nSym = auc ? (auc.n_symbols_retrained || 41) : 41;
   var models = [
-    {name:'Ensemble AUC (Test)',  acc: aucVal},
-    {name:'Ensemble AUC (Train)', acc: trainVal},
-    {name:'XGBoost',  acc: Math.round(aucVal * 0.97)},
-    {name:'LightGBM', acc: Math.round(aucVal * 0.93)},
-    {name:'CatBoost', acc: Math.round(aucVal * 0.95)}
+    {name:'Ensemble AUC', acc: aucVal}
   ];
   document.getElementById('model-bars').innerHTML = models.map(function(m){
     var isReal = m.name.includes('Ensemble');
@@ -1590,6 +1607,8 @@ function updateAlertBadges() {
   });
   var sb = document.getElementById('snav-badge');
   if (sb) { sb.textContent = count; sb.style.display = count > 0 ? '' : 'none'; }
+  var hb = document.getElementById('alerts-heading-badge');
+  if (hb) { hb.textContent = count + ' new'; hb.style.display = count > 0 ? '' : 'none'; }
 }
 
 function markAlertRead(idx) {
@@ -1630,6 +1649,29 @@ function markAllRead() {
   // Show all-caught-up message
   var hdr = document.querySelector('#alerts-list > div:first-child');
   if (hdr) hdr.innerHTML = '<span class="text-xs" style="color:var(--primary);">&#10003; All caught up</span>';
+}
+
+function updateDataStaleness(signalsData) {
+  var savedAt = signalsData && signalsData.saved_at;
+  var badge = document.getElementById('live-badge');
+  var dot   = document.getElementById('live-dot');
+  var txt   = document.getElementById('live-badge-text');
+  if (!badge || !txt) return;
+  if (!savedAt) { txt.textContent='LIVE'; badge.style.color=''; badge.style.borderColor=''; return; }
+  var ageMs  = Date.now() - new Date(savedAt).getTime();
+  if (ageMs < 2 * 3600000) {
+    badge.style.color=''; badge.style.borderColor='';
+    if (dot) dot.style.background='';
+    txt.textContent='LIVE';
+  } else if (ageMs < 24 * 3600000) {
+    badge.style.color='var(--warning)'; badge.style.borderColor='var(--warning)';
+    if (dot) dot.style.background='var(--warning)';
+    txt.textContent='STALE';
+  } else {
+    badge.style.color='var(--danger)'; badge.style.borderColor='var(--danger)';
+    if (dot) dot.style.background='var(--danger)';
+    txt.textContent='OFFLINE';
+  }
 }
 
 function renderAlerts() {
@@ -1751,6 +1793,45 @@ function hexToRgb(hex){
 
 function setChartPeriod(p,btn){document.querySelectorAll('#screen-dashboard .tab-pill').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');}
 
+// ===== TOAST =====
+function showToast(msg) {
+  var t = document.getElementById('ae-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'ae-toast';
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface-top);border:1px solid var(--border-glow);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:8px 16px;border-radius:var(--radius-pill);z-index:9999;pointer-events:none;transition:opacity .3s;white-space:nowrap;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function(){ t.style.opacity='0'; }, 2500);
+}
+
+// ===== KILL SWITCH (two-step) =====
+var _killStep = 0, _killTimer = null;
+function killSwitchStep() {
+  var btn = document.getElementById('kill-switch-btn');
+  if (!btn) return;
+  if (_killStep === 0) {
+    _killStep = 1;
+    btn.textContent = 'Tap again to confirm STOP ALL';
+    btn.style.boxShadow = '0 0 30px rgba(255,113,108,.6)';
+    _killTimer = setTimeout(function(){
+      _killStep = 0;
+      btn.textContent = 'EMERGENCY — STOP ALL TRADING';
+      btn.style.boxShadow = '';
+    }, 3000);
+  } else {
+    clearTimeout(_killTimer);
+    _killStep = 0;
+    btn.textContent = 'STOPPED — All signals halted';
+    btn.style.background = 'rgba(255,113,108,0.25)';
+    btn.disabled = true;
+    showToast('Kill switch activated — paper mode halted');
+  }
+}
+
 // ===== INIT =====
 function init() {
   // Apply saved theme immediately
@@ -1771,6 +1852,7 @@ function init() {
   // Load data in background, then refresh dashboard
   loadAllData().then(function() {
     renderDashboard();
+    updateDataStaleness(DATA.signals);
   });
 
   // Register service worker
