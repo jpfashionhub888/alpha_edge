@@ -383,7 +383,8 @@ class GateioLiveTrader:
             return
 
         self.last_signal_time[symbol] = time.time()
-        self.paper.save_state()
+        if PAPER_TRADE:
+            self.paper.save_state()
 
         try:
             self.telegram.alert_buy_signal(

@@ -72,11 +72,19 @@ jobs:
           python generate_dashboard.py || true
 
           # ── Publish live data to docs/data/ for PWA (GitHub Pages) ──
-          # Only copy files that exist so the app always has fresh data
-          for f in paper_trades.json paper_trades_stocks_only.json latest_signals.json \
+          # Copy supporting state files from the cloud scan output
+          for f in paper_trades.json paper_trades_stocks_only.json \
                    closed_trades.json circuit_breaker.json model_auc.json scan_info.json; do
             [ -f "logs/$f" ] && cp "logs/$f" "docs/data/$f" || true
           done
+
+          # latest_signals.json is owned exclusively by the VPS scan (alpaca_live.py).
+          # cloud_scan.py (main.py legacy) writes {} when no model is available,
+          # which would overwrite real VPS signal data. Only copy if it has real content
+          # (> 500 bytes). The VPS sync script (scripts/sync_vps_data.sh) handles this.
+          if [ -f "logs/latest_signals.json" ] && [ "$(wc -c < logs/latest_signals.json)" -gt 500 ]; then
+            cp "logs/latest_signals.json" "docs/data/latest_signals.json"
+          fi
 
           # ── Git staging ──
           git add -f docs/index.html || true

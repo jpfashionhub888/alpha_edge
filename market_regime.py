@@ -45,7 +45,7 @@ class MarketRegimeDetector:
         'unknown'  — insufficient data, treat as sideways
     """
 
-    def __init__(self, hysteresis_bars: int = 1):
+    def __init__(self, hysteresis_bars: int = 3):
         """
         hysteresis_bars: regime must hold for N bars before switching.
         Prevents flip-flopping on choppy days.

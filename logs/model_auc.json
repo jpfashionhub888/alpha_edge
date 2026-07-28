@@ -1,4 +1,4 @@
-{
+
   "training_auc": 0.9708280317126142,
   "model_auc": 0.7726620422394959,
   "n_symbols_retrained": 41,

@@ -1,0 +1,16 @@
+[Unit]
+Description=AlphaEdge VPS data sync — runs after each scan cycle
+Requires=alphaedge-data-sync.service
+
+[Timer]
+# Run 20 minutes after each scan window:
+#   14:05 UTC (after 9:45 ET open scan)
+#   16:50 UTC (after 12:30 ET midday scan)
+#   20:35 UTC (after 16:15 ET close scan)
+OnCalendar=Mon-Fri 14:05:00 UTC
+OnCalendar=Mon-Fri 16:50:00 UTC
+OnCalendar=Mon-Fri 20:35:00 UTC
+Persistent=false
+
+[Install]
+WantedBy=timers.target

@@ -255,3 +255,10 @@ if __name__ == '__main__':
     triggered = cb.check(current_value=9400.0, starting_capital=10000.0)
     print(f"Trading blocked: {triggered}")
 
+    print("\n--- Partial recovery (+1%) — should NOT reset yet ---")
+    triggered = cb.check(current_value=9494.0, starting_capital=10000.0)
+    print(f"Still blocked: {triggered}")
+
+    print("\n--- Full recovery (+2.1%) — should reset ---")
+    triggered = cb.check(current_value=9588.0, starting_capital=10000.0)
+    print(f"Trading allowed again: {not triggered}")

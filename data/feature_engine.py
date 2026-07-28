@@ -433,4 +433,11 @@ class FeatureEngine:
 
         df['target'] = (df['future_return'] > 0).astype(int)
 
-        # CRITICAL:
+        # CRITICAL: Drop future_return — must NEVER be a model feature
+        df = df.drop(columns=['future_return'])
+
+        return df
+
+    def get_feature_names(self) -> list:
+        """Return list of feature column names."""
+        return self.feature_names

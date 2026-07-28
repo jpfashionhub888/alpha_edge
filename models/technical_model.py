@@ -7,11 +7,13 @@ Five models vote together for maximum accuracy.
 """
 
 import numpy as np
+import pandas as pd
 import xgboost as xgb
 import lightgbm as lgb
 from catboost import CatBoostClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.feature_selection import SelectKBest, mutual_info_classif
 from sklearn.metrics import roc_auc_score
 from models.lstm_model import LSTMPredictor
 import logging
@@ -31,11 +33,18 @@ class TechnicalPredictor:
     compatibility.
     """
 
+    # Maximum features fed to tree models.
+    # Rule of thumb: n_samples / 8-10.
+    # With ~180 samples, 20 features keeps p/n ≈ 0.14 — safe for tree ensembles.
+    MAX_FEATURES = 20
+
     def __init__(self, use_lstm=True):
-        self.models       = {}
-        self.feature_names= []
-        self.trained      = False
-        self.use_lstm     = use_lstm
+        self.models           = {}
+        self.feature_names    = []
+        self.selected_features= []   # post-selection feature names
+        self.feature_selector = None  # fitted SelectKBest
+        self.trained          = False
+        self.use_lstm         = use_lstm
         # Set after train() — AUC on last 20% of training data
         self.train_auc    : float = 0.5
         self.val_auc      : float = 0.5
@@ -63,6 +72,33 @@ class TechnicalPredictor:
         if len(X_tr) < 50:
             X_tr, y_tr = X, y
             X_val_raw, y_val_raw = X, y
+
+        # ── Feature selection (p >> n guard) ──────────────────────────────────
+        # With 167 features on ~144 training rows, p/n ≈ 1.16 — guaranteed overfit.
+        # Reduce to MAX_FEATURES using mutual information so p/n < 0.15.
+        # Selector is fitted on train only (no data leak).
+        n_features = X_tr.shape[1]
+        k = min(self.MAX_FEATURES, n_features)
+        if n_features > k:
+            try:
+                selector = SelectKBest(mutual_info_classif, k=k)
+                selector.fit(X_tr, y_tr)
+                selected_mask   = selector.get_support()
+                selected_cols   = [c for c, s in zip(X_tr.columns, selected_mask) if s]
+                X_tr            = X_tr[selected_cols]
+                X_val_raw       = X_val_raw[selected_cols]
+                self.feature_selector  = selector
+                self.selected_features = selected_cols
+                logger.info(
+                    f'Feature selection: {n_features} → {k} features '
+                    f'(p/n ratio: {n_features/max(len(X_tr),1):.2f} → {k/max(len(X_tr),1):.2f})'
+                )
+            except Exception as e:
+                logger.warning(f'Feature selection failed ({e}) — using all {n_features} features')
+                self.feature_selector  = None
+                self.selected_features = list(X_tr.columns)
+        else:
+            self.selected_features = list(X_tr.columns)
 
         min_class = y_tr.value_counts().min()
         n_folds = min(5, min_class)
@@ -263,6 +299,21 @@ class TechnicalPredictor:
 
         return self
 
+    def _apply_feature_selection(self, X):
+        """Apply the same feature selection used during training."""
+        if self.selected_features and isinstance(X, pd.DataFrame):
+            # Keep only the columns the model was trained on
+            available = [c for c in self.selected_features if c in X.columns]
+            if len(available) == len(self.selected_features):
+                return X[self.selected_features]
+            elif len(available) > 0:
+                logger.warning(
+                    f'Feature mismatch: expected {len(self.selected_features)}, '
+                    f'found {len(available)} — using available subset'
+                )
+                return X[available]
+        return X
+
     def predict(self, X):
         """
         Average predictions from all models.
@@ -272,6 +323,8 @@ class TechnicalPredictor:
 
         if not self.trained:
             raise Exception("Model not trained yet")
+
+        X = self._apply_feature_selection(X)
 
         all_predictions = []
         weights = []
@@ -319,6 +372,8 @@ class TechnicalPredictor:
 
         if not self.trained:
             raise Exception("Model not trained yet")
+
+        X = self._apply_feature_selection(X)
 
         all_predictions = []
 

@@ -1,0 +1,11 @@
+[Unit]
+Description=AlphaEdge VPS data sync to GitHub Pages
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/root/alpha_edge
+ExecStart=/bin/bash /root/alpha_edge/scripts/sync_vps_data.sh
+StandardOutput=journal
+StandardError=journal

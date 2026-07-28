@@ -977,7 +977,7 @@ var EARNINGS_DATES = [
   {sym:'JPM',date:'2026-10-15',eps:'$4.80'},
   {sym:'V',date:'2026-10-22',eps:'$2.60'},
   {sym:'UNH',date:'2026-10-17',eps:'$7.40'},
-  {sym:'NVDA',date:'2026-08-20',eps:'$0.68'},
+  {sym:'AMD',date:'2026-10-28',eps:'$0.92'},
   {sym:'AAPL',date:'2026-10-30',eps:'$1.60'},
   {sym:'MSFT',date:'2026-10-29',eps:'$3.30'}
 ];
@@ -1143,7 +1143,7 @@ function renderDashboard() {
   } else { document.getElementById('dash-updated').textContent = 'No data'; }
 
   var cb = DATA.circuit, cbEl = document.getElementById('dash-circuit');
-  if (cb&&cb.active){ cbEl.textContent='TRIPPED'; cbEl.className='text-xs red mono'; }
+  if (cb&&cb.triggered){ cbEl.textContent='TRIPPED'; cbEl.className='text-xs red mono'; }
   else { cbEl.textContent='OK - ARMED'; cbEl.className='text-xs green mono'; }
 
   // Positions list
@@ -1277,7 +1277,7 @@ function onSignalSearch(q) {
 
 function renderSignalsList(list) {
   var el=document.getElementById('signals-list');
-  if(!list.length){el.innerHTML='<div class="card text-center dim" style="padding:20px;">No signals match</div>';return;}
+  if(!list.length){el.innerHTML='<div class="card text-center dim" style="padding:20px;">'+(Object.keys(DATA.signals||{}).filter(function(k){return k!=='saved_at';}).length===0?'No signals yet — bot is scanning':'No signals match current filter')+'</div>';return;}
   el.innerHTML=list.map(function(s){
     var sig=s.signal||'HOLD', cls=sig==='BUY'?'buy':sig==='AVOID'?'avoid':'hold';
     var bdg=sig==='BUY'?'badge-buy':sig==='AVOID'?'badge-sell':'badge-hold';
@@ -1479,19 +1479,21 @@ function renderAnalytics() {
 
   var expectancy = wr_dec * avgW - (1-wr_dec) * avgL;
 
-  document.getElementById('an-winrate').textContent = wr.toFixed(1)+'%';
-  document.getElementById('an-pf').textContent      = pf ? pf.toFixed(2) : '--';
-  document.getElementById('an-sharpe').textContent  = sharpe.toFixed(2);
-  document.getElementById('an-maxdd').textContent   = maxdd.toFixed(1)+'%';
-  document.getElementById('an-trades').textContent  = s.total || 0;
-  document.getElementById('an-totalpnl').textContent = (s.total_pnl>=0?'+':'-')+fmt$(Math.abs(s.total_pnl||0));
-  document.getElementById('an-avgwin').textContent  = '+'+fmt$(s.avg_win||0);
-  document.getElementById('an-avgloss').textContent = '-'+fmt$(Math.abs(s.avg_loss||0));
-  document.getElementById('an-sharpe2').textContent = sharpe.toFixed(2);
-  document.getElementById('an-sortino').textContent = sortino.toFixed(2);
-  document.getElementById('an-maxdd2').textContent  = maxdd.toFixed(1)+'%';
-  document.getElementById('an-kelly').textContent   = kelly.toFixed(1)+'%';
-  document.getElementById('an-exp').textContent     = '$'+expectancy.toFixed(2);
+  // Guard: show '--' for all metrics when no trade data exists
+  var hasData = (s.total || 0) > 0;
+  document.getElementById('an-winrate').textContent  = hasData ? wr.toFixed(1)+'%'   : '--';
+  document.getElementById('an-pf').textContent       = hasData && pf ? pf.toFixed(2) : '--';
+  document.getElementById('an-sharpe').textContent   = hasData ? sharpe.toFixed(2)   : '--';
+  document.getElementById('an-maxdd').textContent    = hasData ? maxdd.toFixed(1)+'%': '--';
+  document.getElementById('an-trades').textContent   = s.total || 0;
+  document.getElementById('an-totalpnl').textContent = hasData ? (s.total_pnl>=0?'+':'-')+fmt$(Math.abs(s.total_pnl||0)) : '--';
+  document.getElementById('an-avgwin').textContent   = hasData ? '+'+fmt$(s.avg_win||0)          : '--';
+  document.getElementById('an-avgloss').textContent  = hasData ? '-'+fmt$(Math.abs(s.avg_loss||0)): '--';
+  document.getElementById('an-sharpe2').textContent  = hasData ? sharpe.toFixed(2)   : '--';
+  document.getElementById('an-sortino').textContent  = hasData ? sortino.toFixed(2)  : '--';
+  document.getElementById('an-maxdd2').textContent   = hasData ? maxdd.toFixed(1)+'%': '--';
+  document.getElementById('an-kelly').textContent    = hasData ? kelly.toFixed(1)+'%': '--';
+  document.getElementById('an-exp').textContent      = hasData ? '$'+expectancy.toFixed(2) : '--';
 
   var curve=generateEquityCurve(DATA.trades);
   renderLineChart('analytics-equity-chart',curve.pts,curve.labels,'#00d4aa',true);

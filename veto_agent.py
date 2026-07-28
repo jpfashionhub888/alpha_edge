@@ -154,8 +154,9 @@ APPROVE if:
 
             if decision not in ('APPROVE', 'VETO'):
                 logger.warning(f"Veto agent returned unknown decision '{decision}' for {symbol} — defaulting to VETO")
-                decision = 'VETO'
-                reason   = f"Unexpected decision value '{decision}' from model"
+                bad_value = decision
+                decision  = 'VETO'
+                reason    = f"Unexpected decision value '{bad_value}' from model"
 
             logger.info("Veto Agent [%s]: %s | reason=%s | confidence=%.0f%%",
                         symbol, decision, reason, confidence * 100)
@@ -200,3 +201,4 @@ if __name__ == '__main__':
     print(f"\nDecision:   {result['decision']}")
     print(f"Reason:     {result['reason']}")
     print(f"Confidence: {result['confidence']:.0%}")
+']:.0%}")

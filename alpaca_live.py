@@ -20,6 +20,22 @@ Scan schedule: once daily at 16:15 ET (15 min after market close)
 """
 
 import os
+
+# ── Cache path hardening (must be first — before yfinance / HF imports) ───────
+os.environ.setdefault('HF_HOME',           '/root/.cache/huggingface')
+os.environ.setdefault('TRANSFORMERS_CACHE', '/root/.cache/huggingface/hub')
+os.environ.setdefault('XDG_CACHE_HOME',    '/root/.cache')
+for _d in ('/root/.cache/huggingface', '/root/.cache/py-yfinance'):
+    try:
+        os.makedirs(_d, exist_ok=True)
+    except Exception:
+        pass
+try:
+    import yfinance as _yf_cache
+    _yf_cache.set_tz_cache_location('/root/.cache/py-yfinance')
+except Exception:
+    pass
+
 from config import settings
 import time
 import logging
@@ -43,7 +59,7 @@ logger = logging.getLogger(__name__)
 DAILY_SCAN_HOUR     = 16      # 4 PM ET
 DAILY_SCAN_MIN      = 15      # 16:15 ET — 15 min after market close
 RISK_PER_TRADE_PCT  = settings.MAX_RISK_PER_TRADE   # was hardcoded 0.015, now matches settings.yaml / paper_trader.py
-MAX_POSITIONS       = 5       # max open positions at once
+MAX_POSITIONS       = 8       # max open positions at once
 MARKET_TZ           = pytz.timezone('America/New_York')
 MARKET_OPEN         = dtime(9, 30)
 MARKET_CLOSE        = dtime(16, 0)
@@ -618,6 +634,7 @@ class AlpacaLiveTrader:
                     'score'       : combined,
                 }
                 self._save_managed_positions()  # BUG 4 FIX: persist to disk
+                self._record_buy_to_state(symbol, price, dollar_amount)  # sync dashboard
                 try:
                     self.telegram.alert_buy_signal(
                         symbol, price, combined,
@@ -704,12 +721,46 @@ class AlpacaLiveTrader:
                 continue
             self._check_stops_targets()
 
+    def _update_state_prices(self, positions: dict) -> None:
+        """Write current prices + live P&L into paper_trades_stocks_only.json."""
+        try:
+            import json as _json, tempfile as _tf
+            trade_file = 'logs/paper_trades_stocks_only.json'
+            if not os.path.exists(trade_file):
+                return
+            with open(trade_file) as f:
+                state = _json.load(f)
+            changed = False
+            for sym, pos_data in state.get('positions', {}).items():
+                live = positions.get(sym, {})
+                curr = live.get('current_price', 0)
+                if curr and curr != pos_data.get('current_price', 0):
+                    entry   = pos_data.get('entry_price', curr)
+                    shares  = pos_data.get('shares', 0)
+                    pnl     = round((curr - entry) * shares, 2)
+                    pnl_pct = round((curr - entry) / entry * 100, 4) if entry > 0 else 0
+                    pos_data['current_price'] = round(curr, 4)
+                    pos_data['pnl']           = pnl
+                    pos_data['pnl_pct']       = pnl_pct
+                    changed = True
+            if changed:
+                state['prices_updated_at'] = datetime.now(MARKET_TZ).isoformat()
+                tmp_fd, tmp_path = _tf.mkstemp(dir='logs', suffix='.tmp')
+                with os.fdopen(tmp_fd, 'w') as f:
+                    _json.dump(state, f, indent=2)
+                os.replace(tmp_path, trade_file)
+        except Exception as e:
+            logger.warning(f'Could not update state prices: {e}')
+
     def _check_stops_targets(self):
         """Check managed positions against current Alpaca prices."""
         if not self.managed_positions:
             return
 
         positions = self.broker.get_positions()
+
+        # Always sync live prices so dashboard P&L stays current
+        self._update_state_prices(positions)
 
         for symbol in list(self.managed_positions.keys()):
             if symbol not in positions:
@@ -751,6 +802,45 @@ class AlpacaLiveTrader:
             self._save_managed_positions()
 
     # ── Utilities ─────────────────────────────────────────────────────
+
+    def _record_buy_to_state(self, symbol: str, price: float, dollar_amount: float) -> None:
+        """Write BUY entry into paper_trades_stocks_only.json so dashboard shows open positions."""
+        try:
+            import json as _json, tempfile as _tf
+            trade_file = 'logs/paper_trades_stocks_only.json'
+            os.makedirs('logs', exist_ok=True)
+            state = {}
+            if os.path.exists(trade_file):
+                with open(trade_file) as f:
+                    state = _json.load(f)
+            shares = round(dollar_amount / price, 4) if price > 0 else 0
+            state.setdefault('positions', {})[symbol] = {
+                'shares'       : shares,
+                'entry_price'  : round(price, 4),
+                'current_price': round(price, 4),
+                'pnl'          : 0.0,
+                'pnl_pct'      : 0.0,
+            }
+            state['capital'] = round(state.get('capital', 10000.0) - dollar_amount, 2)
+            state.setdefault('trade_history', []).append({
+                'action'    : 'BUY',
+                'symbol'    : symbol,
+                'shares'    : shares,
+                'price'     : round(price, 4),
+                'fill_price': round(price, 4),
+                'pnl'       : 0.0,
+                'pnl_pct'   : 0.0,
+                'reason'    : 'SIGNAL',
+                'date'      : datetime.now(MARKET_TZ).isoformat(),
+            })
+            state['saved_at'] = datetime.now(MARKET_TZ).isoformat()
+            tmp_fd, tmp_path = _tf.mkstemp(dir='logs', suffix='.tmp')
+            with os.fdopen(tmp_fd, 'w') as f:
+                _json.dump(state, f, indent=2)
+            os.replace(tmp_path, trade_file)
+            logger.info(f'{symbol}: BUY recorded to state (shares={shares} @ ${price:.2f})')
+        except Exception as e:
+            logger.warning(f'Could not record BUY to state for {symbol}: {e}')
 
     def _save_managed_positions(self):
         """Persist stop/target levels to disk so they survive restarts."""
@@ -826,6 +916,16 @@ class AlpacaLiveTrader:
                 emoji = '🟢' if pos['pnl'] >= 0 else '🔴'
                 print(
                     f'    {emoji} {sym}: {pos["shares"]} shares | '
+                    f'entry=${pos["entry_price"]:.2f} | '
+                    f'current=${pos["current_price"]:.2f} | '
+                    f'PnL=${pos["pnl"]:+.2f} ({pos["pnl_pct"]:.1%})'
+                )
+
+
+if __name__ == '__main__':
+    trader = AlpacaLiveTrader()
+    trader.start()
+{sym}: {pos["shares"]} shares | '
                     f'entry=${pos["entry_price"]:.2f} | '
                     f'current=${pos["current_price"]:.2f} | '
                     f'PnL=${pos["pnl"]:+.2f} ({pos["pnl_pct"]:.1%})'

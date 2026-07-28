@@ -343,4 +343,27 @@ class CrashRecoveryTest:
 
 # ── Pytest entry point ───────────────────────────────────────────────
 # CrashRecoveryTest uses systemctl and requires the production VPS.
-# This wrapper makes it
+# This wrapper makes it collectable by pytest while skipping cleanly in CI.
+
+def test_crash_recovery():
+    """
+    Full crash recovery suite. Skips automatically when systemctl is
+    unavailable (CI / local dev). Runs on VPS and fails pytest if any
+    of T1-T7 fail, so regressions show up in the test report.
+    """
+    result = subprocess.run(
+        ['which', 'systemctl'], capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        pytest.skip('systemctl not available — test requires VPS environment')
+
+    suite     = CrashRecoveryTest()
+    exit_code = suite.run_all()
+    assert exit_code == 0, 'One or more crash recovery tests failed (see output above)'
+
+
+# ── Direct execution ──────────────────────────────────────────────────
+
+if __name__ == '__main__':
+    test = CrashRecoveryTest()
+    sys.exit(test.run_all())

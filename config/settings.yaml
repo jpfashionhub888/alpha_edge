@@ -75,7 +75,7 @@ risk_management:
   max_position_size: 0.15
   max_daily_loss: 0.02
   max_drawdown: 0.10
-  max_open_positions: 5
+  max_open_positions: 8
   max_per_sector: 2
   cooloff_days: 5
   time_stop_days: 5      # P2-4: days flat before time-stop fires (configurable)

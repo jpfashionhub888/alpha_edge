@@ -303,7 +303,7 @@ class BybitLiveTrader:
         # now accepts an optional daily_df parameter.
         try:
             mtf_score = self.mtf.get_mtf_score(symbol, daily_df=df)
-            if mtf_score < 0.0:
+            if mtf_score < 0.5:
                 logger.info(f'{symbol}: SKIP — MTF bearish ({mtf_score:+.2f})')
                 return
         except Exception as e:
