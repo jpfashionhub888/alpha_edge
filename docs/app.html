@@ -142,7 +142,7 @@
     .market-clock { font-family:var(--font-mono); font-size:11px; padding:3px 10px; border-radius:var(--radius-pill); border:1px solid var(--border); display:none; white-space:nowrap; }
     .market-clock.open  { color:var(--primary); border-color:var(--primary); }
     .market-clock.closed{ color:var(--text-muted); }
-    .date-chip { font-family:var(--font-mono); font-size:11px; color:var(--text-muted); padding:2px 8px; background:var(--surface-hi); border-radius:var(--radius-pill); white-space:nowrap; }
+    .date-chip { font-family:var(--font-mono); font-size:11px; color:var(--text-muted); padding:2px 8px; background:var(--surface-hi); border-radius:var(--radius-pill); white-space:nowrap; display:none; }
     .icon-btn { background:none; border:none; color:var(--text-dim); cursor:pointer; padding:6px; border-radius:var(--radius-sm); transition:all .2s; line-height:1; }
     .icon-btn:hover { color:var(--primary); background:rgba(0,212,170,.08); }
     .icon-btn svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; display:block; }
@@ -354,6 +354,7 @@
       .bottom-nav { display:none; }
       .header-logo { display:none; }
       .market-clock { display:inline-flex; }
+      .date-chip { display:inline-flex; }
       .screen { padding:24px; max-width:1200px; }
       .desktop-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
       .desktop-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
@@ -449,7 +450,7 @@
         </div>
       </div>
       <div class="header-right">
-        <div class="date-chip" id="live-date-chip">-- --- ----</div>
+        <div class="date-chip" id="live-date-chip"></div>
         <div class="market-clock" id="market-clock-badge">-- --:--</div>
         <div class="live-badge"><span class="live-dot"></span>LIVE</div>
         <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">
