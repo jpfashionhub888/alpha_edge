@@ -2,7 +2,7 @@
   "name": "AlphaEdge Terminal",
   "short_name": "AlphaEdge",
   "description": "AI-powered US stock trading bot - live signals, portfolio tracking & analytics",
-  "start_url": "/alpha_edge/docs/app.html",
+  "start_url": "/alpha_edge/app.html",
   "scope": "/alpha_edge/",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -34,13 +34,13 @@
     {
       "name": "AI Signals",
       "short_name": "Signals",
-      "url": "/alpha_edge/docs/app.html#signals",
+      "url": "/alpha_edge/app.html",
       "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Portfolio",
       "short_name": "Portfolio",
-      "url": "/alpha_edge/docs/app.html#portfolio",
+      "url": "/alpha_edge/app.html",
       "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
     }
   ]
