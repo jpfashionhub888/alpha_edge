@@ -1,39 +1,47 @@
 {
-    "name": "Alpha Edge Terminal",
-    "short_name": "AlphaEdge",
-    "description": "Global AI Trading System - AlphaEdge + BharatEdge + CryptoEdge",
-    "start_url": "/alpha_edge/master.html",
-    "display": "standalone",
-    "background_color": "#0a0e1a",
-    "theme_color": "#00d4ff",
-    "orientation": "portrait",
-    "icons": [
-        {
-            "src": "icon-192.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        }
-    ],
-    "shortcuts": [
-        {
-            "name": "AlphaEdge",
-            "url": "https://jpfashionhub888.github.io/alpha_edge",
-            "description": "US Stock Trading"
-        },
-        {
-            "name": "BharatEdge",
-            "url": "https://jpfashionhub888.github.io/bharat-edge",
-            "description": "Indian Stock Trading"
-        },
-        {
-            "name": "CryptoEdge",
-            "url": "https://jpfashionhub888.github.io/crypto_edge",
-            "description": "Crypto Trading 24/7"
-        }
-    ]
+  "name": "AlphaEdge Terminal",
+  "short_name": "AlphaEdge",
+  "description": "AI-powered US stock trading bot - live signals, portfolio tracking & analytics",
+  "start_url": "/alpha_edge/docs/app.html",
+  "scope": "/alpha_edge/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0e1a",
+  "theme_color": "#00d4aa",
+  "categories": ["finance", "productivity"],
+  "lang": "en-US",
+  "icons": [
+    {
+      "src": "icons/alpha_edge_logo.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "AI Signals",
+      "short_name": "Signals",
+      "url": "/alpha_edge/docs/app.html#signals",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Portfolio",
+      "short_name": "Portfolio",
+      "url": "/alpha_edge/docs/app.html#portfolio",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
 }
