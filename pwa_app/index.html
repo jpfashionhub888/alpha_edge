@@ -1481,28 +1481,42 @@ var STATIC_ALERTS = [
    time:'Today'}
 ];
 
-// ===== ALERTS READ STATE =====
+// ===== ALERTS READ STATE (persisted in localStorage) =====
+var AE_READ_KEY = 'ae-alerts-read'; // key for localStorage
+
+// Load previously read alert titles from localStorage and apply to STATIC_ALERTS
+(function initAlertReadState() {
+  try {
+    var stored = JSON.parse(localStorage.getItem(AE_READ_KEY) || '[]');
+    STATIC_ALERTS.forEach(function(a) {
+      if (stored.indexOf(a.title) !== -1) a.unread = false;
+    });
+  } catch(e) { /* ignore */ }
+})();
+
+function saveAlertReadState() {
+  try {
+    var readTitles = STATIC_ALERTS.filter(function(a){ return !a.unread; }).map(function(a){ return a.title; });
+    localStorage.setItem(AE_READ_KEY, JSON.stringify(readTitles));
+  } catch(e) { /* ignore */ }
+}
+
 function updateAlertBadges() {
   var count = STATIC_ALERTS.filter(function(a){ return a.unread; }).length;
-  // Header bell badge
   document.querySelectorAll('.notif-badge').forEach(function(el){
     el.textContent = count;
     el.style.display = count > 0 ? '' : 'none';
   });
-  // Sidebar badge
   var sb = document.getElementById('snav-badge');
   if (sb) { sb.textContent = count; sb.style.display = count > 0 ? '' : 'none'; }
-  // Bottom nav badge
-  var nb = document.getElementById('alerts-nav-badge');
-  if (nb) { nb.textContent = count; nb.style.display = count > 0 ? '' : 'none'; }
 }
 
 function markAlertRead(idx) {
   if (idx < 0 || idx >= STATIC_ALERTS.length) return;
-  if (!STATIC_ALERTS[idx].unread) return; // already read
+  if (!STATIC_ALERTS[idx].unread) return;
   STATIC_ALERTS[idx].unread = false;
+  saveAlertReadState();       // <-- persist to localStorage
   updateAlertBadges();
-  // Update the DOM item without full re-render
   var items = document.querySelectorAll('#alerts-list .alert-item');
   if (items[idx]) {
     items[idx].classList.remove('alert-unread');
@@ -1511,19 +1525,30 @@ function markAlertRead(idx) {
     setTimeout(function(){ items[idx].style.opacity = '1'; }, 300);
     var dot = items[idx].querySelector('.unread-dot');
     if (dot) dot.remove();
+    var greenDot = items[idx].querySelector('div[style*="border-radius:50%"]');
+    if (greenDot) greenDot.remove();
+    // Update title tooltip
+    items[idx].removeAttribute('title');
   }
 }
 
+
 function markAllRead() {
   STATIC_ALERTS.forEach(function(a){ a.unread = false; });
+  saveAlertReadState();       // persist to localStorage
   updateAlertBadges();
   document.querySelectorAll('#alerts-list .alert-item').forEach(function(el){
     el.classList.remove('alert-unread');
     var dot = el.querySelector('.unread-dot');
     if (dot) dot.remove();
+    var greenDot = el.querySelector('div[style*="border-radius:50%"]');
+    if (greenDot) greenDot.remove();
   });
   var markAllBtn = document.getElementById('mark-all-read-btn');
   if (markAllBtn) markAllBtn.style.display = 'none';
+  // Show all-caught-up message
+  var hdr = document.querySelector('#alerts-list > div:first-child');
+  if (hdr) hdr.innerHTML = '<span class="text-xs" style="color:var(--primary);">&#10003; All caught up</span>';
 }
 
 function renderAlerts() {
@@ -1656,6 +1681,7 @@ function init() {
   // Show app immediately - do NOT block on data fetch
   document.getElementById('loading-screen').style.display = 'none';
   renderDashboard(); // renders with empty/null data (shows placeholders)
+  updateAlertBadges(); // apply persisted read state to badges immediately
 
   // Start clock right away
   updateMarketClock();
