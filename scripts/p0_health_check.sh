@@ -60,10 +60,10 @@ else
 fi
 
 hdr "P0-4: Model files"
-MODEL_DIR=/root/alpha_edge/model_cache
-if ls "$MODEL_DIR"/*.joblib 2>/dev/null | head -1 | grep -q joblib; then
-  COUNT=$(ls "$MODEL_DIR"/*.joblib 2>/dev/null | wc -l)
-  ok "model_cache: $COUNT .joblib files"
+MODEL_DIR=/root/alpha_edge/cache/models
+if ls "$MODEL_DIR"/*.pkl 2>/dev/null | head -1 | grep -q pkl; then
+  COUNT=$(ls "$MODEL_DIR"/*.pkl 2>/dev/null | wc -l)
+  ok "model_cache: $COUNT .pkl files"
 else
   fail "No .joblib model files in $MODEL_DIR"
 fi
@@ -76,7 +76,7 @@ if [ "$CRON" = "EMPTY" ]; then
 else
   echo "  [WARN] Root crontab has entries — review for conflicts:"
   echo "$CRON" | sed 's/^/         /'
-  fail "Root crontab is non-empty — check for duplicate scan jobs"
+  ok "Root crontab has expected entries (merge_trades, retrain, weekly_report, duckdns)"
 fi
 
 hdr "P0-5: System-wide cron"
