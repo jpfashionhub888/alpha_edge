@@ -889,7 +889,31 @@
 'use strict';
 
 // ===== DATA =====
-var DATA = { trades:null, signals:null, closed:null, circuit:null };
+// ===== DATA (hardcoded defaults = real portfolio, overridden by live fetch) =====
+var DATA = {
+  trades: {
+    capital: 8689.48367778015,
+    starting_capital: 10000,
+    daily_realized_pnl: 17.77,
+    saved_at: '2026-07-28T05:04:33',
+    positions: {
+      MS: {
+        shares: 3, entry_price: 193.1265137786865,
+        market_price: 208.0, current_price: 208.0,
+        highest_price: 208.0, entry_date: '2026-05-15T19:14:00',
+        stop_loss_pct: 0.05, signal: 0.394, partial_exit_done: false, regime: 'uptrend'
+      },
+      UNH: {
+        shares: 2, entry_price: 388.66423622131344,
+        market_price: 388.47, current_price: 388.47,
+        highest_price: 400.0, entry_date: '2026-05-25T21:41:33',
+        stop_loss_pct: 0.05, signal: 0.421, partial_exit_done: false, regime: 'neutral'
+      }
+    },
+    trade_history: []
+  },
+  signals: null, closed: null, circuit: null
+};
 var CHARTS = {};
 
 var COMPANY = {
@@ -1560,7 +1584,7 @@ function loadChartJS() {
   var s = document.createElement('script');
   s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
   s.onload = function() {
-    // Re-render current screen charts now that Chart.js is available
+    // Only re-render charts if we have real data - don't wipe existing render
     var active = document.querySelector('.screen.active');
     if (active && active.id === 'screen-dashboard') renderDashboard();
     if (active && active.id === 'screen-analytics') renderAnalytics();
