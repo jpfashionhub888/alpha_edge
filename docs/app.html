@@ -931,14 +931,21 @@ var EARNINGS_DATES = [
   {sym:'UNH',date:'2026-07-16',eps:'$7.20'}
 ];
 
-// ===== FETCH =====
+// ===== FETCH (with 5s timeout) =====
+function fetchWithTimeout(url, ms) {
+  return new Promise(function(resolve, reject) {
+    var timer = setTimeout(function(){ reject(new Error('timeout')); }, ms);
+    fetch(url).then(function(r){ clearTimeout(timer); resolve(r); }, function(e){ clearTimeout(timer); reject(e); });
+  });
+}
+
 async function fetchJSON(path) {
   try {
-    var base = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? '../logs/' : './data/';
-    var r = await fetch(base + path + '?t=' + Date.now());
+    var base = (location.hostname==='localhost'||location.hostname==='127.0.0.1') ? '../logs/' : './data/';
+    var r = await fetchWithTimeout(base + path + '?t=' + Date.now(), 5000);
     if (!r.ok) throw new Error(r.status);
     return await r.json();
-  } catch(e) { console.warn('Could not load', path); return null; }
+  } catch(e) { console.warn('Could not load', path, e.message); return null; }
 }
 
 async function loadAllData() {
@@ -1504,22 +1511,30 @@ function hexToRgb(hex){
 function setChartPeriod(p,btn){document.querySelectorAll('#screen-dashboard .tab-pill').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');}
 
 // ===== INIT =====
-async function init() {
-  // Apply saved theme
-  var savedTheme=localStorage.getItem('ae-theme')||'dark';
-  document.documentElement.setAttribute('data-theme',savedTheme);
-  var btn=document.getElementById('theme-toggle-btn');
-  if(btn) btn.textContent=savedTheme==='dark'?'Dark Mode':'Light Mode';
+function init() {
+  // Apply saved theme immediately
+  var savedTheme = localStorage.getItem('ae-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  var btn = document.getElementById('theme-toggle-btn');
+  if (btn) btn.textContent = savedTheme === 'dark' ? 'Dark Mode' : 'Light Mode';
 
-  await loadAllData();
-  document.getElementById('loading-screen').style.display='none';
-  renderDashboard();
+  // Show app immediately - do NOT block on data fetch
+  document.getElementById('loading-screen').style.display = 'none';
+  renderDashboard(); // renders with empty/null data (shows placeholders)
 
-  // Clock
+  // Start clock right away
   updateMarketClock();
-  setInterval(updateMarketClock,30000);
+  setInterval(updateMarketClock, 60000);
 
-  if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}
+  // Load data in background, then refresh dashboard
+  loadAllData().then(function() {
+    renderDashboard();
+  });
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }
 }
 
 init();
