@@ -12,8 +12,7 @@
   <link rel="manifest" href="manifest.json"/>
   <link rel="icon" href="icons/alpha_edge_logo.png"/>
   <link rel="apple-touch-icon" href="icons/alpha_edge_logo.png"/>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
 
   <style>
     /* === DESIGN TOKENS === */
@@ -1436,7 +1435,7 @@ var CHART_DEFAULTS = {
   scales:{ x:{display:false}, y:{display:false} }
 };
 
-function destroyChart(id) { if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];} }
+function destroyChart(id) { if(typeof Chart==='undefined') return; if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];} }
 
 function renderLineChart(id, pts, labels, color, fill, invert) {
   destroyChart(id);
@@ -1537,7 +1536,30 @@ function init() {
   }
 }
 
+// Hard failsafe: loading screen ALWAYS hides within 1.5 seconds no matter what
+setTimeout(function() {
+  var ls = document.getElementById('loading-screen');
+  if (ls && ls.style.display !== 'none') {
+    ls.style.display = 'none';
+    renderDashboard();
+  }
+}, 1500);
+
 init();
+
+// Load Chart.js dynamically AFTER app is visible (non-blocking)
+function loadChartJS() {
+  var s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+  s.onload = function() {
+    // Re-render current screen charts now that Chart.js is available
+    var active = document.querySelector('.screen.active');
+    if (active && active.id === 'screen-dashboard') renderDashboard();
+    if (active && active.id === 'screen-analytics') renderAnalytics();
+  };
+  document.head.appendChild(s);
+}
+loadChartJS();
 </script>
 </body>
 </html>
