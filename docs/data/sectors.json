@@ -1,56 +1,112 @@
-{"Technology": {
-    "score": 0.060497201865276594,
-    "flow": "INFLOW",
-    "momentum_21d": 0.0530573080162513
+{
+  "Technology": {
+    "score": -0.013606831630854627,
+    "momentum_10d": -0.050756956286169164,
+    "momentum_21d": -0.03760144407069543,
+    "momentum_63d": 0.08680222590887676,
+    "volume_ratio": 0.7303741879103851,
+    "relative_strength": -0.051456279879684375,
+    "etf": "XLK",
+    "flow": "NEUTRAL"
   },
   "Healthcare": {
-    "score": 0.04005023934378902,
-    "flow": "INFLOW",
-    "momentum_21d": 0.05691416410830863
+    "score": 0.03168152409392718,
+    "momentum_10d": 0.032282524651539246,
+    "momentum_21d": 0.01908443076264832,
+    "momentum_63d": 0.14401657259596767,
+    "volume_ratio": 0.612538364179796,
+    "relative_strength": 0.005229594953659378,
+    "etf": "XLV",
+    "flow": "INFLOW"
   },
   "Financials": {
-    "score": 0.05872094055537463,
-    "flow": "INFLOW",
-    "momentum_21d": 0.07036477463404034
+    "score": 0.03654129623176751,
+    "momentum_10d": 0.012459963672783347,
+    "momentum_21d": 0.061788340342492365,
+    "momentum_63d": 0.10170329824192237,
+    "volume_ratio": 0.7808025866369337,
+    "relative_strength": 0.047933504533503424,
+    "etf": "XLF",
+    "flow": "INFLOW"
   },
   "Energy": {
-    "score": -0.03070406842910063,
-    "flow": "OUTFLOW",
-    "momentum_21d": -0.04760129478118014
+    "score": 0.05371712483590148,
+    "momentum_10d": 0.02475855712946151,
+    "momentum_21d": 0.08395245997313405,
+    "momentum_63d": 0.03542147436146892,
+    "volume_ratio": 1.027126842147358,
+    "relative_strength": 0.07009762416414511,
+    "etf": "XLE",
+    "flow": "INFLOW"
   },
   "Consumer": {
-    "score": 0.0245243902853701,
-    "flow": "INFLOW",
-    "momentum_21d": 0.0351010906939333
+    "score": -0.04280652621234968,
+    "momentum_10d": -0.04365837033106901,
+    "momentum_21d": -0.03086479254978336,
+    "momentum_63d": -0.057528258381697506,
+    "volume_ratio": 0.9547649292009114,
+    "relative_strength": -0.0447196283587723,
+    "etf": "XLY",
+    "flow": "OUTFLOW"
   },
   "Industrials": {
-    "score": 0.02983127594896246,
-    "flow": "INFLOW",
-    "momentum_21d": 0.07490026866400723
+    "score": 0.020235740893815815,
+    "momentum_10d": 0.015239678839056747,
+    "momentum_21d": 0.011037527779712342,
+    "momentum_63d": 0.06458020257020203,
+    "volume_ratio": 0.8558099653385833,
+    "relative_strength": -0.0028173080292765995,
+    "etf": "XLI",
+    "flow": "INFLOW"
   },
   "Utilities": {
-    "score": 0.00014664281094696084,
-    "flow": "NEUTRAL",
-    "momentum_21d": 0.03863556112296229
+    "score": -0.009409587091210292,
+    "momentum_10d": -0.00021882954330754156,
+    "momentum_21d": -0.011255420977845598,
+    "momentum_63d": -0.00472630288748721,
+    "volume_ratio": 0.8598135124225128,
+    "relative_strength": -0.02511025678683454,
+    "etf": "XLU",
+    "flow": "NEUTRAL"
   },
   "Materials": {
-    "score": -0.001266649877255244,
-    "flow": "NEUTRAL",
-    "momentum_21d": 0.02984443456668595
+    "score": -0.0011268942075271294,
+    "momentum_10d": 0.014810426718790737,
+    "momentum_21d": -0.004069749819430313,
+    "momentum_63d": -0.0038209007582570287,
+    "volume_ratio": 0.9168172191629917,
+    "relative_strength": -0.017924585628419254,
+    "etf": "XLB",
+    "flow": "NEUTRAL"
   },
   "Real Estate": {
-    "score": -0.004307478341411157,
-    "flow": "NEUTRAL",
-    "momentum_21d": -0.00334502026231398
+    "score": 0.02389241409524978,
+    "momentum_10d": 0.028776951269557483,
+    "momentum_21d": 0.011494178244337183,
+    "momentum_63d": 0.061416033770058664,
+    "volume_ratio": 0.8384402273519299,
+    "relative_strength": -0.002360657564651758,
+    "etf": "XLRE",
+    "flow": "INFLOW"
   },
   "Communications": {
-    "score": 0.007352869967691621,
-    "flow": "NEUTRAL",
-    "momentum_21d": 0.008291445444314816
+    "score": -0.019594601718759,
+    "momentum_10d": -0.03400622153352684,
+    "momentum_21d": 0.013938626414389255,
+    "momentum_63d": -0.06795540652048893,
+    "volume_ratio": 0.9394859019563376,
+    "relative_strength": 8.379060540031347e-05,
+    "etf": "XLC",
+    "flow": "NEUTRAL"
   },
   "Staples": {
-    "score": -0.009696910926371528,
-    "flow": "NEUTRAL",
-    "momentum_21d": -0.009197859982250423
+    "score": 0.016816469161560807,
+    "momentum_10d": 0.023255843730388026,
+    "momentum_21d": 0.00767325620238446,
+    "momentum_63d": 0.0438702755152498,
+    "volume_ratio": 0.8204493316017444,
+    "relative_strength": -0.0061815796066044815,
+    "etf": "XLP",
+    "flow": "NEUTRAL"
   }
 }
