@@ -201,4 +201,3 @@ if __name__ == '__main__':
     print(f"\nDecision:   {result['decision']}")
     print(f"Reason:     {result['reason']}")
     print(f"Confidence: {result['confidence']:.0%}")
-']:.0%}")
