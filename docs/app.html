@@ -1693,6 +1693,7 @@ var CHART_DEFAULTS = {
 function destroyChart(id) { if(typeof Chart==='undefined') return; if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];} }
 
 function renderLineChart(id, pts, labels, color, fill, invert) {
+  if (typeof Chart === 'undefined') return;
   destroyChart(id);
   var canvas=document.getElementById(id); if(!canvas) return;
   var ctx=canvas.getContext('2d');
