@@ -28,13 +28,13 @@ os.environ.setdefault('XDG_CACHE_HOME',    '/root/.cache')
 for _d in ('/root/.cache/huggingface', '/root/.cache/py-yfinance'):
     try:
         os.makedirs(_d, exist_ok=True)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] cache dir setup failed: {e}", flush=True)
 try:
     import yfinance as _yf_cache
     _yf_cache.set_tz_cache_location('/root/.cache/py-yfinance')
-except Exception:
-    pass
+except Exception as e:
+    print(f"[warn] yfinance cache setup failed: {e}", flush=True)
 
 from config import settings
 import time
