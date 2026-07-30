@@ -392,7 +392,7 @@ def run_runtime_checks():
 # MODULE 3: SERVICE + LOG HEALTH (server-side only)
 # ═════════════════════════════════════════════════════════════════════════════
 
-SERVICES = ['alpaca.service', 'gateio.service', 'dashboard.service']
+SERVICES = ['alphaedge.service', 'gateio.service', 'dashboard.service']
 
 def run_service_checks():
     """Check systemd service health and scan logs for errors."""
