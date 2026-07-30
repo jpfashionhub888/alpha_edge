@@ -1,0 +1,26 @@
+[Unit]
+Description=AlphaEdge Dashboard
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=alphaedge
+Group=alphaedge
+WorkingDirectory=/root/alpha_edge
+ExecStart=/root/alpha_edge/venv/bin/python -m http.server 8050 --directory /root/alpha_edge/docs
+Restart=on-failure
+RestartSec=30
+KillMode=control-group
+
+# ── Security hardening ─────────────────────────────────────────────────
+EnvironmentFile=/etc/alphaedge/secrets
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=false
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target
