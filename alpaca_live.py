@@ -195,6 +195,7 @@ class AlpacaLiveTrader:
 
         # Load any existing Alpaca positions into managed_positions
         self._sync_positions()
+        self._bootstrap_state_file()
 
         # Start price monitor for stop/target management
         self._monitor_running = True
@@ -898,6 +899,54 @@ class AlpacaLiveTrader:
                     f'    {symbol}: {pos["shares"]} shares @ ${pos["entry_price"]:.2f}'
                     f' | PnL={pos["pnl_pct"]:.1%}'
                 )
+
+
+    def _bootstrap_state_file(self):
+        """Write paper_trades_stocks_only.json from live Alpaca state on startup.
+        Preserves trade_history. Called once after _sync_positions().
+        """
+        try:
+            import json as _json, tempfile as _tf
+            trade_file = 'logs/paper_trades_stocks_only.json'
+            os.makedirs('logs', exist_ok=True)
+            state = {}
+            if os.path.exists(trade_file):
+                try:
+                    with open(trade_file) as f:
+                        state = _json.load(f)
+                except Exception:
+                    state = {}
+            account = self.broker.get_account()
+            if not account:
+                logger.warning('Bootstrap: could not fetch account — state file unchanged')
+                return
+            real_cash = float(account['cash'])
+            real_positions = {}
+            broker_positions = self.broker.get_positions()
+            if broker_positions:
+                for symbol, pos in broker_positions.items():
+                    real_positions[symbol] = {
+                        'shares'       : pos.get('shares', 0),
+                        'entry_price'  : pos.get('entry_price', 0.0),
+                        'current_price': pos.get('current_price', pos.get('entry_price', 0.0)),
+                        'pnl'          : pos.get('pnl', 0.0),
+                        'pnl_pct'      : pos.get('pnl_pct', 0.0),
+                    }
+            state['capital']   = round(real_cash, 2)
+            state['positions'] = real_positions
+            state['saved_at']  = datetime.now(MARKET_TZ).isoformat()
+            state.setdefault('starting_capital', 10000.0)
+            state.setdefault('trade_history', [])
+            tmp_fd, tmp_path = _tf.mkstemp(dir='logs', suffix='.tmp')
+            with os.fdopen(tmp_fd, 'w') as f:
+                _json.dump(state, f, indent=2)
+            os.replace(tmp_path, trade_file)
+            logger.info(
+                f'Bootstrap: state written — cash=${real_cash:,.2f}, '
+                f'positions={list(real_positions.keys()) or "none"}'
+            )
+        except Exception as e:
+            logger.warning(f'Bootstrap state file failed: {e}')
 
     def _print_account(self):
         account = self.broker.get_account()
