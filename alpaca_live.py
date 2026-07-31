@@ -422,7 +422,7 @@ class AlpacaLiveTrader:
                 # C4 FIX: MetaLabeler gate — filters false positives from primary model.
                 # load() returns unfitted instance (pass-through) if no cached model.
                 try:
-                    _meta_path = os.path.join('model_cache', f'meta_{symbol}.pkl')
+                    _meta_path = os.path.join('cache', 'models', f'meta_{symbol}.pkl')  # M3 FIX: align with save_models() path
                     _meta      = MetaLabeler.load(_meta_path)
                     _approved, _meta_conf = _meta.should_trade(latest[selected], pred)
                     if not _approved:
@@ -771,7 +771,12 @@ class AlpacaLiveTrader:
 
             pos           = positions[symbol]
             managed       = self.managed_positions[symbol]
-            current_price = pos.get('current_price', 0)
+            # H3 FIX: fetch live quote for stop/target — position price can be 60s stale
+            try:
+                live_quote    = self.broker.get_latest_quote(symbol)
+                current_price = float(live_quote) if live_quote else pos.get('current_price', 0)
+            except Exception:
+                current_price = pos.get('current_price', 0)
             entry         = managed['entry_price']
             pnl_pct       = ((current_price - entry) / entry) * 100 if entry > 0 else 0
 
