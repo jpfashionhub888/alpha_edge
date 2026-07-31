@@ -456,12 +456,16 @@ def run_service_checks():
                     # These are probing noise, not real crashes — downgrade to P2.
                     effective_priority = priority
                     if svc == 'dashboard.service' and label == 'Exception/Traceback in logs':
-                        # Matches: bad HTTP from bots, socketserver connection resets,
-                        # BrokenPipe, HTTP 400/404 — all expected internet noise
+                        # dashboard.service runs python3 -m http.server which:
+                        # (a) always loads via <frozen runpy> — so runpy appears in every traceback
+                        # (b) logs a full traceback for every bad HTTP request from internet scanners
+                        # Service liveness is already checked separately above (P0 if not active).
+                        # If the service is currently active, these tracebacks are historical noise.
                         if re.search(
                             r'\b(?:400|404|BadRequest|BrokenPipe|'
                             r'process_request_thr|ConnectionReset|'
-                            r'socketserver|http\.server)\b',
+                            r'socketserver|http\.server|runpy|'
+                            r'restart counter)\b',
                             ctx
                         ):
                             effective_priority = 'P2'
