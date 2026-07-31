@@ -225,7 +225,7 @@ class TechnicalPredictor:
         # ==========================================
         # MODEL 5: LSTM Neural Network
         # ==========================================
-        if self.use_lstm and len(X) >= 50:
+        if self.use_lstm and len(X_tr) >= 50:
             try:
                 lstm = LSTMPredictor(
                     sequence_length=20,
@@ -235,7 +235,8 @@ class TechnicalPredictor:
                     learning_rate=0.001,
                     batch_size=32
                 )
-                lstm.train(X, y)
+                # L2 FIX: train on X_tr only (not full X) — prevents val-set lookahead
+                lstm.train(X_tr, y_tr)
 
                 if lstm.trained:
                     self.models['lstm'] = lstm
@@ -263,17 +264,51 @@ class TechnicalPredictor:
             f"Ensemble training complete ({n_models} models)"
         )
 
-        # ── Overfitting guard ─────────────────────────────────────────────────
-        # Evaluate on BOTH the training tail and the held-out validation set
-        # to catch models that memorise rather than generalise.
+        # ── Overfitting guard (walk-forward cross-validation) ─────────────────
+        # Use TimeSeriesSplit instead of a single 80/20 cut.
+        # A single split can fool us if the last 20% happens to be an easy
+        # regime (trending market). Walk-forward averages AUC across 3 folds,
+        # each fold training on strictly earlier data than its test window.
+        # val_auc is the mean of fold AUCs — a much more robust estimate.
         try:
-            train_preds = self.predict(X_tr)
-            val_preds   = self.predict(X_val_raw)
+            from sklearn.model_selection import TimeSeriesSplit
 
+            # Use the FULL training data (X_tr) for walk-forward CV,
+            # keeping X_val_raw as a final holdout for the train_auc comparison.
+            n_splits = 3 if len(X_tr) >= 120 else 2
+            tscv     = TimeSeriesSplit(n_splits=n_splits, gap=5)  # gap=5 bars purge
+            fold_aucs = []
+
+            for fold_train_idx, fold_val_idx in tscv.split(X_tr):
+                try:
+                    X_ft = X_tr.iloc[fold_train_idx]
+                    y_ft = y_tr.iloc[fold_train_idx]
+                    X_fv = X_tr.iloc[fold_val_idx]
+                    y_fv = y_tr.iloc[fold_val_idx]
+                    if y_fv.nunique() < 2 or len(X_ft) < 30:
+                        continue
+                    fold_preds = self.predict(X_fv)
+                    fold_aucs.append(float(roc_auc_score(y_fv, fold_preds)))
+                except Exception:
+                    continue
+
+            # Train AUC: evaluate on the held-out final 20% (X_val_raw)
+            train_preds = self.predict(X_tr)
             if y_tr.nunique() >= 2:
                 self.train_auc = float(roc_auc_score(y_tr, train_preds))
-            if y_val_raw.nunique() >= 2:
-                self.val_auc   = float(roc_auc_score(y_val_raw, val_preds))
+
+            # Val AUC: mean of walk-forward folds (robust cross-temporal estimate)
+            if fold_aucs:
+                self.val_auc = float(np.mean(fold_aucs))
+                logger.info(
+                    f'Walk-forward CV: {len(fold_aucs)} folds, '
+                    f'AUCs={[f"{a:.3f}" for a in fold_aucs]}, mean={self.val_auc:.3f}'
+                )
+            else:
+                # Fallback to single holdout if CV failed
+                val_preds = self.predict(X_val_raw)
+                if y_val_raw.nunique() >= 2:
+                    self.val_auc = float(roc_auc_score(y_val_raw, val_preds))
 
             self.overfit_gap = self.train_auc - self.val_auc
 

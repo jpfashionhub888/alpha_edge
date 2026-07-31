@@ -315,8 +315,18 @@ def get_trade_stats_for_sizing(trades_file: str = 'logs/closed_trades.json') -> 
         sells = [t for t in trades if t.get('action') in ('SELL', 'PARTIAL_SELL') and 'pnl' in t]
         if len(sells) < 10:
             return {**defaults, 'n_trades': len(sells)}
-        wins   = [t['pnl'] for t in sells if t['pnl'] > 0]
-        losses = [abs(t['pnl']) for t in sells if t['pnl'] <= 0]
+        # M1 FIX: Kelly formula requires percentage returns, not dollar PnL.
+        # Use pnl_pct (already stored as decimal ratio e.g. 0.08 = 8%) when available.
+        # Fallback: derive pnl_pct from dollar pnl ÷ cost_basis if stored.
+        def _pct(t):
+            if 'pnl_pct' in t and t['pnl_pct'] is not None:
+                return float(t['pnl_pct'])
+            cost = t.get('cost_basis') or (t.get('price', 0) * t.get('shares', 1))
+            return float(t['pnl']) / cost if cost else 0.0
+
+        pcts   = [_pct(t) for t in sells]
+        wins   = [p for p in pcts if p > 0]
+        losses = [abs(p) for p in pcts if p <= 0]
         return {
             'win_rate': len(wins) / len(sells),
             'avg_win' : sum(wins)   / len(wins)   if wins   else defaults['avg_win'],

@@ -31,7 +31,11 @@ class VetoAgent:
         self._client = None  # S3 FIX: created once in __init__, not per-call
 
         if not self.enabled:
-            logger.warning("Veto Agent: GROQ_API_KEY not found — all signals will APPROVE (review disabled)")
+            logger.error(
+                "Veto Agent: GROQ_API_KEY not set — veto layer DISABLED. "
+                "All BUY signals will be VETOED until key is restored. "
+                "Set GROQ_API_KEY in /etc/alphaedge.env and restart the service."
+            )
         else:
             # S3 FIX: instantiate Groq client once here (was created on every review_signal() call,
             # causing up to 100s sequential overhead when 10+ BUY signals queued per scan).
@@ -57,15 +61,16 @@ class VetoAgent:
         """
         Review a BUY signal. Returns dict with 'decision', 'reason', 'confidence'.
 
-        If veto agent is disabled (no API key), returns APPROVE with note.
+        If veto agent is disabled (no API key), returns VETO (fail-closed).
         If API call fails for any reason, returns VETO (fail-closed).
         """
         if not self.enabled:
-            # Disabled — allow trade but mark it as unreviewed
+            # Fail-closed: missing API key = VETO, not APPROVE.
+            # An unreviewed trade is riskier than a skipped trade.
             return {
-                'decision' : 'APPROVE',
-                'reason'   : 'Veto agent disabled (no GROQ_API_KEY)',
-                'confidence': 0.5,
+                'decision'  : 'VETO',
+                'reason'    : 'Veto agent disabled (GROQ_API_KEY not set) — fail-closed',
+                'confidence': 0.0,
             }
 
         try:

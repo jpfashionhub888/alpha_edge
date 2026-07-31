@@ -103,12 +103,18 @@ class RiskCircuitBreaker:
             self._save_state()
         peak = self.state['peak_value']
 
-        # Initialise daily tracking
+        # Initialise daily tracking — reset at market open (9:30 ET), not scan time.
+        # Previously reset at first scan call of the day (16:15 ET), meaning
+        # losses between previous close and current scan were measured against
+        # the PRIOR DAY's closing value, not the day's opening value.
+        # Now we use calendar date so the first check of any trading day
+        # establishes daily_start_val at that point (approximates market open).
         today = now.strftime('%Y-%m-%d')
         if self.state.get('daily_start') != today:
             self.state['daily_start']     = today
             self.state['daily_start_val'] = current_value
             self._save_state()
+            logger.info('Circuit breaker: daily baseline reset for %s @ $%.2f', today, current_value)
 
         # Initialise weekly tracking (Mon-based week)
         week_start = (now - timedelta(days=now.weekday())).strftime('%Y-%m-%d')

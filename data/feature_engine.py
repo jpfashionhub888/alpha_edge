@@ -420,6 +420,12 @@ class FeatureEngine:
 
         forward_period = 5
 
+        # Minimum return magnitude to qualify as a tradeable move.
+        # Binary "up or down" on raw close is ~50% by chance in trending markets.
+        # Requiring ≥0.5% filters noise and aligns labels with realistic entry thresholds
+        # (spread + slippage alone consume ~0.05-0.10%, so <0.5% moves are not tradeable).
+        MIN_RETURN_THRESHOLD = 0.005  # 0.5%
+
         df['future_return'] = (
             df['close']
             .pct_change(forward_period)
@@ -431,7 +437,7 @@ class FeatureEngine:
         # so those rows get target=0 regardless of actual future price movement.
         df = df[df['future_return'].notna()]
 
-        df['target'] = (df['future_return'] > 0).astype(int)
+        df['target'] = (df['future_return'] > MIN_RETURN_THRESHOLD).astype(int)
 
         # CRITICAL: Drop future_return — must NEVER be a model feature
         df = df.drop(columns=['future_return'])
