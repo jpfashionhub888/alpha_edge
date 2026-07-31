@@ -833,6 +833,278 @@ def run_circuit_breaker_checks():
 
 
 # ═════════════════════════════════════════════════════════════════════════════
+# MODULE 9: SECURITY — NON-PYTHON SECRET SCAN
+# Scans all non-.py source files for hardcoded tokens, PATs, API keys.
+# Complements Module 1 (which only reads .py files).
+# ═════════════════════════════════════════════════════════════════════════════
+
+# (pattern, priority, label)
+SECRET_PATTERNS = [
+    (r'ghp_[A-Za-z0-9]{36,}',                                         'P0', 'GitHub Personal Access Token'),
+    (r'ghs_[A-Za-z0-9]{36,}',                                         'P0', 'GitHub Service/Actions token'),
+    (r'AKIA[0-9A-Z]{16}',                                              'P0', 'AWS Access Key ID'),
+    (r'sk-[A-Za-z0-9]{48,}',                                          'P0', 'OpenAI secret key'),
+    (r'(?i)groq[_-]?api[_-]?key\s*[=:]\s*["\'][A-Za-z0-9._\-]{16,}["\']', 'P0', 'Groq API key hardcoded'),
+    (r'(?i)alpaca[_-]?secret\s*[=:]\s*["\'][A-Za-z0-9._\-]{16,}["\']',     'P0', 'Alpaca secret key hardcoded'),
+    (r'(?i)telegram[_-]?token\s*[=:]\s*["\'][0-9]{8,}:[A-Za-z0-9_\-]{30,}["\']', 'P1', 'Telegram bot token hardcoded'),
+]
+
+NON_PY_EXTS = {'.md', '.yaml', '.yml', '.txt', '.sh', '.env', '.cfg', '.ini', '.toml', '.json'}
+# JSON files that are data/output — don't scan for secrets (too noisy)
+NON_PY_JSON_SKIP = {'logs', 'docs', 'cache', 'catboost_info'}
+
+def run_secret_scan():
+    """Scan non-Python files for hardcoded secrets / tokens."""
+    scanned = 0
+    hits     = 0
+    SKIP_SECRET = SKIP_DIRS | {'logs', 'docs', 'catboost_info', 'cache', 'alpha_edge'}
+
+    # os.walk with explicit dir pruning is much faster than rglob on NTFS mounts
+    for dirpath, dirnames, filenames in os.walk(str(ROOT)):
+        dpath = Path(dirpath)
+        # Prune dirs in-place (modifies os.walk traversal)
+        dirnames[:] = [
+            d for d in dirnames
+            if d not in SKIP_SECRET and not d.startswith('.')
+        ]
+        for fname in filenames:
+            fpath = dpath / fname
+            if fpath.suffix not in NON_PY_EXTS:
+                continue
+            # Skip .json files in data/output directories
+            if fpath.suffix == '.json':
+                continue  # skip all JSON — too noisy and rarely contain inline secrets
+            try:
+                rel = fpath.relative_to(ROOT)
+            except ValueError:
+                continue
+            try:
+                src = fpath.read_text(encoding='utf-8', errors='replace')
+            except Exception:
+                continue
+            scanned += 1
+
+            for pattern, priority, label in SECRET_PATTERNS:
+                for m in re.finditer(pattern, src):
+                    lineno  = src[:m.start()].count('\n') + 1
+                    context = src[max(0, m.start() - 40): m.end() + 40]
+                    # Skip if already redacted or annotated as revoked/example
+                    if any(kw in context.upper() for kw in ('REDACTED', 'REVOKED', 'EXAMPLE', 'YOUR_', 'PLACEHOLDER')):
+                        continue
+                    snippet = m.group()
+                    if len(snippet) > 44:
+                        snippet = snippet[:20] + '...' + snippet[-8:]
+                    finding(priority, 'security', str(rel), lineno,
+                            f'{label} exposed in {fpath.suffix} file',
+                            f'Match: {snippet}',
+                            'Rotate the credential immediately. Remove from file, use env vars or secrets manager.')
+                    hits += 1
+
+    ok(f'Secret scan: {scanned} non-Python files checked, {hits} raw secret match(es)')
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# MODULE 10: QUANT METHODOLOGY CHECKS
+# Professional-grade checks for ML/quant correctness issues that static
+# syntax analysis cannot catch: data leakage, overfit measurement bias,
+# label noise, model path mismatches, fill price realism, rate-limit gaps.
+# ═════════════════════════════════════════════════════════════════════════════
+
+def run_quant_methodology_checks():
+    """
+    Validates ML/quant methodology for correctness issues that syntax
+    checks and import tests miss entirely.
+
+    Checks:
+      1. Walk-forward CV vs single 80/20 split (overfit measurement)
+      2. LSTM trained on full X/y vs train split (val lookahead)
+      3. Target variable minimum return threshold (label noise)
+      4. MetaLabeler save vs load path consistency
+      5. Kelly Criterion: pnl_pct (%) not dollar PnL
+      6. Backtest fill price: open not close
+      7. Broker 429 / rate-limit handling
+      8. Fresh live quote for stop/target (not stale position data)
+    """
+
+    # ── 1. Walk-forward CV ────────────────────────────────────────────────
+    model_path = ROOT / 'models' / 'technical_model.py'
+    if model_path.exists():
+        src = model_path.read_text(encoding='utf-8', errors='replace')
+        if 'TimeSeriesSplit' in src:
+            ok('technical_model.py: walk-forward TimeSeriesSplit CV present')
+        else:
+            has_any_split = bool(re.search(
+                r'train_test_split|iloc\[.*train|X_train|X_tr\b', src
+            ))
+            if has_any_split:
+                finding('P1', 'quant-methodology', 'models/technical_model.py', 0,
+                        'Single train/val split — val_AUC variance too high for overfit detection',
+                        'One 80/20 split gives a single noisy estimate. '
+                        'Overfitting is invisible if the split happens to land on a favourable period.',
+                        'Replace with TimeSeriesSplit(n_splits=3, gap=5) from sklearn.model_selection.')
+            else:
+                ok('technical_model.py: no single-split pattern detected')
+    else:
+        ok('models/technical_model.py: file not found (skip CV check)')
+
+    # ── 2. LSTM training data leak ─────────────────────────────────────────
+    lstm_candidates = (
+        list((ROOT / 'models').glob('*lstm*.py'))
+        + list(ROOT.glob('*lstm*.py'))
+        + list((ROOT / 'models').glob('lstm*.py'))
+    )
+    for lf in lstm_candidates:
+        if not lf.exists():
+            continue
+        src = lf.read_text(encoding='utf-8', errors='replace')
+        rel = str(lf.relative_to(ROOT))
+        # .train(X, y) with bare X/y variable names = full-dataset training
+        leak_match = re.search(r'\.train\(\s*X\s*,\s*y\s*\)', src)
+        if leak_match:
+            lineno = src[:leak_match.start()].count('\n') + 1
+            finding('P1', 'quant-methodology', rel, lineno,
+                    'LSTM.train(X, y) uses full dataset — val rows leak into training',
+                    'Calling train() before the train/val split means the model has seen '
+                    'validation rows during training. val_AUC is optimistically biased.',
+                    'Change to: lstm.train(X_tr, y_tr) using only the training partition.')
+        elif re.search(r'\.train\(X_tr|\.train\(X_train', src):
+            ok(f'{rel}: LSTM trains on X_tr/X_train split (no lookahead)')
+
+    # ── 3. Target variable minimum return threshold ────────────────────────
+    fe_path = ROOT / 'data' / 'feature_engine.py'
+    if fe_path.exists():
+        src = fe_path.read_text(encoding='utf-8', errors='replace')
+        thr_match = re.search(r'MIN_RETURN_THRESHOLD\s*=\s*([\d.]+)', src)
+        if thr_match:
+            val = float(thr_match.group(1))
+            if val >= 0.005:
+                ok(f'feature_engine.py: MIN_RETURN_THRESHOLD={val:.3f} (≥0.5%, noise filtered)')
+            elif val > 0:
+                finding('P1', 'quant-methodology', 'data/feature_engine.py', 0,
+                        f'MIN_RETURN_THRESHOLD={val:.4f} is below 0.5% — label noise too high',
+                        f'A threshold of {val*100:.2f}% is smaller than typical spread+slippage (~0.1%). '
+                        'Classifying tiny noise-moves as signals pollutes the label set.',
+                        'Set MIN_RETURN_THRESHOLD = 0.005 (0.5% minimum to qualify as a signal).')
+            else:
+                finding('P1', 'quant-methodology', 'data/feature_engine.py', 0,
+                        'MIN_RETURN_THRESHOLD = 0 — all positive returns classified as signals',
+                        'Zero threshold produces ~50% base rate in trending markets; model '
+                        'cannot distinguish noise from edge.',
+                        'Set MIN_RETURN_THRESHOLD = 0.005.')
+        elif re.search(r'future_return\s*>\s*0(?!\.)', src):
+            finding('P1', 'quant-methodology', 'data/feature_engine.py', 0,
+                    'Target variable: future_return > 0 with no minimum threshold',
+                    'Binary classification on raw >0 returns ~50% base rate due to noise trades. '
+                    'Tiny moves (<0.5%) are not tradeable after spread and slippage.',
+                    'Add: MIN_RETURN_THRESHOLD = 0.005; target = (future_return > MIN_RETURN_THRESHOLD)')
+        else:
+            ok('feature_engine.py: target variable definition looks clean')
+
+    # ── 4. MetaLabeler model save vs load path consistency ────────────────
+    alpaca_path = ROOT / 'alpaca_live.py'
+    if alpaca_path.exists():
+        src_live = alpaca_path.read_text(encoding='utf-8', errors='replace')
+        load_paths = set(re.findall(r"os\.path\.join\(['\"]([^'\"]+)['\"],\s*f?['\"][^'\"]*meta[^'\"]*['\"]", src_live))
+        load_paths |= set(re.findall(r"['\"]([^'\"]*(?:cache/models|model_cache)[^'\"]*meta[^'\"]*)['\"]", src_live))
+
+        # Search for save paths in meta_labeler.py or models/
+        save_paths: set[str] = set()
+        for candidate in [ROOT / 'models' / 'meta_labeler.py',
+                          ROOT / 'meta_labeler.py',
+                          ROOT / 'models' / 'metalabeler.py']:
+            if candidate.exists():
+                s = candidate.read_text(encoding='utf-8', errors='replace')
+                save_paths |= set(re.findall(
+                    r"['\"]([^'\"]*(?:cache/models|model_cache)[^'\"]*)['\"]", s
+                ))
+
+        if load_paths and save_paths:
+            # Check whether the directory component matches
+            load_dirs = {p.split('/meta')[0].split('/model')[0] for p in load_paths}
+            save_dirs = {p.split('/meta')[0].split('/model')[0] for p in save_paths}
+            mismatched = load_dirs - save_dirs
+            if mismatched:
+                finding('P1', 'quant-methodology', 'alpaca_live.py', 0,
+                        f'MetaLabeler: load dir {load_dirs} ≠ save dir {save_dirs}',
+                        'Model saved in a different directory from where it is loaded. '
+                        'alpaca_live.py will always use a stale or missing model.',
+                        "Align both paths to cache/models/: "
+                        "os.path.join('cache', 'models', f'meta_{symbol}.pkl')")
+            else:
+                ok(f'MetaLabeler: save/load paths consistent ({load_dirs})')
+
+    # ── 5. Kelly uses pnl_pct (%), not dollar pnl ─────────────────────────
+    sizer_path = ROOT / 'risk' / 'position_sizer.py'
+    if sizer_path.exists():
+        src = sizer_path.read_text(encoding='utf-8', errors='replace')
+        if 'pnl_pct' in src:
+            ok("position_sizer.py: Kelly uses pnl_pct (% returns) — correct")
+        else:
+            # Check if it sums dollar pnl directly for wins/losses
+            if re.search(r"wins\s*=.*pnl.*>\s*0|avg_win.*pnl\b", src):
+                finding('P0', 'quant-methodology', 'risk/position_sizer.py', 0,
+                        'Kelly Criterion uses dollar PnL — sizing will be wrong',
+                        'Kelly formula requires win/loss as percentage returns (not dollars). '
+                        'Dollar amounts scale with account size, not the edge per trade, '
+                        'producing arbitrary over/under-sizing.',
+                        "Use pnl_pct (e.g. 0.08 = 8%) not pnl. "
+                        "Fallback: pnl / cost_basis if pnl_pct not stored.")
+
+    # ── 6. Backtest fill price: open not close ────────────────────────────
+    for pat in ('*backtest*.py', 'backtest*.py'):
+        for bf in ROOT.glob(pat):
+            src = bf.read_text(encoding='utf-8', errors='replace')
+            rel = str(bf.relative_to(ROOT))
+            # Heuristic: fill assigned from close without open mention nearby
+            fill_close = re.search(r"(?i)(?:fill|exec(?:uted)?|entry)[_\s]*price\s*=\s*\w*close\b", src)
+            fill_open  = re.search(r"(?i)(?:fill|exec(?:uted)?|entry)[_\s]*price\s*=\s*\w*open\b", src)
+            if fill_close and not fill_open:
+                lineno = src[:fill_close.start()].count('\n') + 1
+                finding('P1', 'quant-methodology', rel, lineno,
+                        'Backtest fills at close price — look-ahead bias',
+                        'Filling at the close bar uses the price you were trying to predict. '
+                        'Realistic market-order simulation fills at next-bar open.',
+                        "Change fill price to df['open'].shift(-1) (next-bar open).")
+            elif fill_open:
+                ok(f'{rel}: backtest fills at open price (correct)')
+
+    # ── 7. Broker 429 / rate-limit handling ───────────────────────────────
+    broker_candidates = list(ROOT.glob('*broker*.py')) + list(ROOT.glob('*alpaca*.py'))
+    for bf in broker_candidates:
+        if not bf.exists():
+            continue
+        src = bf.read_text(encoding='utf-8', errors='replace')
+        rel = str(bf.relative_to(ROOT))
+        has_rate_handling = bool(
+            re.search(r'429|rate.limit|RateLimitError|too.many.request', src, re.IGNORECASE)
+        )
+        has_http_calls = bool(
+            re.search(r'requests\.|urlopen|alpaca_trade_api|alpaca\.trading', src)
+        )
+        if has_rate_handling:
+            ok(f'{rel}: 429/rate-limit handling present')
+        elif has_http_calls:
+            finding('P2', 'reliability', rel, 0,
+                    'No 429/rate-limit handling in broker module',
+                    'Alpaca returns HTTP 429 during high-traffic periods. Without retry logic '
+                    'the scan silently skips affected symbols and misses trade signals.',
+                    'Add exponential backoff: sleep(2**attempt) on 429; max 3 retries.')
+
+    # ── 8. Fresh live quote for stop/target, not stale position cache ─────
+    if alpaca_path.exists():
+        src = alpaca_path.read_text(encoding='utf-8', errors='replace')
+        if 'get_latest_quote' in src:
+            ok('alpaca_live.py: get_latest_quote() used for fresh stop/target price')
+        elif re.search(r'current_price\s*=\s*(?:pos|position)\.get|stop.*pos\.get.*price', src):
+            finding('P1', 'quant-methodology', 'alpaca_live.py', 0,
+                    'Stop/target calculated from stale position.current_price',
+                    'Position current_price is last portfolio-sync value (up to 23 h stale). '
+                    'Stop/target levels derived from it will be wrong intraday.',
+                    'Fetch a live quote before computing stops: '
+                    'price = self.broker.get_latest_quote(symbol)')
+
+
+# ═════════════════════════════════════════════════════════════════════════════
 # SCORING ENGINE
 # Produces a health score 0-10 based on priority-weighted finding count.
 # ═════════════════════════════════════════════════════════════════════════════
@@ -1078,28 +1350,34 @@ def main():
     print(f'  Commit: {commit_sha}')
     print(f'{"="*62}\n')
 
-    print('1/7  Static code analysis ...')
+    print('1/9  Static code analysis ...')
     hit = run_static_analysis()
     print(f'     {hit} antipattern hits across all source files')
 
-    print('2/7  Runtime module checks ...')
+    print('2/9  Runtime module checks ...')
     run_runtime_checks()
 
-    print('3/7  Service + log health ...')
+    print('3/9  Service + log health ...')
     run_service_checks()
 
-    print('4/7  Data integrity ...')
+    print('4/9  Data integrity ...')
     run_data_integrity()
 
-    print('5/7  Performance analysis ...')
+    print('5/9  Performance analysis ...')
     run_performance_analysis()
 
-    print('6/7  Config consistency ...')
+    print('6/9  Config consistency ...')
     run_config_checks()
 
-    print('7/7  Dependencies + circuit breaker ...')
+    print('7/9  Dependencies + circuit breaker ...')
     run_dependency_checks()
     run_circuit_breaker_checks()
+
+    print('8/9  Security — non-Python secret scan ...')
+    run_secret_scan()
+
+    print('9/9  Quant methodology checks ...')
+    run_quant_methodology_checks()
 
     duration = (datetime.now() - t0).total_seconds()
     score, grade = compute_score()
