@@ -317,16 +317,37 @@ def create_app():
         _regime_label = _regime_map.get(_regime, _regime)
         _saved_at = _sigs.get('_meta', {}).get('saved_at', '') or next(
             (v.get('saved_at', '') for v in _sigs.values() if isinstance(v, dict) and v.get('saved_at')), '')
+        # P3-1 FIX: previously showed the last-scan timestamp with no
+        # staleness indicator at all — a scan that silently stopped
+        # running 5+ days ago (a real documented incident on this
+        # project) looked identical to a fresh one, same green text,
+        # no warning. Now the status line's color and label change
+        # based on how old the data actually is. Threshold is 72h
+        # (not 24h) because the scan only runs once on weekdays — a
+        # Friday scan is legitimately ~2.5 days old by Monday morning
+        # before the next one runs; that's normal schedule, not staleness.
         _scan_age = ''
+        _staleness_color = C['green']
         if _saved_at:
             try:
                 _st = datetime.fromisoformat(_saved_at.replace('Z', '+00:00')).astimezone(_ET)
-                _scan_age = f'  |  LAST SCAN: {_st.strftime("%m/%d %H:%M ET")}'
+                _age_hours = (datetime.now(_ET) - _st).total_seconds() / 3600
+                if _age_hours >= 120:
+                    _staleness_color = C['red']
+                    _scan_age = f'  |  ⚠ LAST SCAN: {_st.strftime("%m/%d %H:%M ET")} (STALE — {_age_hours/24:.1f}d old)'
+                elif _age_hours >= 72:
+                    _staleness_color = C['yellow']
+                    _scan_age = f'  |  LAST SCAN: {_st.strftime("%m/%d %H:%M ET")} ({_age_hours/24:.1f}d old)'
+                else:
+                    _scan_age = f'  |  LAST SCAN: {_st.strftime("%m/%d %H:%M ET")}'
             except Exception as e:
                 logger.warning(f'Dashboard scan timestamp parse failed: {e}')
+        else:
+            _staleness_color = C['red']
+            _scan_age = '  |  ⚠ NO SCAN DATA'
         status_bar = [
             html.Span(f'PAPER TRADING  |  ALPACA CONNECTED  |  {_regime_label}  |  SCAN: 16:15 ET DAILY{_scan_age}',
-                      style={'color': C['green'], 'fontSize': '9px', 'fontFamily': MONO, 'letterSpacing': '1px'}),
+                      style={'color': _staleness_color, 'fontSize': '9px', 'fontFamily': MONO, 'letterSpacing': '1px'}),
             html.Span(now_str, style={'color': C['mid'], 'fontSize': '9px', 'fontFamily': MONO}),
         ]
 
