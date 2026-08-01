@@ -25,6 +25,7 @@ Criteria:
 """
 
 import json
+import logging
 import os
 import subprocess
 import sys
@@ -36,6 +37,9 @@ try:
     load_dotenv()
 except ImportError:
     pass
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 PASS = '  [GO]   '
 FAIL = '  [NOGO] '
@@ -52,6 +56,10 @@ def check(name: str, ok: bool, detail: str = '', critical: bool = True) -> bool:
     if detail:
         line += f'  --  {detail}'
     print(line)
+    # Mirror every NOGO to the logging module (not just stdout) so it's
+    # captured by journalctl/systemd if this is ever run non-interactively.
+    if not ok:
+        logger.warning('Readiness check failed: %s -- %s', name, detail or '(no detail)')
     results.append({'name': name, 'ok': ok, 'detail': detail, 'critical': critical})
     return ok
 
@@ -206,6 +214,15 @@ def check_model_auc():
         return check('Model AUC >= 0.55', auc >= 0.55, f'{auc:.3f} (need >= 0.55)')
     except FileNotFoundError:
         print(f'{INFO} logs/model_auc.json not found — AUC check skipped')
+        logger.info('logs/model_auc.json not found — AUC check skipped')
+        # Record as a non-critical skip (consistent with the "not yet
+        # measured" branch above) instead of vanishing from the tally
+        # entirely — previously this returned True without adding
+        # anything to `results`, so the criterion silently disappeared
+        # from the pass/total count rather than showing as skipped.
+        results.append({'name': 'Model AUC >= 0.55', 'ok': True,
+                        'detail': 'logs/model_auc.json not found — not measured yet',
+                        'critical': False})
         return True
     except Exception as e:
         return check('Model AUC >= 0.55', False, str(e))

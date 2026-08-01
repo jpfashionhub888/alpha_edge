@@ -44,6 +44,8 @@ logs/closed_trades.json
 logs/alerts.json
 logs/managed_positions.json
 logs/heartbeats/
+logs/kill_switch.json
+logs/model_auc.json
 
 # ── Secrets — NEVER commit API keys ──────────────────────────────────
 config/secrets.env

@@ -267,7 +267,7 @@ class AlphaEdgeHyperOpt:
         if std < 1e-9:
             return 0.0
         # Annualise by actual trade count, not a hardcoded assumption
-        return float((mean / std) * math.sqrt(len(all_returns)))
+        return float((mean / std) * math.sqrt(len(returns)))
 
     # ── Data loading ─────────────────────────────────────────────────────
 

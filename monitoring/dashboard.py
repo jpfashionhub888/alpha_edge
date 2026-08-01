@@ -9,11 +9,14 @@ Bloomberg-style terminal with:
 """
 
 import json, os
+import logging
 import pandas as pd
 from datetime import datetime
 from dash import Dash, html, dcc, dash_table
 from dash.dependencies import Input, Output
 import plotly.graph_objects as go
+
+logger = logging.getLogger(__name__)
 
 # Eastern Time (auto-handles EDT/EST daylight saving)
 try:

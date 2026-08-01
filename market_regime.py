@@ -52,7 +52,14 @@ class MarketRegimeDetector:
         """
         self.hysteresis_bars = hysteresis_bars
         self._regime_history: list = []
-        self._current_regime: str = "unknown"
+        # None = "no committed regime yet" (fresh detector). This is
+        # deliberately NOT the string "unknown" — "unknown" is a truthy
+        # string, so `self._current_regime or new_regime` below would
+        # always short-circuit to "unknown" and the detector could never
+        # report its first real classification (bug: every fresh
+        # detector reported "unknown" forever, even after a clear
+        # bull/bear/crisis reading, because the `or` never fell through).
+        self._current_regime: Optional[str] = None
 
     def analyze(self) -> Dict[str, Any]:
         """

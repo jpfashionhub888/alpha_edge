@@ -18,6 +18,7 @@ import json
 import logging
 import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import pandas as pd
 from datetime import datetime
 from config import settings
@@ -96,38 +97,65 @@ def feature_set_hash(feature_names: list) -> str:
     return hashlib.md5(key.encode()).hexdigest()[:8]
 
 
+EARNINGS_MAX_WORKERS = 8
+EARNINGS_TIMEOUT_SEC = 30
+
+
 def get_earnings_calendar(watchlist):
-    """Check which stocks have earnings this week (with retry)."""
+    """
+    Check which stocks have earnings this week (with retry).
+
+    PERF FIX: this used to fetch each symbol's calendar sequentially
+    (yf.Ticker().calendar in a for-loop), which scaled linearly with
+    watchlist size — at 71 symbols this blocked the scan for minutes.
+    scanner.py already solved this with a ThreadPoolExecutor for the
+    same yfinance call; mirrored here so the live-trading path
+    (alpaca_live.py imports get_earnings_calendar from this module)
+    gets the same speedup instead of running the slow duplicate.
+    """
     import yfinance as yf
     print("\n📅 Checking earnings calendar...")
     earnings_soon = []
-    for symbol in watchlist:
+
+    def _fetch_one(symbol):
         try:
             def _fetch():
                 ticker = yf.Ticker(symbol)
                 return ticker.calendar
             cal = with_retry(_fetch, retries=2, delay=2, label=f'earnings/{symbol}')
-            if cal is not None and len(cal) > 0:
-                if isinstance(cal, dict):
-                    ed = cal.get('Earnings Date', [None])
-                    if ed:
-                        if isinstance(ed, list):
-                            ed = ed[0]
-                        if ed is not None:
-                            from datetime import timedelta
-                            now = datetime.now()
-                            if hasattr(ed, 'date'):
-                                ed = ed.date()
-                            today = now.date()
-                            diff = (ed - today).days
-                            if 0 <= diff <= 7:
-                                earnings_soon.append({
-                                    'symbol': symbol,
-                                    'date': str(ed),
-                                    'days_until': diff,
-                                })
+            if cal is not None and len(cal) > 0 and isinstance(cal, dict):
+                ed = cal.get('Earnings Date', [None])
+                if ed:
+                    if isinstance(ed, list):
+                        ed = ed[0]
+                    if ed is not None:
+                        now = datetime.now()
+                        if hasattr(ed, 'date'):
+                            ed = ed.date()
+                        today = now.date()
+                        diff = (ed - today).days
+                        if 0 <= diff <= 7:
+                            return {
+                                'symbol': symbol,
+                                'date': str(ed),
+                                'days_until': diff,
+                            }
         except Exception as e:
             logger.debug(f'Earnings date parse skipped: {e}')  # Non-critical; skip silently
+        return None
+
+    with ThreadPoolExecutor(max_workers=EARNINGS_MAX_WORKERS) as executor:
+        futures = {executor.submit(_fetch_one, s): s for s in watchlist}
+        for future in as_completed(futures, timeout=EARNINGS_TIMEOUT_SEC):
+            symbol = futures[future]
+            try:
+                result = future.result()
+                if result:
+                    earnings_soon.append(result)
+            except Exception as e:
+                logger.debug(f'Earnings fetch failed for {symbol}: {e}')
+
+    earnings_soon.sort(key=lambda x: x['days_until'])
 
     if earnings_soon:
         n = len(earnings_soon)

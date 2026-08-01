@@ -105,11 +105,19 @@ class AlpacaLiveTrader:
         from execution.alpaca_broker        import AlpacaBroker
         from monitoring.telegram_bot        import TelegramBot
         from monitoring.heartbeat           import HeartbeatMonitor
+        from market_regime                  import MarketRegimeDetector
 
         self.broker          = AlpacaBroker()
         self.telegram        = TelegramBot()
         self.mode            = get_mode()
         self.circuit_breaker = RiskCircuitBreaker()
+        # Created ONCE and reused across scans. MarketRegimeDetector applies
+        # hysteresis (won't switch regime until a new reading holds for N
+        # consecutive detections) to avoid flip-flopping — that only works
+        # if the same instance persists. Recreating it every scan resets
+        # its history each time, so it could never accumulate the readings
+        # needed to report anything but its just-initialized default.
+        self.regime_detector = MarketRegimeDetector()
 
         # Phase 4: heartbeat monitor — writes logs/heartbeats/alpaca_bot.json
         self.heartbeat = HeartbeatMonitor(service_name='alpaca_bot')
@@ -309,7 +317,9 @@ class AlpacaLiveTrader:
 
         # ── Market regime ─────────────────────────────────────────────
         try:
-            regime_detector = MarketRegimeDetector()
+            # Reuse the detector created once in __init__ (not a fresh
+            # instance) so hysteresis history persists across scans.
+            regime_detector = self.regime_detector
             market_regime   = regime_detector.analyze() if hasattr(regime_detector, 'analyze') else {'can_trade': True, 'regime': 'unknown', 'reason': ''}
         except Exception as e:
             logger.warning(f'Regime detect error: {e}')

@@ -44,12 +44,19 @@ jobs:
           ssh root@67.207.82.11 << 'ENDSSH'
             set -e
 
-            echo "=== Stashing any local generated files ==="
+            echo "=== Discarding local changes to generated dashboard only ==="
             cd /root/alpha_edge
-            git stash
+            # Do NOT blanket-stash: this machine holds live trading state and
+            # a bare `git stash` here was never popped, stranding real position
+            # state on every deploy. Only discard the one file that's rebuilt
+            # below anyway.
+            git checkout -- docs/index.html 2>/dev/null || true
 
             echo ""
             echo "=== Pulling latest code ==="
+            # If this fails with "local changes would be overwritten," that means
+            # a state file is still tracked in git — investigate before forcing
+            # past it. Do NOT add `git reset --hard` here.
             git pull origin main
 
             echo ""
