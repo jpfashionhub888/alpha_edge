@@ -507,7 +507,15 @@ class AlpacaLiveTrader:
                         }
                         continue
                 except Exception as _me:
-                    logger.debug(f'{symbol}: MetaLabeler skipped ({_me})')
+                    # P2-4 FIX: was logger.debug, identical severity to the
+                    # intentional "not fitted yet" pass-through — so a real
+                    # bug here (corrupted meta pickle, feature mismatch, etc.)
+                    # silently disabled the false-positive filter with no
+                    # visible trace in production logs. scanner.py already
+                    # gets this right (logger.warning for genuine errors,
+                    # logger.debug only for the expected unfitted case) —
+                    # matching that convention here.
+                    logger.warning(f'{symbol}: MetaLabeler gate error (non-fatal): {_me}')
 
                 regime      = latest['regime'].iloc[0]
                 price       = latest['close'].iloc[0]

@@ -501,7 +501,12 @@ def run_daily_scan():
                     }
                     continue
             except Exception as _me:
-                logger.debug(f"{symbol}: MetaLabeler skipped ({_me})")
+                # P2-4 FIX: was logger.debug, same severity as the intentional
+                # "not fitted yet" pass-through — a genuine error here silently
+                # disabled the false-positive filter with no visible trace.
+                # Matches scanner.py's existing convention (warning for real
+                # errors, debug only for the expected unfitted case).
+                logger.warning(f"{symbol}: MetaLabeler gate error (non-fatal): {_me}")
 
             regime     = latest['regime'].iloc[0]
             price      = latest['close'].iloc[0]
