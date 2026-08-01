@@ -150,12 +150,53 @@ class AlpacaLiveTrader:
 
     # ── Startup ──────────────────────────────────────────────────────
 
+    def _verify_scan_imports(self) -> bool:
+        """
+        L3 FIX: _run_scan() imports ~15 modules locally, once per scan,
+        so a broken import (bad deploy, missing dependency, typo) used
+        to only surface at 16:15 ET when the scan actually runs — hours
+        after startup, with no chance to catch it before market close.
+        This does a dry-run of the same imports at startup instead, so
+        a bad deploy fails loudly here instead of silently at scan time.
+        Does NOT change where _run_scan() gets its imports from — still
+        deliberately local there, just also validated eagerly here.
+        """
+        modules = [
+            'data.stock_data', 'data.news_data', 'data.feature_engine',
+            'models.technical_model', 'models.sentiment_model',
+            'models.regime_detector', 'models.sector_rotation',
+            'models.meta_labeler', 'market_regime', 'multi_timeframe',
+            'correlation_filter', 'veto_agent', 'main', 'scanner',
+            'model_cache',
+        ]
+        import importlib
+        failed = []
+        for mod in modules:
+            try:
+                importlib.import_module(mod)
+            except Exception as e:
+                failed.append((mod, str(e)))
+        if failed:
+            logger.error('Startup import check FAILED for %d module(s):', len(failed))
+            for mod, err in failed:
+                logger.error('  %s: %s', mod, err)
+            return False
+        logger.info('Startup import check OK — all %d scan modules importable', len(modules))
+        return True
+
     def start(self):
         print('\n' + '🚀' * 25)
         print(f'ALPHAEDGE ALPACA STOCKS  —  {datetime.now(MARKET_TZ).strftime("%Y-%m-%d %H:%M ET")}')
         print(f'Mode: {self.mode}  |  Scan interval: 16:15 ET daily')
         print(f'Max positions: {MAX_POSITIONS}  |  Risk per trade: {RISK_PER_TRADE_PCT*100:.1f}%')
         print('🚀' * 25)
+
+        if not self._verify_scan_imports():
+            print('\n❌ HALTED: one or more scan-time imports are broken — see errors above.')
+            print('   Fix the import error before starting; this would otherwise fail silently at 16:15 ET.')
+            if os.getenv('ALPHAEDGE_FORCE_START') != '1':
+                return
+            print('   ALPHAEDGE_FORCE_START=1 set — continuing anyway despite broken imports.')
 
         if not self.broker.connected:
             print('\n❌ Alpaca not connected. Check API keys and try again.')

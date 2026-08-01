@@ -9,7 +9,10 @@ SDK docs: https://alpaca.markets/sdkdocs/
 """
 
 import os
+import functools
 import logging
+import random
+import time as _time
 from datetime import datetime
 
 from alpaca.trading.client import TradingClient
@@ -32,6 +35,49 @@ from alpaca.data import StockHistoricalDataClient
 from alpaca.data.requests import StockLatestQuoteRequest, StockLatestBarRequest
 
 logger = logging.getLogger(__name__)
+
+
+def _retry_on_rate_limit(max_retries: int = 3, base_delay: float = 1.0):
+    """
+    L1 FIX: retry a broker call with exponential backoff + jitter, but ONLY
+    for rate-limit-shaped failures (HTTP 429 / "too many requests"). Any
+    other exception is re-raised immediately on the first attempt and falls
+    through to the caller's existing `except Exception` block unchanged —
+    this adds resilience against Alpaca's per-minute rate limits during
+    rapid-fire scans without changing behaviour for real errors (bad
+    symbol, insufficient funds, connection down, etc).
+
+    Safe to use on order-submission methods (buy/sell/set_stop_loss/etc)
+    specifically because a 429 means Alpaca rejected the request BEFORE
+    processing it — the order was never placed, so retrying can't create
+    a duplicate. Deliberately does NOT retry on timeouts or connection
+    errors, where the original request's outcome is ambiguous and a
+    retry could double-submit a real order.
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_retries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    is_rate_limit = (
+                        getattr(e, 'status_code', None) == 429
+                        or '429' in str(e)
+                        or 'rate limit' in str(e).lower()
+                        or 'too many requests' in str(e).lower()
+                    )
+                    if not is_rate_limit or attempt == max_retries:
+                        raise
+                    delay = base_delay * (2 ** attempt) + random.uniform(0, 0.5)
+                    logger.warning(
+                        "%s rate-limited (attempt %d/%d) — backing off %.1fs",
+                        func.__name__, attempt + 1, max_retries, delay,
+                    )
+                    _time.sleep(delay)
+        return wrapper
+    return decorator
+
 
 # ── Credentials (set via environment variables) ────────────────────────────
 ALPACA_API_KEY    = os.getenv('ALPACA_API_KEY', '')
@@ -96,6 +142,7 @@ class AlpacaBroker:
 
     # ── Account ─────────────────────────────────────────────────────────────
 
+    @_retry_on_rate_limit()
     def get_account(self):
         """Get account details. Returns dict or None."""
         if not self.connected:
@@ -116,6 +163,7 @@ class AlpacaBroker:
 
     # ── Positions ────────────────────────────────────────────────────────────
 
+    @_retry_on_rate_limit()
     def get_positions(self):
         """Get all open positions. Returns {symbol: {...}} dict."""
         if not self.connected:
@@ -141,6 +189,7 @@ class AlpacaBroker:
 
     # ── Orders — Buy ─────────────────────────────────────────────────────────
 
+    @_retry_on_rate_limit()
     def buy(self, symbol, amount_dollars, order_type='market'):
         """
         Buy a stock with a dollar amount (notional order).
@@ -170,6 +219,7 @@ class AlpacaBroker:
             logger.error("buy(%s) failed: %s", symbol, e)
             return False
 
+    @_retry_on_rate_limit()
     def buy_shares(self, symbol, shares, order_type='market'):
         """Buy a specific number of shares."""
         if not self.connected:
@@ -190,6 +240,7 @@ class AlpacaBroker:
 
     # ── Orders — Sell ────────────────────────────────────────────────────────
 
+    @_retry_on_rate_limit()
     def sell(self, symbol, shares=None, order_type='market'):
         """
         Sell a stock. If shares is None, closes the entire position.
@@ -216,6 +267,7 @@ class AlpacaBroker:
 
     # ── Orders — Stop / Limit ────────────────────────────────────────────────
 
+    @_retry_on_rate_limit()
     def set_stop_loss(self, symbol, stop_price):
         """Set a GTC stop-loss order for an existing position."""
         if not self.connected:
@@ -244,6 +296,7 @@ class AlpacaBroker:
             logger.error("set_stop_loss(%s) failed: %s", symbol, e)
             return False
 
+    @_retry_on_rate_limit()
     def set_take_profit(self, symbol, limit_price):
         """Set a GTC limit take-profit order for an existing position."""
         if not self.connected:
@@ -273,6 +326,7 @@ class AlpacaBroker:
 
     # ── Orders — Bracket ─────────────────────────────────────────────────────
 
+    @_retry_on_rate_limit()
     def set_bracket_order(self, symbol, amount_dollars,
                           stop_loss_pct=0.03, take_profit_pct=0.08):
         """
@@ -318,6 +372,7 @@ class AlpacaBroker:
 
     # ── Orders — Query / Cancel ───────────────────────────────────────────────
 
+    @_retry_on_rate_limit()
     def get_orders(self, status='open'):
         """Get orders by status ('open', 'closed', 'all')."""
         if not self.connected:
@@ -340,6 +395,7 @@ class AlpacaBroker:
             logger.error(f'get_orders({status}) failed: {e}')
             return []
 
+    @_retry_on_rate_limit()
     def cancel_all_orders(self):
         """Cancel all open orders."""
         if not self.connected:
