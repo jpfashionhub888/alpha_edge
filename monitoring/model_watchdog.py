@@ -190,7 +190,17 @@ class ModelWatchdog:
                 f'     Total P&L: {"+" if pnl >= 0 else ""}${pnl:,.2f}'
             )
         except Exception as e:
-            self.ok_msgs.append(f'  ⚠️  Trade tracker: could not read ({e})')
+            # P2-4 FIX: was filed under ok_msgs — a failure to even READ
+            # trade progress was reported as a "passing check," so this
+            # watchdog could report all-clear while unable to verify the
+            # one thing it exists to track. WARNING (not CRITICAL) since
+            # we don't know the underlying state is bad, just that we
+            # can't see it — but "can't see it" belongs in issues, not
+            # in the list of things confirmed OK.
+            self.issues.append((
+                'WARNING',
+                f'📊 Trade tracker: could not read ({e})'
+            ))
 
     # ── Check: Circuit breaker ────────────────────────────────────────
 
@@ -216,7 +226,17 @@ class ModelWatchdog:
                 peak = cb.get('peak_value', 0)
                 self.ok_msgs.append(f'  ✅ Circuit breaker: Clear (peak=${peak:,.2f})')
         except Exception as e:
-            self.ok_msgs.append(f'  ⚠️  Circuit breaker: Could not read ({e})')
+            # P2-4 FIX: was filed under ok_msgs. Not being able to read
+            # circuit_breaker.json means we genuinely don't know if
+            # trading should be halted — that's the opposite of "OK,"
+            # and a corrupted/unreadable state file is exactly the
+            # failure mode this codebase has fought before (see
+            # CRITICAL_state_overwrite_loop.md).
+            self.issues.append((
+                'WARNING',
+                f'🚨 Circuit breaker: Could not read state file ({e})\n'
+                f'   Cannot confirm trading is safe to continue — investigate.'
+            ))
 
     # ── Check: Heartbeats ─────────────────────────────────────────────
 
@@ -310,7 +330,14 @@ class ModelWatchdog:
         except requests.exceptions.Timeout:
             self.issues.append(('WARNING', '📡 Alpaca API: Timeout (network issue?)'))
         except Exception as e:
-            self.ok_msgs.append(f'  ⚠️  Alpaca API: check skipped ({e})')
+            # P2-4 FIX: was filed under ok_msgs. This watchdog exists
+            # specifically to verify Alpaca connectivity beyond "process
+            # alive" — silently treating "the check itself broke" the
+            # same as "the check passed" defeats that purpose.
+            self.issues.append((
+                'WARNING',
+                f'📡 Alpaca API: check failed to run ({e})'
+            ))
 
     # ── Output ────────────────────────────────────────────────────────
 

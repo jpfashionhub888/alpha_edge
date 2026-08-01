@@ -40,28 +40,45 @@ MIN_TRADES_WF  = 10      # Minimum trades before walk-forward is meaningful
 UNDERPERF_DAYS = 10      # Consecutive underperforming days before auto-retrain
 
 
-def _get_trade_summary() -> dict:
+def _get_trade_summary() -> tuple[dict, bool]:
+    """
+    Returns (summary, read_failed).
+
+    P2-4 FIX: previously any exception (including a corrupted/truncated
+    closed_trades.json) was swallowed identically to "file doesn't exist
+    yet", so a genuine read failure silently rendered as "0 trades, 0%
+    win rate" with no indication anything was wrong — and the weekly
+    report could still end with "[OK] All walk-forward checks passed."
+    Now a real read failure is logged and flagged so it surfaces as a
+    WARN in the report instead of masquerading as a clean empty state.
+    """
     try:
         with open(TRADES_FILE) as f:
             data = json.load(f)
-        return data.get('summary', {})
-    except Exception:
-        return {}
+        return data.get('summary', {}), False
+    except FileNotFoundError:
+        return {}, False
+    except Exception as e:
+        logger.warning(f'Trade summary read failed: {e}')
+        return {}, True
 
 
-def _get_recent_winrate(n: int = 10) -> Optional[float]:
-    """Win rate on last N closed trades."""
+def _get_recent_winrate(n: int = 10) -> tuple[Optional[float], bool]:
+    """Win rate on last N closed trades. Returns (winrate, read_failed) — see _get_trade_summary."""
     try:
         with open(TRADES_FILE) as f:
             data = json.load(f)
         trades = data.get('trades', [])
         recent = trades[-n:]
         if not recent:
-            return None
+            return None, False
         wins = sum(1 for t in recent if t.get('pnl_usd', t.get('pnl', 0)) > 0)
-        return wins / len(recent)
-    except Exception:
-        return None
+        return wins / len(recent), False
+    except FileNotFoundError:
+        return None, False
+    except Exception as e:
+        logger.warning(f'Recent winrate read failed: {e}')
+        return None, True
 
 
 def _check_feature_drift() -> list[str]:
@@ -169,15 +186,16 @@ def run_walkforward_report(telegram=None, auto_retrain: bool = True) -> str:
     """Run full walk-forward validation and return report string."""
 
     now = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
-    summary  = _get_trade_summary()
+    summary, summary_read_failed = _get_trade_summary()
     n_trades = summary.get('total', 0)
     wr_all   = summary.get('win_rate', 0) * 100
     pf       = summary.get('profit_factor') or 0
     pnl      = summary.get('total_pnl', 0)
 
     # Recent win rate (last 10 trades)
-    wr_recent = _get_recent_winrate(10)
+    wr_recent, winrate_read_failed = _get_recent_winrate(10)
     wr_recent_str = f'{wr_recent*100:.1f}%' if wr_recent is not None else 'N/A'
+    trade_data_read_failed = summary_read_failed or winrate_read_failed
 
     # AUC drift
     auc_msg, auc_critical = _check_model_auc()
@@ -214,6 +232,11 @@ def run_walkforward_report(telegram=None, auto_retrain: bool = True) -> str:
 
     # Alerts section
     alerts = []
+    if trade_data_read_failed:
+        alerts.append(
+            '[WARN] closed_trades.json exists but failed to parse — '
+            'trade stats above may be stale/incomplete, not genuinely zero'
+        )
     if auc_critical:
         alerts.append('[CRITICAL] AUC degraded — new entries HALTED')
     if wr_recent is not None and wr_recent < WR_CRIT:
