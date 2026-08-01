@@ -47,6 +47,18 @@ def atomic_json_write(filepath: str, data: object, default=None) -> None:
     try:
         with os.fdopen(tmp_fd, 'w') as f:
             json.dump(data, f, indent=2, default=default)
+        # REGRESSION FIX: tempfile.mkstemp() always creates the temp file at
+        # mode 0600 (owner-only), regardless of umask — that's its security
+        # property. os.replace() then makes that 0600 file become the final
+        # file, silently tightening permissions on every file this helper
+        # writes vs. the plain open(path, 'w') it replaced (which honored
+        # the process umask, typically 0644 for root cron/systemd jobs).
+        # This broke alphaedge-audit.service (runs as a separate unprivileged
+        # `alphaedge` user) reading logs/paper_trades_stocks_only.json,
+        # written by merge_trades.py running as root — PermissionError,
+        # failing the daily audit for 2+ days before being caught.
+        # Restore the prior effective permissions explicitly.
+        os.chmod(tmp_path, 0o644)
         os.replace(tmp_path, filepath)  # atomic on POSIX and Windows
     except Exception:
         os.unlink(tmp_path)
