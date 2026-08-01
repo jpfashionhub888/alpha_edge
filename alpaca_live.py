@@ -84,9 +84,24 @@ def _seconds_until_next_scan() -> float:
 
 
 def is_market_hours() -> bool:
-    """Return True if current time is within NYSE market hours."""
-    now_et = datetime.now(MARKET_TZ).time()
-    return MARKET_OPEN <= now_et <= MARKET_CLOSE
+    """Return True if current time is within NYSE market hours.
+
+    BUG FIX: this previously checked time-of-day only, with no weekday
+    check — so on a Saturday/Sunday where the clock happened to fall
+    between 9:30-16:00 ET, it incorrectly returned True. That gates the
+    position monitor loop (_check_stops_targets, and now
+    _check_intraday_circuit_breaker), so the bot was making live quote/
+    account API calls and running monitoring logic on weekends. Does
+    NOT account for US market holidays (Thanksgiving, Christmas, etc.)
+    — that needs a real holiday calendar (e.g. pandas_market_calendars)
+    which is a bigger dependency than this fix scopes to. Weekends are
+    ~104 days/year of the gap; holidays are ~9-10 — this closes the
+    larger one.
+    """
+    now = datetime.now(MARKET_TZ)
+    if now.weekday() >= 5:  # 5=Saturday, 6=Sunday
+        return False
+    return MARKET_OPEN <= now.time() <= MARKET_CLOSE
 
 
 def get_mode() -> str:
