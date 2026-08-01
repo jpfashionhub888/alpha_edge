@@ -11,6 +11,7 @@ Invalid or missing signatures are rejected with HTTP 403.
 """
 
 import os
+import sys
 import hmac
 import hashlib
 import json
@@ -19,6 +20,9 @@ import time
 from collections import defaultdict
 from datetime import datetime
 from flask import Flask, request, jsonify, abort
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from atomic_io import atomic_json_write
 
 logger = logging.getLogger(__name__)
 
@@ -456,11 +460,8 @@ def process_signal(signal):
 def save_signals():
     """Save signals to file."""
 
-    import os
     os.makedirs('logs', exist_ok=True)
-
-    with open('logs/webhook_signals.json', 'w') as f:
-        json.dump(received_signals[-100:], f, indent=2)
+    atomic_json_write('logs/webhook_signals.json', received_signals[-100:])
 
 
 def start_webhook_server(port=5000):

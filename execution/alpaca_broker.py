@@ -441,6 +441,7 @@ class AlpacaBroker:
 
     # ── Internal helpers ──────────────────────────────────────────────────────
 
+    @_retry_on_rate_limit()
     def _get_latest_price(self, symbol: str) -> 'float | None':
         """
         Fetch latest ask price via StockHistoricalDataClient.
@@ -465,6 +466,20 @@ class AlpacaBroker:
         except Exception as e:
             logger.warning("_get_latest_price(%s): both quote and bar failed: %s", symbol, e)
             return None
+
+    def get_latest_quote(self, symbol: str) -> 'float | None':
+        """
+        H3 FIX (actually wiring it up): public entry point for callers that
+        need a fresh live price rather than a position's cached price —
+        e.g. alpaca_live.py's stop/target monitor, which was calling
+        self.broker.get_latest_quote(...) already, but that method never
+        existed on this class. Every call was silently raising
+        AttributeError, caught by the monitor's bare `except Exception`,
+        which fell back to the exact stale cached price this was
+        supposed to replace. The comment said "fixed"; the method was
+        never actually implemented. This makes the call real.
+        """
+        return self._get_latest_price(symbol)
 
 
 # ── Standalone connection test ────────────────────────────────────────────────

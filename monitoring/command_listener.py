@@ -19,6 +19,7 @@ Architecture:
 """
 
 import os
+import sys
 import json
 import time
 import logging
@@ -26,6 +27,9 @@ import threading
 from datetime import datetime, timezone
 
 import requests
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from atomic_io import atomic_json_write
 
 logger = logging.getLogger(__name__)
 
@@ -96,8 +100,7 @@ class BotControlState:
                     'paused_at' : self._paused_at,
                     'saved_at'  : datetime.now(timezone.utc).isoformat(),
                 }
-            with open(CONTROL_FILE, 'w') as f:
-                json.dump(data, f, indent=2)
+            atomic_json_write(CONTROL_FILE, data)
         except Exception as e:
             logger.warning('Could not save control state: %s', e)
 

@@ -61,20 +61,11 @@ logging.getLogger().addHandler(_rfh)
 # Helpers
 # ---------------------------------------------------------------------------
 
-def atomic_json_write(filepath: str, data: object) -> None:
-    """Write JSON atomically: write to temp file, then rename.
-    Prevents corrupted JSON if process is killed mid-write."""
-    os.makedirs(os.path.dirname(filepath) or '.', exist_ok=True)
-    tmp_fd, tmp_path = tempfile.mkstemp(
-        dir=os.path.dirname(filepath) or '.', suffix='.tmp'
-    )
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            json.dump(data, f, indent=2)
-        os.replace(tmp_path, filepath)  # atomic on POSIX and Windows
-    except Exception:
-        os.unlink(tmp_path)
-        raise
+# P3-3 FIX: moved to atomic_io.py so other modules can share it instead of
+# each writing state with raw json.dump(). Re-imported here under the same
+# name so nothing that calls atomic_json_write() from within this file
+# needs to change.
+from atomic_io import atomic_json_write
 
 
 def with_retry(fn, retries=3, delay=5, label=''):

@@ -40,6 +40,8 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
+from atomic_io import atomic_json_write
+
 logger = logging.getLogger(__name__)
 
 # ── Default search space ──────────────────────────────────────────────────────
@@ -364,8 +366,7 @@ class AlphaEdgeHyperOpt:
         os.makedirs('logs', exist_ok=True)
         # Sort by Sharpe descending
         sorted_results = sorted(self._results, key=lambda x: x['sharpe'], reverse=True)
-        with open(RESULTS_PATH, 'w') as f:
-            json.dump(sorted_results[:100], f, indent=2)  # top 100
+        atomic_json_write(RESULTS_PATH, sorted_results[:100])  # top 100
         logger.info(f'HyperOpt results saved to {RESULTS_PATH}')
 
     def save_best_params(self, params: Dict) -> None:
@@ -379,8 +380,7 @@ class AlphaEdgeHyperOpt:
             import yaml
         except ImportError:
             logger.warning('PyYAML not installed — saving params to JSON instead')
-            with open('logs/best_hyperopt_params.json', 'w') as f:
-                json.dump(params, f, indent=2)
+            atomic_json_write('logs/best_hyperopt_params.json', params)
             return
 
         os.makedirs('config', exist_ok=True)

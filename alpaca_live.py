@@ -771,7 +771,45 @@ class AlpacaLiveTrader:
             time.sleep(60)
             if not is_market_hours():
                 continue
+            self._check_intraday_circuit_breaker()
             self._check_stops_targets()
+
+    def _check_intraday_circuit_breaker(self):
+        """
+        M4/P3-2 FIX (closing the actual gap): circuit_breaker.check() was
+        only ever called once daily, inside _run_scan() at 16:15 ET after
+        market close. A prior fix made the daily baseline reset on
+        calendar-date change instead of scan-timestamp — correct as far
+        as it went, but with only one check per day, that reset can only
+        ever compare yesterday's close to today's close. It structurally
+        cannot catch an intraday drop, because no second reading is ever
+        taken during the day to compare against. Calling it here, from
+        the loop that already runs every 60s during market hours, means
+        the FIRST call of each trading day now naturally lands shortly
+        after 9:30 ET (market open) rather than at 16:15 — which is what
+        the existing reset-on-date-change logic was already written to
+        assume, just never actually got to run under.
+
+        Deliberately does NOT gate _check_stops_targets() on the result:
+        a tripped breaker should stop NEW entries (already enforced in
+        _run_scan), not prevent exiting existing positions on a stop or
+        target hit — if anything you want that working MORE reliably
+        while the breaker is active, not less.
+        """
+        try:
+            starting_capital = self.circuit_breaker.state.get('starting_capital')
+            if not starting_capital:
+                return  # not yet established by the first daily scan
+            account = self.broker.get_account()
+            if not account:
+                return
+            self.circuit_breaker.check(
+                current_value    = account['portfolio_value'],
+                starting_capital = starting_capital,
+                telegram         = self.telegram,
+            )
+        except Exception as e:
+            logger.warning(f'Intraday circuit breaker check failed: {e}')
 
     def _update_state_prices(self, positions: dict) -> None:
         """Write current prices + live P&L into paper_trades_stocks_only.json."""

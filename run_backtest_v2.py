@@ -36,6 +36,7 @@ from data.stock_data    import StockDataFetcher
 from data.feature_engine import FeatureEngine
 from backtest.walk_forward import WalkForwardBacktester
 from config import settings
+from atomic_io import atomic_json_write
 
 logging.basicConfig(
     level=logging.INFO,
@@ -599,8 +600,7 @@ def _save_results(metrics: dict, label: str):
                 return obj.to_dict()
             return str(obj)
 
-        with open(filename, 'w') as f:
-            json.dump(metrics, f, indent=2, default=serialize)
+        atomic_json_write(filename, metrics, default=serialize)
         print(f"\n  💾 Results saved: {filename}")
     except Exception as e:
         logger.warning(f"Save failed: {e}")

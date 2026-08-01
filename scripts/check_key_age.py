@@ -17,6 +17,9 @@ import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from atomic_io import atomic_json_write
+
 logger = logging.getLogger(__name__)
 
 KEY_AGE_FILE  = Path('logs/key_ages.json')
@@ -46,8 +49,7 @@ def load_key_ages() -> dict:
 def save_key_ages(ages: dict) -> None:
     try:
         KEY_AGE_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(KEY_AGE_FILE, 'w') as f:
-            json.dump(ages, f, indent=2)
+        atomic_json_write(str(KEY_AGE_FILE), ages)
     except Exception as e:
         logger.warning('Could not save key ages: %s', e)
 

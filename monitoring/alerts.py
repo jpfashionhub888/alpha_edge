@@ -7,6 +7,10 @@ from datetime import datetime
 import logging
 import json
 import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from atomic_io import atomic_json_write
 
 logger = logging.getLogger(__name__)
 
@@ -183,5 +187,4 @@ def save_alert_log(alert_type, details):
     alerts = alerts[-100:]
 
     os.makedirs('logs', exist_ok=True)
-    with open(log_file, 'w') as f:
-        json.dump(alerts, f, indent=2)
+    atomic_json_write(log_file, alerts)

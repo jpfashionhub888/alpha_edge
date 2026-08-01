@@ -15,6 +15,8 @@ import os
 import logging
 from datetime import datetime
 
+from atomic_io import atomic_json_write
+
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -110,19 +112,23 @@ def merge_trades():
     }
 
     # Save merged file
+    # P3-3 FIX: this ran on a 5-minute cron and wrote logs/paper_trades_
+    # stocks_only.json — the reconciler's source of truth for open
+    # positions — with a raw open()+json.dump(), no atomic rename. A
+    # kill/crash mid-write here truncates the exact file the reconciler
+    # depends on, which is the same failure class documented in
+    # CRITICAL_state_overwrite_loop.md, just via a cron race instead of
+    # a git overwrite.
     os.makedirs('logs', exist_ok=True)
-    with open(MERGED_FILE, 'w') as f:
-        json.dump(merged, f, indent=2)
+    atomic_json_write(MERGED_FILE, merged)
 
     # Also update the main dashboard file
     # (keeps original stock-only as backup)
     if os.path.exists(STOCK_TRADES_FILE):
         # Backup stock-only file
-        with open('logs/paper_trades_stocks_only.json', 'w') as f:
-            json.dump(stock_data, f, indent=2)
+        atomic_json_write('logs/paper_trades_stocks_only.json', stock_data)
 
-    with open(DASHBOARD_FILE, 'w') as f:
-        json.dump(merged, f, indent=2)
+    atomic_json_write(DASHBOARD_FILE, merged)
 
     n_stock  = len(stock_trades)
     n_crypto = len(crypto_trades)
