@@ -68,7 +68,14 @@ for attempt in 1 2 3; do
     break
   fi
   echo "[sync] push attempt $attempt failed — pulling and retrying..."
-  git pull --no-edit --strategy-option=ours origin main || true
+  # FIX: --strategy-option=ours made this VPS-local commit always win a
+  # merge conflict against whatever was pushed to main in the meantime —
+  # not scoped to docs/data/, the whole merge. Same defect FIX-01 already
+  # found and fixed in daily_scan.yml; this script wasn't covered by that
+  # audit since it's a VPS-side script, not a GitHub Actions workflow.
+  # --rebase replays this sync commit on top of upstream instead of
+  # silently discarding upstream's changes.
+  git pull --no-edit --rebase origin main || true
   sleep 5
 done
 
