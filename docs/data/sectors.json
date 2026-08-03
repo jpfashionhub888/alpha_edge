@@ -4,7 +4,7 @@
     "momentum_10d": -0.002048833854623844,
     "momentum_21d": -0.029015949613126923,
     "momentum_63d": 0.08456844385040774,
-    "volume_ratio": 1.292280917328827,
+    "volume_ratio": 1.3021743255795357,
     "relative_strength": -0.03203697583764076,
     "etf": "XLK",
     "flow": "NEUTRAL"
@@ -14,7 +14,7 @@
     "momentum_10d": 0.020722154171163742,
     "momentum_21d": -0.007267634063050865,
     "momentum_63d": 0.12473738139996748,
-    "volume_ratio": 1.128159714974022,
+    "volume_ratio": 1.1295932517278653,
     "relative_strength": -0.0102886602875647,
     "etf": "XLV",
     "flow": "INFLOW"
@@ -24,7 +24,7 @@
     "momentum_10d": 0.016059916068493107,
     "momentum_21d": 0.023732465303366146,
     "momentum_63d": 0.10052890196530928,
-    "volume_ratio": 1.0542491652290646,
+    "volume_ratio": 1.0580069852011613,
     "relative_strength": 0.02071143907885231,
     "etf": "XLF",
     "flow": "INFLOW"
@@ -34,7 +34,7 @@
     "momentum_10d": 0.027787377433754257,
     "momentum_21d": 0.11894020802643257,
     "momentum_63d": 0.01919223791684277,
-    "volume_ratio": 0.9218365509669136,
+    "volume_ratio": 0.9243874411505651,
     "relative_strength": 0.11591918180191874,
     "etf": "XLE",
     "flow": "INFLOW"
@@ -44,7 +44,7 @@
     "momentum_10d": 0.012913320998668487,
     "momentum_21d": -0.008794453419883164,
     "momentum_63d": -0.01946108517588563,
-    "volume_ratio": 0.9598325235021229,
+    "volume_ratio": 0.9610246947582325,
     "relative_strength": -0.011815479644396998,
     "etf": "XLY",
     "flow": "NEUTRAL"
@@ -54,7 +54,7 @@
     "momentum_10d": 0.009656418526013955,
     "momentum_21d": -0.0221304292489517,
     "momentum_63d": 0.04233615013044245,
-    "volume_ratio": 1.0999238696645501,
+    "volume_ratio": 1.1289505113597347,
     "relative_strength": -0.025151455473465534,
     "etf": "XLI",
     "flow": "NEUTRAL"
@@ -64,7 +64,7 @@
     "momentum_10d": -0.013128619728911994,
     "momentum_21d": -0.030812934858623242,
     "momentum_63d": -0.04117735885655349,
-    "volume_ratio": 1.1566489489699736,
+    "volume_ratio": 1.1590316413087376,
     "relative_strength": -0.033833961083137076,
     "etf": "XLU",
     "flow": "OUTFLOW"
@@ -74,7 +74,7 @@
     "momentum_10d": 0.007995233572630767,
     "momentum_21d": -0.030378736153569008,
     "momentum_63d": -0.014244107557190744,
-    "volume_ratio": 1.159292791145524,
+    "volume_ratio": 1.1613976473146699,
     "relative_strength": -0.03339976237808284,
     "etf": "XLB",
     "flow": "NEUTRAL"
@@ -84,7 +84,7 @@
     "momentum_10d": -0.003537471789330837,
     "momentum_21d": 0.008728723970112817,
     "momentum_63d": 0.025833489764700124,
-    "volume_ratio": 1.354633668987662,
+    "volume_ratio": 1.356018267126884,
     "relative_strength": 0.005707697745598983,
     "etf": "XLRE",
     "flow": "NEUTRAL"
@@ -94,7 +94,7 @@
     "momentum_10d": -0.023104739327420742,
     "momentum_21d": -0.012408764865746713,
     "momentum_63d": -0.07023999629858446,
-    "volume_ratio": 1.0424484891296548,
+    "volume_ratio": 1.044814547884398,
     "relative_strength": -0.015429791090260547,
     "etf": "XLC",
     "flow": "OUTFLOW"
@@ -104,7 +104,7 @@
     "momentum_10d": 0.0022390106061709325,
     "momentum_21d": 0.0007060264677787309,
     "momentum_63d": 0.017466192309837147,
-    "volume_ratio": 1.4726105202809217,
+    "volume_ratio": 1.4775959103721739,
     "relative_strength": -0.0023149997567351033,
     "etf": "XLP",
     "flow": "NEUTRAL"
