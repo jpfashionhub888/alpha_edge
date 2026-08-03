@@ -433,7 +433,14 @@ class AlpacaLiveTrader:
                     continue
 
                 split      = len(df) - 30
-                train      = df.iloc[max(0, split-180):split]
+                # FIX: was split-180. Recovered from a stashed 2026-07-16
+                # commit ("hardening: expand training window 180→365 rows —
+                # fix ML overfit root cause") that was never actually
+                # applied — the stash existed but this line stayed at 180.
+                # Directly relevant to the training/live AUC gap (~0.97
+                # train vs ~0.77 live): too little training data is a
+                # textbook overfit cause.
+                train      = df.iloc[max(0, split-365):split]
                 if len(train) < 100:
                     train = df.iloc[:split]
 
