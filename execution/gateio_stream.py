@@ -266,10 +266,16 @@ class GateioStream:
             time.sleep(PING_INTERVAL)
             try:
                 if ws.sock and ws.sock.connected:
+                    # FIX: was {'channel': 'spot.candlesticks', 'event': 'ping'},
+                    # which isn't a format Gate.io's WS v4 API recognizes as a
+                    # keepalive (verified against current docs — the real
+                    # channel is 'spot.ping', no 'event' field). Since
+                    # run_forever(ping_interval=0) deliberately disables the
+                    # websocket library's own built-in ping, this custom one
+                    # was the only heartbeat in play and wasn't doing anything.
                     ws.send(json.dumps({
                         'time'   : int(time.time()),
-                        'channel': 'spot.candlesticks',
-                        'event'  : 'ping',
+                        'channel': 'spot.ping',
                     }))
             except Exception:
                 break
