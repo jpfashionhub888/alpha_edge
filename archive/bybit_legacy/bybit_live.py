@@ -1,5 +1,32 @@
 # bybit_live.py
 """
+=====================================================================
+ARCHIVED 2026-08-02 — not part of the active AlphaEdge system.
+
+Gate.io (gateio_live.py) is the exchange actually in use for live
+crypto trading. This file, plus the bybit_client.py / bybit_stream.py
+it depends on, were moved here from the repo root / execution/ because
+they were unused dead weight sitting in the active tree with real
+live-execution capability and no systemd service ever running them.
+
+Before archiving, one real bug was fixed and is preserved below: the
+BYBIT_TESTNET env var defaulted to LIVE if unset or malformed, the
+opposite of gateio_live.py's fail-safe default (GATEIO_PAPER_TRADE
+defaults to paper). That's fixed in the `start()` method below.
+
+The imports on lines below (execution.bybit_client, execution.bybit_stream)
+are now intentionally broken — those two files moved into this same
+archive/bybit_legacy/ directory as flat modules, not a package. This is
+deliberate: it means this script cannot be run by accident. To actually
+resurrect Bybit trading, you'd need to: restore bybit_client.py and
+bybit_stream.py to execution/, fix these two import lines back to
+`from execution.bybit_client import BybitClient` /
+`from execution.bybit_stream import BybitStream`, and give it the same
+safety review gateio_live.py and alpaca_live.py got (circuit breaker,
+reconciliation, market-hours where relevant) rather than assuming the
+V2 fixes below are still sufficient after time has passed.
+=====================================================================
+
 AlphaEdge — Bybit Realtime Trading Loop (V2)
 
 Gaps fixed in this version:
@@ -84,7 +111,13 @@ class BybitLiveTrader:
 
     def start(self):
         """Start all services. Blocking."""
-        env = 'TESTNET' if os.getenv('BYBIT_TESTNET', '').lower() == 'true' else 'LIVE'
+        # P2-4 FIX: previously defaulted to LIVE if BYBIT_TESTNET was unset
+        # or malformed (os.getenv(..., '') == 'true' is False for anything
+        # else, including a typo or missing var, falling through to LIVE).
+        # gateio_live.py gets this right — GATEIO_PAPER_TRADE defaults to
+        # safe/paper when unset. Matching that fail-safe direction here:
+        # only go LIVE on an explicit 'false', default to TESTNET otherwise.
+        env = 'LIVE' if os.getenv('BYBIT_TESTNET', 'true').lower() == 'false' else 'TESTNET'
         print('\n' + '🚀' * 25)
         print(f'ALPHAEDGE BYBIT LIVE  —  {datetime.now().strftime("%Y-%m-%d %H:%M")}')
         print(f'Symbols: {CRYPTO_SYMBOLS}  |  Interval: {CANDLE_INTERVAL}m  |  Mode: {env}')
