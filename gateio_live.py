@@ -333,7 +333,17 @@ class GateioLiveTrader:
                 atr     = atr,
             )
             if not opened:
-                logger.info(f'{symbol}: paper open_position returned False (max positions or daily loss limit)')
+                # FIX: was guessing "(max positions or daily loss limit)" as
+                # the cause, but PaperTrader.open_position() already logs
+                # the real reason one line above this (daily halt, max
+                # positions, zero shares after sizing, insufficient capital,
+                # or per-trade loss cap). For BTC/ETH specifically, "zero
+                # shares after sizing" fires almost every time on a modest
+                # paper account — whole-unit truncation makes 1 BTC/ETH cost
+                # more than max_position_pct allows, so the trade is skipped
+                # every time. See the PaperTrader log line above for the
+                # actual cause instead of guessing here.
+                logger.info(f'{symbol}: paper open_position returned False — see PaperTrader log above for reason')
                 return
 
             self.positions[symbol] = {
