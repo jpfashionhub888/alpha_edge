@@ -219,7 +219,10 @@ def run_static_analysis():
             continue
         try:
             src = filepath.read_text(encoding='utf-8', errors='replace')
-        except Exception:
+        except Exception as e:
+            # P2-4 FIX: was a silent continue — this file just vanished
+            # from the scan with no trace it was ever skipped.
+            print(f'[skip] {rel}: unreadable — {e}')
             continue
         lines = src.splitlines()
         total_lines += len(lines)
@@ -256,7 +259,10 @@ def _run_ast_checks(py_files: list[Path]):
                     str(e),
                     'Fix the syntax error before anything else.')
             continue
-        except Exception:
+        except Exception as e:
+            # P2-4 FIX: was a silent continue — this file's AST checks
+            # (including the bare-except detector itself) just vanished.
+            print(f'[skip] {rel}: AST parse failed — {e}')
             continue
 
         for node in ast.walk(tree):
@@ -341,8 +347,13 @@ def run_runtime_checks():
                     "Change exception handler return to 'VETO'.")
         else:
             ok('VetoAgent: fail-closed (exceptions return VETO)')
-    except Exception:
-        pass
+    except Exception as e:
+        # P2-4 FIX: was a silent pass — this P0-severity safety check
+        # (does a Groq API error fail-open and approve trades?) simply
+        # vanished from the report with no trace if it errored.
+        finding('P2', 'audit-tool', 'veto_agent.py', 0,
+                'VetoAgent fail-closed check errored internally — result unknown, not "passed"',
+                str(e), 'Investigate deep_audit.py itself.')
 
     # Check circuit breaker is wired into alpaca_live
     try:
@@ -354,8 +365,12 @@ def run_runtime_checks():
                     'No circuit breaker in alpaca_live.py',
                     'Alpaca stock bot has zero drawdown protection.',
                     'Import and call RiskCircuitBreaker at top of _run_scan().')
-    except Exception:
-        pass
+    except Exception as e:
+        # P2-4 FIX: was a silent pass — same issue, this P0-severity
+        # check could vanish from the report with no trace.
+        finding('P2', 'audit-tool', 'alpaca_live.py', 0,
+                'Circuit-breaker-wired-in check errored internally — result unknown, not "passed"',
+                str(e), 'Investigate deep_audit.py itself.')
 
     # Check REALIZED_ACTIONS at module scope in generate_dashboard
     try:
@@ -384,8 +399,12 @@ def run_runtime_checks():
                 ok("generate_dashboard.py: REALIZED_ACTIONS used consistently")
         else:
             ok("generate_dashboard.py: REALIZED_ACTIONS defined, no stray SELL filters")
-    except Exception:
-        pass
+    except Exception as e:
+        # P2-4 FIX: was a silent pass — this correctness check could
+        # vanish from the report with no trace if it errored.
+        finding('P2', 'audit-tool', 'generate_dashboard.py', 0,
+                'REALIZED_ACTIONS check errored internally — result unknown, not "passed"',
+                str(e), 'Investigate deep_audit.py itself.')
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -478,8 +497,13 @@ def run_service_checks():
                         ok(f'{svc}: {label} (expected, means fix is working)')
         except FileNotFoundError:
             return  # not on Linux
-        except Exception:
-            pass
+        except Exception as e:
+            # P2-4 FIX: was a silent pass — the entire crash-pattern log
+            # scan (Tracebacks, KeyErrors, etc. across all services) could
+            # vanish from the report with no trace if it errored.
+            finding('P2', 'audit-tool', svc, 0,
+                    'Crash-pattern log scan errored internally — result unknown, not "passed"',
+                    str(e), 'Investigate deep_audit.py itself.')
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -608,8 +632,12 @@ def run_data_integrity():
                         'Recompute days_until at render time from date string, not scan time.')
             else:
                 ok(f'earnings.json: {len(earnings)} entries, none stale')
-        except Exception:
-            pass
+        except Exception as e:
+            # P2-4 FIX: was a silent pass — this check could vanish
+            # from the report with no trace if it errored.
+            finding('P2', 'audit-tool', 'logs/earnings.json', 0,
+                    'Earnings staleness check errored internally — result unknown, not "passed"',
+                    str(e), 'Investigate deep_audit.py itself.')
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -639,7 +667,15 @@ def run_performance_analysis():
         start   = data.get('starting_capital', 10_000)
         capital = data.get('capital', start)
         hist    = data.get('trade_history', [])
-    except Exception:
+    except Exception as e:
+        # P2-4 FIX: was a silent return — the ENTIRE Performance Analytics
+        # module (win rate, drawdown, Sharpe, all P0/P1 flags below) just
+        # vanished from the report with no trace if this file failed to
+        # parse. Worse than the other instances since it's a whole module,
+        # not one check.
+        finding('P2', 'audit-tool', 'logs/paper_trades_stocks_only.json', 0,
+                'Performance Analytics module errored internally — entire module skipped, not "no findings"',
+                str(e), 'Investigate deep_audit.py itself.')
         return
 
     sells = [t for t in hist if t.get('action') in REALIZED_ACTIONS]
@@ -744,8 +780,13 @@ def run_config_checks():
                     f' or lower MIN_RISK_REWARD below {rr:.1f}.')
         else:
             ok(f'Config R:R: ATR R:R={rr:.1f}x >= MIN={min_rr}x')
-    except (AttributeError, ZeroDivisionError):
-        pass
+    except (AttributeError, ZeroDivisionError) as e:
+        # P2-4 FIX: was a silent pass — this check (trades never passing
+        # the R:R filter is a real live-trading-affecting bug class) could
+        # vanish from the report with no trace if settings were missing.
+        finding('P2', 'audit-tool', 'config/settings.py', 0,
+                'ATR R:R consistency check errored internally — result unknown, not "passed"',
+                str(e), 'Investigate deep_audit.py itself.')
 
     # MAX_DRAWDOWN sanity
     try:
@@ -760,8 +801,13 @@ def run_config_checks():
                     'MAX_DRAWDOWN <= 0 — circuit breaker will trigger immediately',
                     f'MAX_DRAWDOWN={dd}',
                     'Set to a positive fraction e.g. 0.10.')
-    except Exception:
-        pass
+    except Exception as e:
+        # P2-4 FIX: was a silent pass — the MAX_DRAWDOWN<=0 case (P0:
+        # circuit breaker triggers immediately) could vanish from the
+        # report with no trace if this check errored.
+        finding('P2', 'audit-tool', 'config/settings.py', 0,
+                'MAX_DRAWDOWN sanity check errored internally — result unknown, not "passed"',
+                str(e), 'Investigate deep_audit.py itself.')
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -884,7 +930,12 @@ def run_secret_scan():
                 continue
             try:
                 src = fpath.read_text(encoding='utf-8', errors='replace')
-            except Exception:
+            except Exception as e:
+                # P2-4 FIX: was a silent continue — this is the SECRET
+                # scanner specifically; a file hiding a real leaked
+                # credential going unscanned with zero trace is the
+                # worst-case outcome for this particular check.
+                print(f'[skip] {rel}: unreadable, not scanned for secrets — {e}')
                 continue
             scanned += 1
 

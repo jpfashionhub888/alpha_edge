@@ -97,8 +97,11 @@ class DataLoader:
                     try:
                         results[sym] = pd.read_parquet(cache_path)
                         continue
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        # P2-4 FIX: was a silent pass — a corrupted cache
+                        # file just refetched forever with zero trace,
+                        # masking a real disk/cache problem.
+                        logger.warning(f'{sym}: cached earnings parquet unreadable ({e}) — refetching')
 
             try:
                 ticker = yf.Ticker(sym)
@@ -196,8 +199,10 @@ class DataLoader:
         if self.cache_enabled and cache_path.exists():
             try:
                 return pd.read_parquet(cache_path)
-            except Exception:
-                pass
+            except Exception as e:
+                # P2-4 FIX: was a silent pass — same issue as the earnings
+                # cache above, corrupted OHLCV cache refetched silently.
+                logger.warning(f'{cache_key}: cached OHLCV parquet unreadable ({e}) — refetching')
 
         # Try Polygon first (if key available), fall back to yfinance
         df = None
