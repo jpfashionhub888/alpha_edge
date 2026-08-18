@@ -1,712 +1,712 @@
 {
-  "QQQ": {
-    "prediction": 0.8670315791233515,
-    "regime": "sideways",
-    "price": 720.8699951171875,
-    "sentiment": 0.11157534730325384,
-    "sector": "Technology",
-    "signal": "HOLD",
-    "combined": 0.5725340169346617,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
   "LMT": {
     "prediction": 0.7887404780186029,
     "regime": "uptrend",
-    "price": 603.1599731445312,
-    "sentiment": 0.19047857347456082,
+    "price": 597.77001953125,
+    "sentiment": 0.1608460862039318,
     "sector": "Unknown",
     "signal": "BUY",
-    "combined": 0.5113400015060738,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.5054135040519481,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
   "CRWD": {
-    "prediction": 0.737164835207023,
+    "prediction": 0.7515378523125963,
     "regime": "uptrend",
-    "price": 225.16000366210938,
-    "sentiment": 0.19398480346021446,
+    "price": 221.89999389648438,
+    "sentiment": 0.25151265875643325,
     "sector": "Technology",
     "signal": "BUY",
-    "combined": 0.5110958618162568,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "META": {
-    "prediction": 0.9004208464011816,
-    "regime": "sideways",
-    "price": 594.9199829101562,
-    "sentiment": -0.22667704577712963,
-    "sector": "Communications",
-    "signal": "HOLD",
-    "combined": 0.49491709868528294,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "MU": {
-    "prediction": 0.7411652290981171,
-    "regime": "downtrend",
-    "price": 861.0,
-    "sentiment": 0.21740139888235085,
-    "sector": "Unknown",
-    "signal": "AVOID",
-    "combined": 0.4881794172353404,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "WMT": {
-    "prediction": 0.7668824489272312,
-    "regime": "downtrend",
-    "price": 112.66000366210938,
-    "sentiment": 0.04736975251855153,
-    "sector": "Staples",
-    "signal": "AVOID",
-    "combined": 0.469603419860049,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "GOOGL": {
-    "prediction": 0.7319434345781155,
-    "regime": "downtrend",
-    "price": 357.5199890136719,
-    "sentiment": 0.0,
-    "sector": "Technology",
-    "signal": "AVOID",
-    "combined": 0.4691660607468693,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "SPY": {
-    "prediction": 0.7910037829898523,
-    "regime": "uptrend",
-    "price": 773.030029296875,
-    "sentiment": -0.02848844869846576,
-    "sector": "Market",
-    "signal": "BUY",
-    "combined": 0.4689045800542182,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "MRNA": {
-    "prediction": 0.6728755395189909,
-    "regime": "uptrend",
-    "price": 59.810001373291016,
-    "sentiment": 0.0,
-    "sector": "Unknown",
-    "signal": "BUY",
-    "combined": 0.4037253237113945,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "AMD": {
-    "prediction": 0.6196225501593844,
-    "regime": "sideways",
-    "price": 469.55999755859375,
-    "sentiment": 0.0,
-    "sector": "Technology",
-    "signal": "HOLD",
-    "combined": 0.4017735300956306,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "NVDA": {
-    "prediction": 0.6130208134735973,
-    "regime": "sideways",
-    "price": 217.5500030517578,
-    "sentiment": 0.0,
-    "sector": "Technology",
-    "signal": "HOLD",
-    "combined": 0.3978124880841583,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "OXY": {
-    "prediction": 0.6002227138136103,
-    "regime": "uptrend",
-    "price": 58.650001525878906,
-    "sentiment": 0.0,
-    "sector": "Energy",
-    "signal": "BUY",
-    "combined": 0.3901336282881661,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "UNH": {
-    "prediction": 0.5908169485181997,
-    "regime": "uptrend",
-    "price": 408.739990234375,
-    "sentiment": 0.0,
-    "sector": "Healthcare",
-    "signal": "BUY",
-    "combined": 0.38449016911091977,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.5012252431388444,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
   "C": {
-    "prediction": 0.6297095177024867,
+    "prediction": 0.7336180144034036,
     "regime": "sideways",
-    "price": 135.22000122070312,
-    "sentiment": 0.0,
+    "price": 135.77000427246094,
+    "sentiment": 0.30490360395950183,
     "sector": "Unknown",
     "signal": "HOLD",
-    "combined": 0.377825710621492,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.5011515294339425,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
-  "PEP": {
-    "prediction": 0.6255859998607001,
+  "QQQ": {
+    "prediction": 0.8672833282136209,
+    "regime": "sideways",
+    "price": 718.4500122070312,
+    "sentiment": -0.12100154777900093,
+    "sector": "Technology",
+    "signal": "HOLD",
+    "combined": 0.4961696873723723,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "META": {
+    "prediction": 0.8992014052635786,
+    "regime": "sideways",
+    "price": 599.1199951171875,
+    "sentiment": -0.2646730029329991,
+    "sector": "Communications",
+    "signal": "HOLD",
+    "combined": 0.48658624257154737,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "WMT": {
+    "prediction": 0.7426170070649757,
     "regime": "downtrend",
-    "price": 137.72999572753906,
-    "sentiment": 0.0,
-    "sector": "Unknown",
+    "price": 113.26000213623047,
+    "sentiment": 0.10443775245111506,
+    "sector": "Staples",
     "signal": "AVOID",
-    "combined": 0.37535159991642003,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.4664577547292084,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
-  "PFE": {
-    "prediction": 0.5649404818113234,
-    "regime": "uptrend",
-    "price": 27.049999237060547,
+  "GOOGL": {
+    "prediction": 0.7324283309272758,
+    "regime": "downtrend",
+    "price": 343.79998779296875,
     "sentiment": 0.0,
-    "sector": "Healthcare",
-    "signal": "BUY",
-    "combined": 0.368964289086794,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "sector": "Technology",
+    "signal": "AVOID",
+    "combined": 0.43945699855636544,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
-  "CVX": {
-    "prediction": 0.5543643970438759,
+  "SPY": {
+    "prediction": 0.7780038977437708,
     "regime": "uptrend",
-    "price": 194.91000366210938,
+    "price": 770.5599975585938,
+    "sentiment": -0.1380688068343372,
+    "sector": "Market",
+    "signal": "BUY",
+    "combined": 0.439188577279395,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "OXY": {
+    "prediction": 0.6049856277379105,
+    "regime": "uptrend",
+    "price": 59.060001373291016,
     "sentiment": 0.0,
     "sector": "Energy",
     "signal": "BUY",
-    "combined": 0.36261863822632545,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.42299137664274633,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
   "TSM": {
-    "prediction": 0.6040833590311777,
-    "regime": "downtrend",
-    "price": 418.4700012207031,
-    "sentiment": 0.0,
-    "sector": "Unknown",
-    "signal": "AVOID",
-    "combined": 0.36245001541870664,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "MARA": {
-    "prediction": 0.548450946687221,
-    "regime": "downtrend",
-    "price": 9.5600004196167,
-    "sentiment": 0.0,
-    "sector": "Technology",
-    "signal": "AVOID",
-    "combined": 0.3590705680123326,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "INTC": {
-    "prediction": 0.5928366136164073,
-    "regime": "downtrend",
-    "price": 97.5199966430664,
-    "sentiment": 0.0,
-    "sector": "Unknown",
-    "signal": "AVOID",
-    "combined": 0.35570196816984434,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "SOFI": {
-    "prediction": 0.5205706063054587,
-    "regime": "uptrend",
-    "price": 18.1200008392334,
-    "sentiment": 0.0,
-    "sector": "Financials",
-    "signal": "BUY",
-    "combined": 0.3423423637832752,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "MS": {
-    "prediction": 0.5085780308588839,
-    "regime": "uptrend",
-    "price": 215.3300018310547,
-    "sentiment": 0.0,
-    "sector": "Financials",
-    "signal": "HOLD",
-    "combined": 0.3351468185153303,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "XLK": {
-    "prediction": 0.5547724788095717,
+    "prediction": 0.6840517848210123,
     "regime": "sideways",
-    "price": 186.32000732421875,
+    "price": 422.05999755859375,
     "sentiment": 0.0,
     "sector": "Unknown",
     "signal": "HOLD",
-    "combined": 0.332863487285743,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.41043107089260733,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
-  "DDOG": {
-    "prediction": 0.5038818783782122,
+  "MRNA": {
+    "prediction": 0.6788146570927298,
     "regime": "uptrend",
-    "price": 260.7799987792969,
-    "sentiment": 0.0,
-    "sector": "Technology",
-    "signal": "HOLD",
-    "combined": 0.3323291270269273,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "XLE": {
-    "prediction": 0.5449404903593231,
-    "regime": "uptrend",
-    "price": 60.18000030517578,
+    "price": 60.56999969482422,
     "sentiment": 0.0,
     "sector": "Unknown",
     "signal": "BUY",
-    "combined": 0.32696429421559386,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.40728879425563785,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
-  "AXP": {
-    "prediction": 0.5416858012273797,
-    "regime": "uptrend",
-    "price": 338.8599853515625,
+  "MU": {
+    "prediction": 0.6729034531825735,
+    "regime": "downtrend",
+    "price": 868.52001953125,
     "sentiment": 0.0,
     "sector": "Unknown",
-    "signal": "BUY",
-    "combined": 0.3250114807364278,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "signal": "AVOID",
+    "combined": 0.4037420719095441,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
-  "MRK": {
-    "prediction": 0.47885688138835375,
+  "CVX": {
+    "prediction": 0.5575585720592201,
     "regime": "uptrend",
-    "price": 130.9199981689453,
+    "price": 196.66000366210938,
+    "sentiment": 0.0,
+    "sector": "Energy",
+    "signal": "BUY",
+    "combined": 0.39453514323553207,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "UNH": {
+    "prediction": 0.5969817885363287,
+    "regime": "sideways",
+    "price": 402.19000244140625,
     "sentiment": 0.0,
     "sector": "Healthcare",
     "signal": "HOLD",
-    "combined": 0.3173141288330122,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.3881890731217972,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "NVDA": {
+    "prediction": 0.6328646271571957,
+    "regime": "sideways",
+    "price": 217.5,
+    "sentiment": 0.0,
+    "sector": "Technology",
+    "signal": "HOLD",
+    "combined": 0.37971877629431744,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "PEP": {
+    "prediction": 0.6282863049332019,
+    "regime": "downtrend",
+    "price": 138.41000366210938,
+    "sentiment": 0.0,
+    "sector": "Unknown",
+    "signal": "AVOID",
+    "combined": 0.3769717829599211,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "AMD": {
+    "prediction": 0.615686991684658,
+    "regime": "downtrend",
+    "price": 474.32000732421875,
+    "sentiment": 0.0,
+    "sector": "Technology",
+    "signal": "AVOID",
+    "combined": 0.3694121950107948,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
   "CAT": {
-    "prediction": 0.5226889089283032,
+    "prediction": 0.6023586988689378,
     "regime": "downtrend",
-    "price": 837.5800170898438,
+    "price": 843.3699951171875,
     "sentiment": 0.0,
     "sector": "Unknown",
     "signal": "AVOID",
-    "combined": 0.31361334535698193,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.36141521932136267,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
-  "TSLA": {
-    "prediction": 0.5214022863084598,
-    "regime": "downtrend",
-    "price": 330.8800048828125,
-    "sentiment": 0.0,
-    "sector": "Consumer",
-    "signal": "AVOID",
-    "combined": 0.3128413717850758,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "COST": {
-    "prediction": 0.5174964752714748,
-    "regime": "downtrend",
-    "price": 952.75,
-    "sentiment": 0.0,
-    "sector": "Consumer",
-    "signal": "AVOID",
-    "combined": 0.31049788516288485,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "JNJ": {
-    "prediction": 0.4644351552427448,
+  "MS": {
+    "prediction": 0.5445593272559038,
     "regime": "uptrend",
-    "price": 261.80999755859375,
+    "price": 215.07000732421875,
+    "sentiment": 0.0,
+    "sector": "Financials",
+    "signal": "BUY",
+    "combined": 0.35673559635354224,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "SOFI": {
+    "prediction": 0.5419041625808216,
+    "regime": "uptrend",
+    "price": 17.979999542236328,
+    "sentiment": 0.0,
+    "sector": "Financials",
+    "signal": "BUY",
+    "combined": 0.3551424975484929,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "PFE": {
+    "prediction": 0.5244259115512132,
+    "regime": "uptrend",
+    "price": 26.6200008392334,
+    "sentiment": 0.0,
+    "sector": "Healthcare",
+    "signal": "BUY",
+    "combined": 0.34465554693072786,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "INTC": {
+    "prediction": 0.5697999848401631,
+    "regime": "downtrend",
+    "price": 97.70999908447266,
+    "sentiment": 0.0,
+    "sector": "Unknown",
+    "signal": "AVOID",
+    "combined": 0.3418799909040979,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "XLE": {
+    "prediction": 0.5594736062973285,
+    "regime": "uptrend",
+    "price": 60.93000030517578,
+    "sentiment": 0.0,
+    "sector": "Unknown",
+    "signal": "BUY",
+    "combined": 0.33568416377839705,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "XLK": {
+    "prediction": 0.5535990798083934,
+    "regime": "sideways",
+    "price": 186.08999633789062,
+    "sentiment": 0.0,
+    "sector": "Unknown",
+    "signal": "HOLD",
+    "combined": 0.33215944788503604,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "MARA": {
+    "prediction": 0.5494217914274009,
+    "regime": "downtrend",
+    "price": 9.680000305175781,
+    "sentiment": 0.0,
+    "sector": "Technology",
+    "signal": "AVOID",
+    "combined": 0.3296530748564405,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "AXP": {
+    "prediction": 0.5334778094801229,
+    "regime": "uptrend",
+    "price": 340.80999755859375,
+    "sentiment": 0.0,
+    "sector": "Unknown",
+    "signal": "BUY",
+    "combined": 0.32008668568807375,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "MRK": {
+    "prediction": 0.48155864038151786,
+    "regime": "uptrend",
+    "price": 130.4199981689453,
     "sentiment": 0.0,
     "sector": "Healthcare",
     "signal": "HOLD",
-    "combined": 0.3086610931456468,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.31893518422891065,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
-  "BA": {
-    "prediction": 0.49862664632753684,
-    "regime": "sideways",
-    "price": 232.7899932861328,
-    "sentiment": 0.0,
-    "sector": "Unknown",
-    "signal": "HOLD",
-    "combined": 0.2991759877965221,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "REGN": {
-    "prediction": 0.49602900846815035,
-    "regime": "uptrend",
-    "price": 808.0499877929688,
-    "sentiment": 0.0,
-    "sector": "Unknown",
-    "signal": "HOLD",
-    "combined": 0.2976174050808902,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "QCOM": {
-    "prediction": 0.493380501110681,
+  "COST": {
+    "prediction": 0.5086715967348834,
     "regime": "downtrend",
-    "price": 162.1699981689453,
-    "sentiment": 0.0,
-    "sector": "Unknown",
-    "signal": "AVOID",
-    "combined": 0.29602830066640856,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "KO": {
-    "prediction": 0.49190696339937845,
-    "regime": "uptrend",
-    "price": 86.87000274658203,
-    "sentiment": 0.0,
-    "sector": "Unknown",
-    "signal": "HOLD",
-    "combined": 0.29514417803962706,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "MCD": {
-    "prediction": 0.48909749495134136,
-    "regime": "downtrend",
-    "price": 273.7200012207031,
+    "price": 944.3200073242188,
     "sentiment": 0.0,
     "sector": "Consumer",
     "signal": "AVOID",
-    "combined": 0.2934584969708048,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.30520295804093,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
-  "HOOD": {
-    "prediction": 0.42133635102331995,
+  "DDOG": {
+    "prediction": 0.5078193485934612,
     "regime": "uptrend",
-    "price": 94.5199966430664,
-    "sentiment": 0.0,
-    "sector": "Financials",
-    "signal": "HOLD",
-    "combined": 0.28280181061399196,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "AAPL": {
-    "prediction": 0.4201632508979825,
-    "regime": "uptrend",
-    "price": 308.260009765625,
+    "price": 246.77999877929688,
     "sentiment": 0.0,
     "sector": "Technology",
     "signal": "HOLD",
-    "combined": 0.28209795053878944,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.30469160915607674,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "BA": {
+    "prediction": 0.5076882776442188,
+    "regime": "sideways",
+    "price": 233.24000549316406,
+    "sentiment": 0.0,
+    "sector": "Unknown",
+    "signal": "HOLD",
+    "combined": 0.30461296658653125,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "TSLA": {
+    "prediction": 0.5002169285414906,
+    "regime": "downtrend",
+    "price": 332.80999755859375,
+    "sentiment": 0.0,
+    "sector": "Consumer",
+    "signal": "AVOID",
+    "combined": 0.3001301571248943,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "KO": {
+    "prediction": 0.4971992654011794,
+    "regime": "uptrend",
+    "price": 86.4800033569336,
+    "sentiment": 0.0,
+    "sector": "Unknown",
+    "signal": "HOLD",
+    "combined": 0.29831955924070763,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "REGN": {
+    "prediction": 0.4966141478444184,
+    "regime": "uptrend",
+    "price": 797.0,
+    "sentiment": 0.0,
+    "sector": "Unknown",
+    "signal": "HOLD",
+    "combined": 0.297968488706651,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "QCOM": {
+    "prediction": 0.49611585982850004,
+    "regime": "downtrend",
+    "price": 162.67999267578125,
+    "sentiment": 0.0,
+    "sector": "Unknown",
+    "signal": "AVOID",
+    "combined": 0.2976695158971,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "MCD": {
+    "prediction": 0.4846739082261315,
+    "regime": "downtrend",
+    "price": 274.1499938964844,
+    "sentiment": 0.0,
+    "sector": "Consumer",
+    "signal": "AVOID",
+    "combined": 0.29080434493567886,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "JPM": {
+    "prediction": 0.43166474023114837,
+    "regime": "uptrend",
+    "price": 362.0400085449219,
+    "sentiment": 0.0,
+    "sector": "Financials",
+    "signal": "HOLD",
+    "combined": 0.288998844138689,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "LLY": {
+    "prediction": 0.4238526331071534,
+    "regime": "uptrend",
+    "price": 1213.2813720703125,
+    "sentiment": 0.0,
+    "sector": "Healthcare",
+    "signal": "HOLD",
+    "combined": 0.284311579864292,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
   "NFLX": {
-    "prediction": 0.47014956093470395,
+    "prediction": 0.4726141324648384,
     "regime": "downtrend",
-    "price": 76.29000091552734,
+    "price": 74.79000091552734,
     "sentiment": 0.0,
     "sector": "Communications",
     "signal": "AVOID",
-    "combined": 0.28208973656082237,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.283568479478903,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
-  "LLY": {
-    "prediction": 0.4152745724549121,
+  "HOOD": {
+    "prediction": 0.41342284639729904,
     "regime": "uptrend",
-    "price": 1230.1771240234375,
+    "price": 94.37999725341797,
     "sentiment": 0.0,
-    "sector": "Healthcare",
+    "sector": "Financials",
     "signal": "HOLD",
-    "combined": 0.27916474347294723,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.2780537078383794,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "BAC": {
+    "prediction": 0.41215973703468406,
+    "regime": "uptrend",
+    "price": 64.0,
+    "sentiment": 0.0,
+    "sector": "Financials",
+    "signal": "HOLD",
+    "combined": 0.2772958422208104,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "RIVN": {
+    "prediction": 0.4591913099110798,
+    "regime": "uptrend",
+    "price": 16.360000610351562,
+    "sentiment": 0.0,
+    "sector": "Consumer",
+    "signal": "HOLD",
+    "combined": 0.27551478594664786,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
   "AMZN": {
-    "prediction": 0.45614644853669994,
+    "prediction": 0.45655198768433886,
     "regime": "volatile",
-    "price": 278.0899963378906,
+    "price": 272.2699890136719,
     "sentiment": 0.0,
     "sector": "Consumer",
     "signal": "CAUTION",
-    "combined": 0.27368786912202,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.2739311926106033,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
   "PLTR": {
-    "prediction": 0.38513822979717505,
+    "prediction": 0.44043733438248134,
     "regime": "volatile",
-    "price": 175.22999572753906,
+    "price": 174.94000244140625,
     "sentiment": 0.0,
     "sector": "Technology",
     "signal": "CAUTION",
-    "combined": 0.261082937878305,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.2642624006294888,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
-  "RIVN": {
-    "prediction": 0.42799921759713744,
+  "XOM": {
+    "prediction": 0.32771971004616746,
     "regime": "uptrend",
-    "price": 16.389999389648438,
+    "price": 158.7719268798828,
     "sentiment": 0.0,
-    "sector": "Consumer",
+    "sector": "Energy",
     "signal": "HOLD",
-    "combined": 0.2567995305582825,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.25663182602770046,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
   "ORCL": {
-    "prediction": 0.42553187746932475,
+    "prediction": 0.4196164424007147,
     "regime": "downtrend",
-    "price": 151.0500030517578,
+    "price": 145.47999572753906,
     "sentiment": 0.0,
     "sector": "Unknown",
     "signal": "AVOID",
-    "combined": 0.2553191264815948,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.25176986544042884,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
-  "GILD": {
-    "prediction": 0.416241621606196,
+  "JNJ": {
+    "prediction": 0.3654076378367124,
     "regime": "uptrend",
-    "price": 133.05999755859375,
+    "price": 259.79998779296875,
     "sentiment": 0.0,
-    "sector": "Unknown",
+    "sector": "Healthcare",
     "signal": "HOLD",
-    "combined": 0.2497449729637176,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.24924458270202743,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
   "AVGO": {
-    "prediction": 0.41440194352997317,
+    "prediction": 0.41451363253664514,
     "regime": "sideways",
-    "price": 422.3999938964844,
+    "price": 416.0799865722656,
     "sentiment": 0.0,
     "sector": "Unknown",
     "signal": "HOLD",
-    "combined": 0.2486411661179839,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.24870817952198707,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "AAPL": {
+    "prediction": 0.40700512707314157,
+    "regime": "sideways",
+    "price": 304.9100036621094,
+    "sentiment": 0.0,
+    "sector": "Technology",
+    "signal": "HOLD",
+    "combined": 0.24420307624388493,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "GILD": {
+    "prediction": 0.4018853173693872,
+    "regime": "uptrend",
+    "price": 135.77000427246094,
+    "sentiment": 0.0,
+    "sector": "Unknown",
+    "signal": "HOLD",
+    "combined": 0.2411311904216323,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "GS": {
+    "prediction": 0.34148961762467517,
+    "regime": "sideways",
+    "price": 1034.4100341796875,
+    "sentiment": 0.0,
+    "sector": "Financials",
+    "signal": "HOLD",
+    "combined": 0.2348937705748051,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "WFC": {
+    "prediction": 0.3804891064870497,
+    "regime": "uptrend",
+    "price": 87.44999694824219,
+    "sentiment": 0.0,
+    "sector": "Unknown",
+    "signal": "HOLD",
+    "combined": 0.22829346389222982,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "HON": {
+    "prediction": 0.37482387053785593,
+    "regime": "sideways",
+    "price": 229.43157958984375,
+    "sentiment": 0.0,
+    "sector": "Unknown",
+    "signal": "HOLD",
+    "combined": 0.22489432232271356,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "GE": {
+    "prediction": 0.34708675853263093,
+    "regime": "uptrend",
+    "price": 368.05999755859375,
+    "sentiment": 0.0,
+    "sector": "Unknown",
+    "signal": "HOLD",
+    "combined": 0.20825205511957856,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "V": {
+    "prediction": 0.29584486629503054,
+    "regime": "uptrend",
+    "price": 362.82000732421875,
+    "sentiment": 0.0,
+    "sector": "Financials",
+    "signal": "HOLD",
+    "combined": 0.2075069197770183,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
   "SNOW": {
     "prediction": 0.34456757134942,
     "regime": "uptrend",
-    "price": 334.70001220703125,
+    "price": 334.1400146484375,
     "sentiment": 0.0,
     "sector": "Technology",
     "signal": "HOLD",
-    "combined": 0.236740542809652,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.206740542809652,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
-  "WFC": {
-    "prediction": 0.3883641751090627,
+  "XLF": {
+    "prediction": 0.29451604168202794,
     "regime": "uptrend",
-    "price": 87.5199966430664,
+    "price": 57.79999923706055,
     "sentiment": 0.0,
     "sector": "Unknown",
     "signal": "HOLD",
-    "combined": 0.2330185050654376,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "HON": {
-    "prediction": 0.3833819279471363,
-    "regime": "uptrend",
-    "price": 242.2032470703125,
-    "sentiment": 0.0,
-    "sector": "Unknown",
-    "signal": "HOLD",
-    "combined": 0.23002915676828178,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "XOM": {
-    "prediction": 0.32177885373668197,
-    "regime": "uptrend",
-    "price": 159.7899932861328,
-    "sentiment": 0.0,
-    "sector": "Energy",
-    "signal": "HOLD",
-    "combined": 0.22306731224200915,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "JPM": {
-    "prediction": 0.318012376352093,
-    "regime": "uptrend",
-    "price": 359.7900085449219,
-    "sentiment": 0.0,
-    "sector": "Financials",
-    "signal": "HOLD",
-    "combined": 0.2208074258112558,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "GE": {
-    "prediction": 0.34907900681995485,
-    "regime": "uptrend",
-    "price": 366.70001220703125,
-    "sentiment": 0.0,
-    "sector": "Unknown",
-    "signal": "HOLD",
-    "combined": 0.2094474040919729,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "BAC": {
-    "prediction": 0.2977189338265375,
-    "regime": "uptrend",
-    "price": 63.86000061035156,
-    "sentiment": 0.0,
-    "sector": "Financials",
-    "signal": "HOLD",
-    "combined": 0.2086313602959225,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "GS": {
-    "prediction": 0.27859893116297146,
-    "regime": "sideways",
-    "price": 1034.510009765625,
-    "sentiment": 0.0,
-    "sector": "Financials",
-    "signal": "HOLD",
-    "combined": 0.19715935869778284,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.17670962500921675,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
   "ABBV": {
-    "prediction": 0.2760622786692526,
+    "prediction": 0.2375984093576789,
     "regime": "uptrend",
-    "price": 247.97000122070312,
+    "price": 250.08999633789062,
     "sentiment": 0.0,
     "sector": "Healthcare",
     "signal": "HOLD",
-    "combined": 0.19563736720155156,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "CRM": {
-    "prediction": 0.26369499414166486,
-    "regime": "uptrend",
-    "price": 197.50999450683594,
-    "sentiment": 0.0,
-    "sector": "Technology",
-    "signal": "HOLD",
-    "combined": 0.1882169964849989,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "NET": {
-    "prediction": 0.25881723583868615,
-    "regime": "uptrend",
-    "price": 310.5899963378906,
-    "sentiment": 0.0,
-    "sector": "Technology",
-    "signal": "HOLD",
-    "combined": 0.18529034150321166,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "V": {
-    "prediction": 0.23719989701529057,
-    "regime": "uptrend",
-    "price": 360.6500244140625,
-    "sentiment": 0.0,
-    "sector": "Financials",
-    "signal": "HOLD",
-    "combined": 0.1723199382091743,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.17255904561460733,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
   "INTU": {
-    "prediction": 0.2760978884520289,
+    "prediction": 0.27524899049358076,
     "regime": "uptrend",
-    "price": 334.42999267578125,
+    "price": 336.44000244140625,
     "sentiment": 0.0,
     "sector": "Unknown",
     "signal": "HOLD",
-    "combined": 0.1656587330712173,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.16514939429614844,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "PG": {
+    "prediction": 0.2711779565983935,
+    "regime": "sideways",
+    "price": 145.2100067138672,
+    "sentiment": 0.0,
+    "sector": "Unknown",
+    "signal": "HOLD",
+    "combined": 0.1627067739590361,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "CRM": {
+    "prediction": 0.27045238045107534,
+    "regime": "uptrend",
+    "price": 197.47000122070312,
+    "sentiment": 0.0,
+    "sector": "Technology",
+    "signal": "HOLD",
+    "combined": 0.1622714282706452,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
   "NKE": {
-    "prediction": 0.2624528264030966,
+    "prediction": 0.26679425021170455,
     "regime": "downtrend",
-    "price": 42.11000061035156,
+    "price": 41.31999969482422,
     "sentiment": 0.0,
     "sector": "Unknown",
     "signal": "AVOID",
-    "combined": 0.15747169584185794,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.16007655012702274,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
-  "TGT": {
-    "prediction": 0.24817785252141308,
+  "NET": {
+    "prediction": 0.26429273412496385,
     "regime": "uptrend",
-    "price": 150.862060546875,
-    "sentiment": 0.0,
-    "sector": "Unknown",
-    "signal": "HOLD",
-    "combined": 0.14890671151284784,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "BLK": {
-    "prediction": 0.2454951152116731,
-    "regime": "uptrend",
-    "price": 1131.4000244140625,
-    "sentiment": 0.0,
-    "sector": "Unknown",
-    "signal": "HOLD",
-    "combined": 0.14729706912700385,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "PG": {
-    "prediction": 0.23176847549407723,
-    "regime": "uptrend",
-    "price": 146.44000244140625,
-    "sentiment": 0.0,
-    "sector": "Unknown",
-    "signal": "HOLD",
-    "combined": 0.13906108529644634,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "IWM": {
-    "prediction": 0.23129529174407903,
-    "regime": "uptrend",
-    "price": 299.9800109863281,
-    "sentiment": 0.0,
-    "sector": "Market",
-    "signal": "HOLD",
-    "combined": 0.1387771750464474,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "XLF": {
-    "prediction": 0.20644633516978783,
-    "regime": "uptrend",
-    "price": 57.810001373291016,
-    "sentiment": 0.0,
-    "sector": "Unknown",
-    "signal": "HOLD",
-    "combined": 0.12386780110187269,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "DIA": {
-    "prediction": 0.1955471886007092,
-    "regime": "uptrend",
-    "price": 538.989990234375,
-    "sentiment": 0.0,
-    "sector": "Market",
-    "signal": "HOLD",
-    "combined": 0.11732831316042551,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
-  },
-  "MSFT": {
-    "prediction": 0.1303185049470561,
-    "regime": "volatile",
-    "price": 506.05999755859375,
+    "price": 306.9700012207031,
     "sentiment": 0.0,
     "sector": "Technology",
-    "signal": "CAUTION",
-    "combined": 0.10819110296823364,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "signal": "HOLD",
+    "combined": 0.1585756404749783,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
-  "NOW": {
-    "prediction": 0.15928837744594063,
+  "BLK": {
+    "prediction": 0.2584508269085063,
     "regime": "uptrend",
-    "price": 127.44000244140625,
+    "price": 1148.8399658203125,
     "sentiment": 0.0,
     "sector": "Unknown",
     "signal": "HOLD",
-    "combined": 0.09557302646756437,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.15507049614510376,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "TGT": {
+    "prediction": 0.24758186800136864,
+    "regime": "uptrend",
+    "price": 151.12998962402344,
+    "sentiment": 0.0,
+    "sector": "Unknown",
+    "signal": "HOLD",
+    "combined": 0.14854912080082117,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "DIA": {
+    "prediction": 0.2429820646396728,
+    "regime": "uptrend",
+    "price": 537.280029296875,
+    "sentiment": 0.0,
+    "sector": "Market",
+    "signal": "HOLD",
+    "combined": 0.14578923878380368,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
   "XLV": {
-    "prediction": 0.12447763102829623,
+    "prediction": 0.20629737979381135,
     "regime": "uptrend",
-    "price": 168.44000244140625,
+    "price": 168.00999450683594,
     "sentiment": 0.0,
     "sector": "Unknown",
     "signal": "HOLD",
-    "combined": 0.07468657861697774,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.1237784278762868,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
   "HD": {
-    "prediction": 0.10969676788807271,
+    "prediction": 0.19480832087704245,
     "regime": "uptrend",
-    "price": 350.7799987792969,
+    "price": 354.4800109863281,
     "sentiment": 0.0,
     "sector": "Consumer",
     "signal": "HOLD",
-    "combined": 0.06581806073284363,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.11688499252622546,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   },
-  "ADBE": {
-    "prediction": 0.1018972442429669,
+  "NOW": {
+    "prediction": 0.15913638750114834,
     "regime": "uptrend",
-    "price": 272.9599914550781,
+    "price": 127.54000091552734,
     "sentiment": 0.0,
     "sector": "Unknown",
     "signal": "HOLD",
-    "combined": 0.06113834654578013,
-    "saved_at": "2026-08-17T16:25:42.218747-04:00"
+    "combined": 0.09548183250068899,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "IWM": {
+    "prediction": 0.15588031914211578,
+    "regime": "uptrend",
+    "price": 300.989990234375,
+    "sentiment": 0.0,
+    "sector": "Market",
+    "signal": "HOLD",
+    "combined": 0.09352819148526946,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "MSFT": {
+    "prediction": 0.13216094611861534,
+    "regime": "volatile",
+    "price": 503.80999755859375,
+    "sentiment": 0.0,
+    "sector": "Technology",
+    "signal": "CAUTION",
+    "combined": 0.0792965676711692,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
+  },
+  "ADBE": {
+    "prediction": 0.0867293316431593,
+    "regime": "uptrend",
+    "price": 263.7099914550781,
+    "sentiment": 0.0,
+    "sector": "Unknown",
+    "signal": "HOLD",
+    "combined": 0.05203759898589558,
+    "saved_at": "2026-08-18T16:21:41.181253-04:00"
   }
 }
