@@ -4,9 +4,9 @@
   "trigger_date": null,
   "trigger_value": null,
   "peak_value": 10028.27,
-  "daily_start": "2026-07-31",
+  "daily_start": "2026-08-18",
   "daily_start_val": 10028.27,
-  "weekly_start": "2026-07-27",
+  "weekly_start": "2026-08-17",
   "weekly_start_val": 10028.27,
   "starting_capital": 10028.27
 }
