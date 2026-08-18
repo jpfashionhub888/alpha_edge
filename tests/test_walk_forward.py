@@ -102,8 +102,11 @@ def test_risk_management_order(wf):
     df = _make_price_df(400)
     try:
         wf.run(df)
-    except Exception:
-        pass  # ML may fail without proper target column — we only care about order
+    except Exception as e:
+        # ML may fail without proper target column — we only care about call
+        # order (asserted below), not whether the run itself succeeds. Kept
+        # visible (not a bare pass) so a real regression here doesn't hide.
+        print(f'[test_walk_forward] wf.run() raised (expected in this harness): {e}')
 
     if "risk" in call_log and "signals" in call_log:
         assert call_log.index("signals") < call_log.index("risk"), (

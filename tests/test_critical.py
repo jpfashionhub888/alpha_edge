@@ -119,8 +119,17 @@ class TestVetoAgentFailsClosed:
         )
         assert result['confidence'] == 0.0
 
-    def test_veto_agent_disabled_returns_approve(self):
-        """When disabled (no API key), APPROVE is acceptable — veto explicitly off."""
+    def test_veto_agent_disabled_returns_veto(self):
+        """When disabled (no API key), fail-closed: VETO, not APPROVE.
+
+        FIX: this test previously asserted APPROVE, testing the OLD
+        fail-open behavior. veto_agent.py's own header documents the
+        deliberate hardening to fail-closed ("Errors now return VETO,
+        not APPROVE") — see review_signal(): 'If veto agent is disabled
+        (no API key), returns VETO (fail-closed)'. The test was never
+        updated after that intentional safety change, so it was asserting
+        the less-safe behavior the code was specifically changed away from.
+        """
         from veto_agent import VetoAgent
         agent = VetoAgent()
         agent.enabled = False
@@ -130,7 +139,7 @@ class TestVetoAgentFailsClosed:
             market_regime='BULL', mtf_score=0.7,
             current_positions={}, vix=15.0,
         )
-        assert result['decision'] == 'APPROVE'
+        assert result['decision'] == 'VETO'
 
 
 # ─── Fix 4.1 — HMAC signature verification ───────────────────────────────────
@@ -197,11 +206,17 @@ class TestSignalLogic:
     def test_compute_signal_blocks_earnings(self):
         """Fix 1.6: Earnings blackout gate must block BUY during earnings week."""
         from main import compute_signal
-        # compute_signal(pred, regime, sent_score, sect_mult, symbol, earnings_symbols, mtf_composite)
+        # compute_signal(pred, regime, sent_score, sect_mult, symbol, earnings_symbols)
+        # NOTE: no mtf_composite kwarg — that was a leftover from an
+        # incomplete refactor and was never implemented on compute_signal();
+        # the live path (alpaca_live.py) applies MTF filtering as a separate
+        # post-signal check instead. These 4 tests previously called
+        # compute_signal() with mtf_composite=0.5, which doesn't exist on
+        # the real function signature and made every one of them fail with
+        # TypeError before ever exercising the logic they're meant to test.
         signal, _ = compute_signal(
             pred=0.80, regime='uptrend', sent_score=0.2,
             sect_mult=1.1, symbol='AAPL', earnings_symbols=['AAPL'],
-            mtf_composite=0.5,
         )
         assert signal in ('EARNINGS_HOLD', 'HOLD'), (
             f"Expected EARNINGS_HOLD for stock in earnings, got {signal}"
@@ -213,7 +228,6 @@ class TestSignalLogic:
         signal, _ = compute_signal(
             pred=0.50, regime='uptrend', sent_score=0.3,
             sect_mult=1.1, symbol='MSFT', earnings_symbols=[],
-            mtf_composite=0.5,
         )
         assert signal != 'BUY', f"Prediction 0.50 should not produce BUY, got {signal}"
 
@@ -223,7 +237,6 @@ class TestSignalLogic:
         signal, _ = compute_signal(
             pred=0.75, regime='uptrend', sent_score=-0.5,
             sect_mult=1.1, symbol='NVDA', earnings_symbols=[],
-            mtf_composite=0.5,
         )
         assert signal != 'BUY', f"Sentiment -0.5 should not produce BUY, got {signal}"
 
@@ -233,7 +246,6 @@ class TestSignalLogic:
         signal, _ = compute_signal(
             pred=0.90, regime='downtrend', sent_score=0.3,
             sect_mult=1.2, symbol='MSFT', earnings_symbols=[],
-            mtf_composite=0.5,
         )
         assert signal in ('AVOID', 'HOLD', 'CAUTION'), (
             f"Downtrend regime must not produce BUY, got {signal}"
@@ -245,9 +257,18 @@ class TestSignalLogic:
 class TestPortfolioExposureCap:
 
     def test_exposure_cap_blocks_beyond_max_positions(self):
-        """Fix 3.4: Max positions cap must prevent over-allocation."""
+        """Fix 3.4: Max positions cap must prevent over-allocation.
+
+        FIX: was relying on settings.MAX_OPEN_POSITIONS default (previously
+        5, now 8 in config/settings.yaml) instead of pinning the cap it's
+        actually testing. That made this test silently start failing the
+        moment someone tuned the live risk setting, even though the cap
+        mechanism itself was working correctly. Pin max_positions=5
+        explicitly so this tests the enforcement logic in isolation,
+        independent of whatever the live default currently is.
+        """
         from execution.paper_trader import PaperTrader
-        trader = PaperTrader(starting_capital=10000)
+        trader = PaperTrader(starting_capital=10000, max_positions=5)
         # Open max positions
         for sym in ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMZN']:
             trader.open_position(sym, 10.0, 0.7, reason='test')
