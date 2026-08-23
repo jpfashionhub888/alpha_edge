@@ -226,7 +226,13 @@ class HeartbeatWatchdog:
                 f"Last ping: {last_ping}\n"
                 f"Cycles completed: {cycle_count}\n"
                 f"Action: Check server immediately\n"
-                f"SSH: ssh root@{os.getenv('VPS_HOST', '67.205.185.84')}\n"
+                # FIX: hardcoded fallback IP (67.205.185.84) was stale --
+                # predates the VPS migration to 67.207.82.11 and was never
+                # updated, so every alert with VPS_HOST unset (the actual
+                # current state) pointed at a server this project no longer
+                # owns. Fallback now matches the real current host; still
+                # prefers VPS_HOST if it's ever actually set.
+                f"SSH: ssh root@{os.getenv('VPS_HOST', '67.207.82.11')}\n"
                 f"Status: systemctl status {service}.service"
             )
             try:
