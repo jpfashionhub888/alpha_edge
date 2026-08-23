@@ -11,6 +11,7 @@
 
 import json
 import os
+import shutil
 import logging
 from datetime import datetime, timedelta
 
@@ -46,19 +47,22 @@ class RiskCircuitBreaker:
     def __init__(self):
         self.state = self._load_state()
 
+    def _default_state(self):
+        return {
+            'triggered'       : False,
+            'trigger_reason'  : None,
+            'trigger_date'    : None,
+            'trigger_value'   : None,   # portfolio value when triggered
+            'peak_value'      : None,   # all-time high portfolio value
+            'daily_start'     : None,
+            'daily_start_val' : None,
+            'weekly_start'    : None,
+            'weekly_start_val': None,
+        }
+
     def _load_state(self):
         if not os.path.exists(CIRCUIT_BREAKER_FILE):
-            return {
-                'triggered'       : False,
-                'trigger_reason'  : None,
-                'trigger_date'    : None,
-                'trigger_value'   : None,   # portfolio value when triggered
-                'peak_value'      : None,   # all-time high portfolio value
-                'daily_start'     : None,
-                'daily_start_val' : None,
-                'weekly_start'    : None,
-                'weekly_start_val': None,
-            }
+            return self._default_state()
         try:
             with open(CIRCUIT_BREAKER_FILE, 'r') as f:
                 data = json.load(f)
@@ -66,11 +70,28 @@ class RiskCircuitBreaker:
             data.setdefault('trigger_value', None)
             data.setdefault('peak_value', None)
             return data
-        except Exception:
-            return {}
+        except Exception as e:
+            # FIX: was `except Exception: return {}` — completely silent,
+            # no quarantine of the bad file, no log line. If this ever
+            # fired there would be no record afterward that it happened —
+            # exactly the silent-failure mode this whole codebase has been
+            # hardened against elsewhere (P2-4). An empty {} also meant
+            # any downstream code doing direct key access (not .get())
+            # would KeyError instead of getting a valid default state.
+            quarantine_path = CIRCUIT_BREAKER_FILE + '.corrupt'
+            try:
+                shutil.move(CIRCUIT_BREAKER_FILE, quarantine_path)
+            except OSError:
+                pass
+            logger.error(
+                f"Circuit breaker state file corrupted ({e}) — quarantined "
+                f"to {quarantine_path}, rebuilding fresh baseline. "
+                f"Peak-drawdown history lost."
+            )
+            return self._default_state()
 
     def _save_state(self):
-        import tempfile, shutil
+        import tempfile
         # Derive save dir from the actual target path so tests can redirect
         # CIRCUIT_BREAKER_FILE to a tmp_path without hitting the real logs/ dir.
         target = CIRCUIT_BREAKER_FILE
@@ -80,6 +101,12 @@ class RiskCircuitBreaker:
         try:
             with os.fdopen(tmp_fd, 'w') as f:
                 json.dump(self.state, f, indent=2)
+                # FIX: write-then-rename was correctly atomic against partial
+                # writes, but without fsync a completed write can still be
+                # lost (not corrupted, just lost) on a crash between file
+                # close and the OS's own flush to disk.
+                f.flush()
+                os.fsync(f.fileno())
             # shutil.move handles cross-device moves (os.replace raises EXDEV)
             shutil.move(tmp_path, target)
         except Exception:

@@ -47,6 +47,15 @@ def atomic_json_write(filepath: str, data: object, default=None) -> None:
     try:
         with os.fdopen(tmp_fd, 'w') as f:
             json.dump(data, f, indent=2, default=default)
+            # FIX: write-then-rename was atomic against partial writes, but
+            # without fsync a completed write can still be lost (not
+            # corrupted, just lost) on a crash between file close and the
+            # OS's own flush to disk. This is the shared helper ~30 call
+            # sites route through, so this one fix covers all of them —
+            # see risk_circuit_breaker.py for the equivalent fix applied to
+            # its separate, non-shared implementation of this same pattern.
+            f.flush()
+            os.fsync(f.fileno())
         # REGRESSION FIX: tempfile.mkstemp() always creates the temp file at
         # mode 0600 (owner-only), regardless of umask — that's its security
         # property. os.replace() then makes that 0600 file become the final
