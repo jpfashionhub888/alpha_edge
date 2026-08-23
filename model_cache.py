@@ -23,7 +23,14 @@ logger = logging.getLogger(__name__)
 # ── Constants ──────────────────────────────────────────────────────────────────
 # Bumped 3.1: force retrain after feature_engine macro-feature removal
 # (gld_level/vix_level/dxy_level/tlt_level removed → old models crash on predict)
-CACHE_VERSION = "3.1"          # Bump this manually when model architecture changes
+# Bumped 3.2 (user-confirmed): the 180->365 training-window fix (ad37e84)
+# only benefits a symbol once its model retrains, and cached models don't
+# retrain until their own 7-day TTL expires -- meaning the fix would have
+# phased in gradually per-symbol over up to a week instead of applying to
+# the whole fleet immediately. This forces every symbol to retrain on the
+# very next scan. Tradeoff (confirmed acceptable): that next scan will be
+# much slower since nothing can use the cache.
+CACHE_VERSION = "3.2"          # Bump this manually when model architecture changes
 DEFAULT_TTL_DAYS = 7           # Max age before forced retrain
 DEFAULT_CACHE_DIR = "cache/models"
 

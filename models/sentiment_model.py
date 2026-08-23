@@ -102,8 +102,25 @@ class SentimentAnalyzer:
             print("   ⚠️  Using keyword-based sentiment (torch unavailable)")
             return
 
+        # FIX: this used to unconditionally claim "first run will download"
+        # on every single load, restart after restart -- even once the
+        # ~850MB model was already cached at HF_HOME (confirmed present on
+        # the VPS, dated back to the initial setup, not re-downloaded each
+        # time as the old message implied). HuggingFace's pipeline() still
+        # does a brief network round-trip to check the cached files' ETags
+        # against the remote even on a warm cache, which is normal and fast
+        # -- that's what was being misread as a real re-download. Check for
+        # the actual cache directory so the message reflects which case
+        # this really is.
+        _hf_cache_dir = os.path.join(
+            os.environ.get('HF_HOME', os.path.expanduser('~/.cache/huggingface')),
+            'hub', 'models--ProsusAI--finbert',
+        )
         print("\n   Loading sentiment model...")
-        print("   (First run will download ~250MB model)")
+        if os.path.isdir(_hf_cache_dir):
+            print("   (Cached locally -- verifying against remote, no re-download)")
+        else:
+            print("   (Not cached yet -- first run will download ~250MB model)")
 
         try:
             self.model = hf_pipeline(

@@ -225,7 +225,17 @@ def compute_signal(pred, regime, sent_score, sect_mult,
 
     if regime == 'uptrend' and combined > _buy_thr:
         signal = 'BUY'
-    elif regime == 'uptrend' and pred > _buy_thr_pred:
+    # FIX (H1, confirmed by user): this secondary pred-only gate previously
+    # ignored sentiment entirely -- a stock with a strong-enough prediction
+    # could reach BUY here even with strongly negative sentiment, bypassing
+    # the sentiment penalty the primary `combined` branch above already
+    # applies. -0.3 matches the threshold already used as convention
+    # elsewhere in this codebase (see veto_agent.py's prompt: "VETO if:
+    # Sentiment below -0.3..."), applied unconditionally here (no
+    # pred>0.65 exception) since this branch's whole purpose is a
+    # pred-only bypass -- letting a strong prediction override strongly
+    # negative sentiment defeats that gate's purpose.
+    elif regime == 'uptrend' and pred > _buy_thr_pred and sent_score > -0.3:
         signal = 'BUY'
     elif regime == 'downtrend':
         signal = 'AVOID'
