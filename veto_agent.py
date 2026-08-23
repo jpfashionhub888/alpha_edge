@@ -27,7 +27,14 @@ class VetoAgent:
     def __init__(self):
         self.api_key = os.getenv('GROQ_API_KEY', '')
         self.enabled = bool(self.api_key)
-        self.model   = 'llama-3.3-70b-versatile'
+        # FIX (Aug 2026): llama-3.3-70b-versatile was deprecated by Groq on
+        # 2026-06-17 and now 404s ("model_not_found") on every call. Because
+        # this class is fail-closed by design, every one of those errors was
+        # silently converting into VETO — killing every BUY signal that
+        # reached this stage for over a month, including dozens of strong
+        # real MTF composite signals (MSFT 0.956, SNOW 1.000, TGT 1.000,
+        # PLTR 1.000, etc). Migrated to Groq's official replacement model.
+        self.model   = 'openai/gpt-oss-120b'
         self._client = None  # S3 FIX: created once in __init__, not per-call
 
         if not self.enabled:
