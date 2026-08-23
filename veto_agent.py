@@ -144,7 +144,20 @@ APPROVE if:
                     }
                 ],
                 temperature = 0.1,
-                max_tokens  = 150,
+                # FIX (Aug 2026): openai/gpt-oss-120b is a reasoning model —
+                # unlike llama-3.3-70b-versatile, it spends tokens on internal
+                # chain-of-thought before emitting the final answer. At the old
+                # max_tokens=150, it was burning the entire budget on reasoning
+                # and returning an EMPTY message.content, which json.loads()
+                # then failed on ("Expecting value: line 1 column 1 (char 0)")
+                # — a second, distinct failure mode from the original 404, and
+                # a documented Groq/gpt-oss issue, not specific to this prompt.
+                # reasoning_effort="low" keeps this simple classification task
+                # from over-thinking, and include_reasoning=False keeps the
+                # reasoning trace out of the parsed field entirely.
+                max_tokens         = 1024,
+                reasoning_effort   = "low",
+                include_reasoning  = False,
                 timeout     = 10,   # explicit timeout — don't hang the scan
             )
 
