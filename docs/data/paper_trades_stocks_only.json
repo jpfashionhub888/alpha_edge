@@ -1,15 +1,7 @@
 {
-  "capital": 9921.85,
+  "capital": 10031.3,
   "starting_capital": 10000.0,
-  "positions": {
-    "MRNA": {
-      "shares": 1.6807,
-      "entry_price": 63.32,
-      "current_price": 63.32,
-      "pnl": 0.0,
-      "pnl_pct": 0.0
-    }
-  },
+  "positions": {},
   "trade_history": [
     {
       "action": "BUY",
@@ -21,7 +13,21 @@
       "pnl_pct": 0.0,
       "reason": "SIGNAL",
       "date": "2026-08-23T14:04:27.432111-04:00"
+    },
+    {
+      "action": "SELL",
+      "symbol": "MRNA",
+      "shares": 0.745690259,
+      "price": 146.76,
+      "fill_price": 146.76,
+      "pnl": 62.22,
+      "pnl_pct": 1.3178,
+      "reason": "TAKE PROFIT",
+      "date": "2026-08-25T09:30:29.663912-04:00",
+      "commission": 0.0,
+      "slippage_pct": 0.0
     }
   ],
-  "saved_at": "2026-08-23T14:04:27.432881-04:00"
+  "saved_at": "2026-08-24T22:55:27.258077-04:00",
+  "prices_updated_at": "2026-08-25T09:30:28.814270-04:00"
 }
