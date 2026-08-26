@@ -1,5 +1,5 @@
 {
-  "capital": 20031.3,
+  "capital": 20031.72,
   "starting_capital": 20000.0,
   "positions": {},
   "trade_history": [
@@ -26,13 +26,37 @@
       "timestamp": "",
       "reason": "TAKE PROFIT",
       "source": "stocks"
+    },
+    {
+      "action": "BUY",
+      "symbol": "SNOW",
+      "shares": 0.3225,
+      "entry_price": 0,
+      "exit_price": 0,
+      "pnl": 0.0,
+      "pnl_pct": 0.0,
+      "timestamp": "",
+      "reason": "SIGNAL",
+      "source": "stocks"
+    },
+    {
+      "action": "SELL",
+      "symbol": "SNOW",
+      "shares": 0.338999482,
+      "entry_price": 0,
+      "exit_price": 0,
+      "pnl": -4.53,
+      "pnl_pct": -0.041,
+      "timestamp": "",
+      "reason": "STOP LOSS",
+      "source": "stocks"
     }
   ],
-  "last_updated": "2026-08-25T20:30:02.431624",
+  "last_updated": "2026-08-26T14:00:02.228058",
   "sources": {
     "stocks": {
-      "capital": 10031.3,
-      "trades": 2,
+      "capital": 10031.72,
+      "trades": 4,
       "positions": 0
     },
     "crypto": {
