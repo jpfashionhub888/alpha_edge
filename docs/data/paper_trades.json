@@ -1,7 +1,22 @@
 {
-  "capital": 20035.21,
+  "capital": 19810.41,
   "starting_capital": 20000.0,
-  "positions": {},
+  "positions": {
+    "CRWD": {
+      "shares": 0.634,
+      "entry_price": 191.95,
+      "current_price": 191.95,
+      "pnl": 0.0,
+      "pnl_pct": 0.0
+    },
+    "MSFT": {
+      "shares": 0.2134,
+      "entry_price": 483.24,
+      "current_price": 483.24,
+      "pnl": 0.0,
+      "pnl_pct": 0.0
+    }
+  },
   "trade_history": [
     {
       "action": "BUY",
@@ -74,14 +89,38 @@
       "timestamp": "",
       "reason": "TAKE PROFIT",
       "source": "stocks"
+    },
+    {
+      "action": "BUY",
+      "symbol": "CRWD",
+      "shares": 0.634,
+      "entry_price": 0,
+      "exit_price": 0,
+      "pnl": 0.0,
+      "pnl_pct": 0.0,
+      "timestamp": "",
+      "reason": "SIGNAL",
+      "source": "stocks"
+    },
+    {
+      "action": "BUY",
+      "symbol": "MSFT",
+      "shares": 0.2134,
+      "entry_price": 0,
+      "exit_price": 0,
+      "pnl": 0.0,
+      "pnl_pct": 0.0,
+      "timestamp": "",
+      "reason": "SIGNAL",
+      "source": "stocks"
     }
   ],
-  "last_updated": "2026-08-28T16:45:02.082095",
+  "last_updated": "2026-08-28T20:30:02.379360",
   "sources": {
     "stocks": {
-      "capital": 10035.21,
-      "trades": 6,
-      "positions": 0
+      "capital": 9810.41,
+      "trades": 8,
+      "positions": 2
     },
     "crypto": {
       "capital": 10000,

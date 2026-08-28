@@ -1,7 +1,22 @@
 {
-  "capital": 10035.21,
+  "capital": 9810.41,
   "starting_capital": 10000.0,
-  "positions": {},
+  "positions": {
+    "CRWD": {
+      "shares": 0.634,
+      "entry_price": 191.95,
+      "current_price": 191.95,
+      "pnl": 0.0,
+      "pnl_pct": 0.0
+    },
+    "MSFT": {
+      "shares": 0.2134,
+      "entry_price": 483.24,
+      "current_price": 483.24,
+      "pnl": 0.0,
+      "pnl_pct": 0.0
+    }
+  },
   "trade_history": [
     {
       "action": "BUY",
@@ -74,8 +89,30 @@
       "date": "2026-08-28T09:30:34.757624-04:00",
       "commission": 0.0,
       "slippage_pct": 0.0
+    },
+    {
+      "action": "BUY",
+      "symbol": "CRWD",
+      "shares": 0.634,
+      "price": 191.95,
+      "fill_price": 191.95,
+      "pnl": 0.0,
+      "pnl_pct": 0.0,
+      "reason": "SIGNAL",
+      "date": "2026-08-28T16:22:44.145078-04:00"
+    },
+    {
+      "action": "BUY",
+      "symbol": "MSFT",
+      "shares": 0.2134,
+      "price": 483.24,
+      "fill_price": 483.24,
+      "pnl": 0.0,
+      "pnl_pct": 0.0,
+      "reason": "SIGNAL",
+      "date": "2026-08-28T16:22:45.943503-04:00"
     }
   ],
-  "saved_at": "2026-08-27T16:22:23.424161-04:00",
+  "saved_at": "2026-08-28T16:22:45.943563-04:00",
   "prices_updated_at": "2026-08-28T09:30:33.875087-04:00"
 }
