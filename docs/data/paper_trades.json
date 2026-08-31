@@ -1,7 +1,15 @@
 {
-  "capital": 20039.4,
+  "capital": 19922.6,
   "starting_capital": 20000.0,
-  "positions": {},
+  "positions": {
+    "CRWD": {
+      "shares": 0.6085,
+      "entry_price": 191.95,
+      "current_price": 191.95,
+      "pnl": 0.0,
+      "pnl_pct": 0.0
+    }
+  },
   "trade_history": [
     {
       "action": "BUY",
@@ -122,14 +130,26 @@
       "timestamp": "",
       "reason": "TAKE PROFIT",
       "source": "stocks"
+    },
+    {
+      "action": "BUY",
+      "symbol": "CRWD",
+      "shares": 0.6085,
+      "entry_price": 0,
+      "exit_price": 0,
+      "pnl": 0.0,
+      "pnl_pct": 0.0,
+      "timestamp": "",
+      "reason": "SIGNAL",
+      "source": "stocks"
     }
   ],
-  "last_updated": "2026-08-31T16:45:01.254330",
+  "last_updated": "2026-08-31T20:30:01.748296",
   "sources": {
     "stocks": {
-      "capital": 10039.4,
-      "trades": 10,
-      "positions": 0
+      "capital": 9922.6,
+      "trades": 11,
+      "positions": 1
     },
     "crypto": {
       "capital": 10000,
