@@ -4,7 +4,7 @@
     "momentum_10d": -0.0243274732273685,
     "momentum_21d": 0.05896775579116054,
     "momentum_63d": -0.05030947285354326,
-    "volume_ratio": 0.8835890617837097,
+    "volume_ratio": 0.8865384804418739,
     "relative_strength": 0.02908951072239052,
     "etf": "XLK",
     "flow": "NEUTRAL"
@@ -14,7 +14,7 @@
     "momentum_10d": 0.02460341535628796,
     "momentum_21d": 0.052968320201200125,
     "momentum_63d": 0.16284411254513254,
-    "volume_ratio": 0.608594658230678,
+    "volume_ratio": 0.6097461968996423,
     "relative_strength": 0.02309007513243011,
     "etf": "XLV",
     "flow": "INFLOW"
@@ -24,7 +24,7 @@
     "momentum_10d": 0.00903085492411293,
     "momentum_21d": 0.020372319553727314,
     "momentum_63d": 0.13364804357334026,
-    "volume_ratio": 0.8759140279916879,
+    "volume_ratio": 0.8828306747071092,
     "relative_strength": -0.009505925515042701,
     "etf": "XLF",
     "flow": "INFLOW"
@@ -34,7 +34,7 @@
     "momentum_10d": 0.0015979301884818664,
     "momentum_21d": 0.05256089182562573,
     "momentum_63d": 0.1017806924020841,
-    "volume_ratio": 0.9565067589266624,
+    "volume_ratio": 0.9588543808639113,
     "relative_strength": 0.022682646756855718,
     "etf": "XLE",
     "flow": "INFLOW"
@@ -44,7 +44,7 @@
     "momentum_10d": 0.003940034984776464,
     "momentum_21d": 0.009647711102704903,
     "momentum_63d": -0.006315605508508293,
-    "volume_ratio": 0.6808327839734262,
+    "volume_ratio": 0.6831629828580137,
     "relative_strength": -0.020230533966065112,
     "etf": "XLY",
     "flow": "NEUTRAL"
@@ -54,7 +54,7 @@
     "momentum_10d": -0.04927011364161238,
     "momentum_21d": -0.015013328532154313,
     "momentum_63d": 0.030022153948693564,
-    "volume_ratio": 1.1034858006696995,
+    "volume_ratio": 1.1327163721250215,
     "relative_strength": -0.04489157360092433,
     "etf": "XLI",
     "flow": "OUTFLOW"
@@ -64,7 +64,7 @@
     "momentum_10d": -0.03282029771216599,
     "momentum_21d": -0.03652759836801478,
     "momentum_63d": -0.002253998007253788,
-    "volume_ratio": 0.7901450621103328,
+    "volume_ratio": 0.7912170867322617,
     "relative_strength": -0.0664058434367848,
     "etf": "XLU",
     "flow": "OUTFLOW"
@@ -74,7 +74,7 @@
     "momentum_10d": 0.01799384755947364,
     "momentum_21d": 0.054531032785216205,
     "momentum_63d": 0.04828844618554062,
-    "volume_ratio": 0.8488430019417362,
+    "volume_ratio": 0.8671182597216928,
     "relative_strength": 0.02465278771644619,
     "etf": "XLB",
     "flow": "INFLOW"
@@ -84,7 +84,7 @@
     "momentum_10d": -0.007807322652748749,
     "momentum_21d": -0.013090751199974937,
     "momentum_63d": 0.03697178996406936,
-    "volume_ratio": 0.686413235957081,
+    "volume_ratio": 0.6874438734108724,
     "relative_strength": -0.04296899626874495,
     "etf": "XLRE",
     "flow": "NEUTRAL"
@@ -94,18 +94,18 @@
     "momentum_10d": 0.019581286545037324,
     "momentum_21d": 0.043883962432984536,
     "momentum_63d": -0.020119869669771195,
-    "volume_ratio": 0.8237447049043121,
+    "volume_ratio": 0.8242765816353944,
     "relative_strength": 0.01400571736421452,
     "etf": "XLC",
     "flow": "NEUTRAL"
   },
   "Staples": {
-    "score": 0.008590906221691497,
-    "momentum_10d": 0.008797859516971318,
-    "momentum_21d": 0.004409170917628158,
-    "momentum_63d": 0.048613059607700126,
-    "volume_ratio": 0.8082139488586112,
-    "relative_strength": -0.025469074151141857,
+    "score": 0.008887751062805482,
+    "momentum_10d": 0.009093016536271037,
+    "momentum_21d": 0.004703043881620461,
+    "momentum_63d": 0.04891986587433972,
+    "volume_ratio": 0.8150979717935375,
+    "relative_strength": -0.025175201187149554,
     "etf": "XLP",
     "flow": "NEUTRAL"
   }
