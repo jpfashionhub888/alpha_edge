@@ -1,15 +1,7 @@
 {
-  "capital": 9922.6,
+  "capital": 10026.35,
   "starting_capital": 10000.0,
-  "positions": {
-    "CRWD": {
-      "shares": 0.6085,
-      "entry_price": 191.95,
-      "current_price": 191.95,
-      "pnl": 0.0,
-      "pnl_pct": 0.0
-    }
-  },
+  "positions": {},
   "trade_history": [
     {
       "action": "BUY",
@@ -143,6 +135,6 @@
       "date": "2026-08-31T16:27:25.350968-04:00"
     }
   ],
-  "saved_at": "2026-08-31T16:27:25.351353-04:00",
+  "saved_at": "2026-09-01T15:22:10.579272-04:00",
   "prices_updated_at": "2026-08-31T09:30:47.713974-04:00"
 }
