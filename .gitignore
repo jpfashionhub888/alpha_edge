@@ -56,3 +56,6 @@ test_predictor.py
 find_signal_logic.py
 *.diff
 python
+*.tmp
+*.bak*
+backtesting/results/
