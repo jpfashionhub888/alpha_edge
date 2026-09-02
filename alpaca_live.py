@@ -22,17 +22,17 @@ Scan schedule: once daily at 16:15 ET (15 min after market close)
 import os
 
 # ── Cache path hardening (must be first — before yfinance / HF imports) ───────
-os.environ.setdefault('HF_HOME',           '/root/.cache/huggingface')
-os.environ.setdefault('TRANSFORMERS_CACHE', '/root/.cache/huggingface/hub')
-os.environ.setdefault('XDG_CACHE_HOME',    '/root/.cache')
-for _d in ('/root/.cache/huggingface', '/root/.cache/py-yfinance'):
+os.environ.setdefault('HF_HOME',           '/root/alpha_edge/cache/huggingface')
+os.environ.setdefault('TRANSFORMERS_CACHE', '/root/alpha_edge/cache/huggingface/hub')
+os.environ.setdefault('XDG_CACHE_HOME',    '/root/alpha_edge/cache')
+for _d in ('/root/alpha_edge/cache/huggingface', '/root/alpha_edge/cache/py-yfinance'):
     try:
         os.makedirs(_d, exist_ok=True)
     except Exception as e:
         print(f"[warn] cache dir setup failed: {e}", flush=True)
 try:
     import yfinance as _yf_cache
-    _yf_cache.set_tz_cache_location('/root/.cache/py-yfinance')
+    _yf_cache.set_tz_cache_location('/root/alpha_edge/cache/py-yfinance')
 except Exception as e:
     print(f"[warn] yfinance cache setup failed: {e}", flush=True)
 
@@ -229,31 +229,52 @@ class AlpacaLiveTrader:
         # place new trades until resolved" while the code did precisely
         # that. Set ALPHAEDGE_FORCE_START=1 to override after manual review.
         try:
-            from monitoring.reconciliation import reconcile_on_startup
-            discrepancies = reconcile_on_startup(
-                broker  = self.broker,
-                log_file= 'logs/paper_trades_stocks_only.json',
-                service = 'alpaca_bot',
+            from monitoring.reconciliation import PositionReconciler, _send_recon_alert
+            reconciler = PositionReconciler(
+                log_file    = 'logs/paper_trades_stocks_only.json',
+                service_name= 'alpaca_bot',
             )
-            if discrepancies:
+            result   = reconciler.auto_correct_local_state(self.broker)
+            phantoms = result.get('phantoms', [])
+            if phantoms:
                 logger.error(
-                    f'Reconciliation found {len(discrepancies)} discrepancies — '
+                    f'Reconciliation found {len(phantoms)} PHANTOM position(s) — '
                     f'review logs/reconciliation.log before trading'
                 )
-                if os.getenv('ALPHAEDGE_FORCE_START') != '1':
-                    print(
-                        f'\n❌ HALTED: {len(discrepancies)} position discrepancies '
-                        f'found on startup.\n'
-                        f'   Review logs/reconciliation.log, resolve manually, '
-                        f'then either fix the local state file or set\n'
-                        f'   ALPHAEDGE_FORCE_START=1 to proceed anyway.\n'
-                    )
-                    return
-                else:
-                    logger.warning(
-                        'ALPHAEDGE_FORCE_START=1 set — proceeding despite '
-                        'unresolved reconciliation discrepancies'
-                    )
+                try:
+                    _send_recon_alert(phantoms, 'alpaca_bot')
+                except Exception as e:
+                    logger.warning(f'[Reconcile] Telegram PHANTOM alert failed: {e}')
+                print(
+                    f'\n❌ HALTED: {len(phantoms)} PHANTOM position(s) found on startup.\n'
+                    f'   Broker holds a position AlphaEdge has no local record of.\n'
+                    f'   Review logs/reconciliation.log, resolve manually, then restart.\n'
+                )
+                return
+            orphans_fixed    = result.get('orphans_fixed', 0)
+            mismatches_fixed = result.get('mismatches_fixed', 0)
+            if orphans_fixed or mismatches_fixed:
+                logger.info(
+                    f"[Reconcile] Auto-corrected: {orphans_fixed} orphan(s) removed, "
+                    f"{mismatches_fixed} mismatch(es) fixed. Proceeding."
+                )
+                try:
+                    from monitoring.telegram_bot import TelegramBot
+                    _bot = TelegramBot()
+                    if _bot.enabled:
+                        _lines = [
+                            'AlphaEdge — Startup Auto-Correction',
+                            '',
+                            f'Orphans removed : {orphans_fixed}',
+                            f'Mismatches fixed: {mismatches_fixed}',
+                        ]
+                        for _o in result.get('orphans_removed', [])[:5]:
+                            _lines.append(f"  [ORPHAN] {_o.get('symbol')} — ${_o.get('freed', 0):.2f} returned to capital")
+                        _lines.append('')
+                        _lines.append('Bot is proceeding normally.')
+                        _bot.send_message('\n'.join(_lines))
+                except Exception as e:
+                    logger.debug(f'[Reconcile] Telegram auto-correct alert failed: {e}')
         except Exception as e:
             logger.warning(f'Reconciliation skipped: {e}')
 

@@ -357,6 +357,7 @@ class PositionReconciler:
 
         phantoms         = []
         orphans_fixed    = 0
+        orphans_removed  = []
         mismatches_fixed = 0
 
         # PHANTOM — broker has a position we have no record of (double-buy risk)
@@ -395,6 +396,7 @@ class PositionReconciler:
                             f'(${freed:.2f} returned to capital)'
                         )
                         orphans_fixed += 1
+                        orphans_removed.append({'symbol': raw_sym, 'freed': freed})
                         changed = True
 
                 if changed:
@@ -426,6 +428,7 @@ class PositionReconciler:
         return {
             'phantoms'        : phantoms,
             'orphans_fixed'   : orphans_fixed,
+            'orphans_removed' : orphans_removed,
             'mismatches_fixed': mismatches_fixed,
         }
 

@@ -106,6 +106,10 @@ def get_earnings_calendar(watchlist):
     """
     import yfinance as yf
     print("\n📅 Checking earnings calendar...")
+    # ETFs don't file individual earnings — skip them to avoid wasted
+    # API retries and 404 warnings/errors on every scan.
+    NO_EARNINGS_SYMBOLS = {'SPY', 'QQQ', 'IWM', 'DIA', 'XLF', 'XLK', 'XLE', 'XLV'}
+    watchlist = [s for s in watchlist if s not in NO_EARNINGS_SYMBOLS]
     earnings_soon = []
 
     def _fetch_one(symbol):
