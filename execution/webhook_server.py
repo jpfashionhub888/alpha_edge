@@ -475,7 +475,7 @@ def start_webhook_server(port=5000):
     print(f"View signals: http://localhost:{port}/signals")
     print("\nTradingView Alert Message Format:")
     print('   {')
-    print(f'     "secret": "{WEBHOOK_SECRET}",')
+    print(f'     "secret": "<WEBHOOK_SECRET>",')
     print('     "symbol": "{{ticker}}",')
     print('     "action": "BUY",')
     print('     "price": {{close}}')

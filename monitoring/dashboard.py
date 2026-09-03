@@ -135,13 +135,13 @@ def _quotes_watchlist():
     try:
         sigs = load_signals()
         syms |= {s for s in sigs.keys() if not s.startswith('_')}
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f'_quotes_watchlist: load_signals() failed: {e}')
     try:
         pos = load_portfolio().get('positions', {})
         syms |= set(pos.keys())
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f'_quotes_watchlist: load_portfolio() failed: {e}')
     if not syms:
         syms = set(WATCHLIST)
     return sorted(syms)[:_QUOTES_MAX_SYMBOLS]

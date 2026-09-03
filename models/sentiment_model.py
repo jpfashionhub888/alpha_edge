@@ -15,13 +15,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 # ── Cache path hardening ───────────────────────────────────────────────────────
-# Must be set BEFORE transformers is imported so HuggingFace uses /root/.cache
+# Must be set BEFORE transformers is imported so HuggingFace uses /root/alpha_edge/cache
 # instead of /home/alphaedge which is owned by a different user.
-os.environ.setdefault('HF_HOME',        '/root/.cache/huggingface')
-os.environ.setdefault('TRANSFORMERS_CACHE', '/root/.cache/huggingface/hub')
-os.environ.setdefault('XDG_CACHE_HOME', '/root/.cache')
+os.environ.setdefault('HF_HOME',        '/root/alpha_edge/cache/huggingface')
+os.environ.setdefault('TRANSFORMERS_CACHE', '/root/alpha_edge/cache/huggingface/hub')
+os.environ.setdefault('XDG_CACHE_HOME', '/root/alpha_edge/cache')
 try:
-    os.makedirs('/root/.cache/huggingface', exist_ok=True)
+    os.makedirs('/root/alpha_edge/cache/huggingface', exist_ok=True)
 except Exception as e:
     logger.warning(f'HuggingFace cache dir create failed: {e}')
 

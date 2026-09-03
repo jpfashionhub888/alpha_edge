@@ -3,10 +3,10 @@
   "trigger_reason": null,
   "trigger_date": null,
   "trigger_value": null,
-  "peak_value": 10028.27,
-  "daily_start": "2026-08-21",
-  "daily_start_val": 10028.27,
-  "weekly_start": "2026-08-17",
-  "weekly_start_val": 10028.27,
-  "starting_capital": 10028.27
+  "peak_value": 10026.35,
+  "daily_start": "2026-09-03",
+  "daily_start_val": 10026.32,
+  "weekly_start": "2026-08-31",
+  "weekly_start_val": 10000.0,
+  "starting_capital": 10000.0
 }

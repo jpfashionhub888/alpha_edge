@@ -411,7 +411,7 @@ def run_runtime_checks():
 # MODULE 3: SERVICE + LOG HEALTH (server-side only)
 # ═════════════════════════════════════════════════════════════════════════════
 
-SERVICES = ['alphaedge.service', 'gateio.service', 'dashboard.service']
+SERVICES = ['alphaedge.service', 'gateio.service', 'alphaedge-dashboard.service']
 
 def run_service_checks():
     """Check systemd service health and scan logs for errors."""
@@ -610,7 +610,7 @@ def run_data_integrity():
                 finding('P1', 'data', 'logs/latest_signals.json', 0,
                         f'Signal file is {age_hrs:.0f}h old — scanner may have stopped',
                         f'Last modified: {sig_time.isoformat()}',
-                        'Check alpaca.service logs; restart service if needed.')
+                        'Check alphaedge.service logs; restart service if needed.')
             else:
                 ok(f'latest_signals.json: {len(sigs)} symbols, {age_hrs:.1f}h old')
         except Exception as e:

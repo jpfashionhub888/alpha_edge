@@ -1,13 +1,146 @@
 {
-  "capital": 20028.27,
+  "capital": 20026.35,
   "starting_capital": 20000.0,
   "positions": {},
-  "trade_history": [],
-  "last_updated": "2026-08-21T20:30:01.523299",
+  "trade_history": [
+    {
+      "action": "BUY",
+      "symbol": "MRNA",
+      "shares": 1.6807,
+      "entry_price": 0,
+      "exit_price": 0,
+      "pnl": 0.0,
+      "pnl_pct": 0.0,
+      "timestamp": "",
+      "reason": "SIGNAL",
+      "source": "stocks"
+    },
+    {
+      "action": "SELL",
+      "symbol": "MRNA",
+      "shares": 0.745690259,
+      "entry_price": 0,
+      "exit_price": 0,
+      "pnl": 62.22,
+      "pnl_pct": 1.3178,
+      "timestamp": "",
+      "reason": "TAKE PROFIT",
+      "source": "stocks"
+    },
+    {
+      "action": "BUY",
+      "symbol": "SNOW",
+      "shares": 0.3225,
+      "entry_price": 0,
+      "exit_price": 0,
+      "pnl": 0.0,
+      "pnl_pct": 0.0,
+      "timestamp": "",
+      "reason": "SIGNAL",
+      "source": "stocks"
+    },
+    {
+      "action": "SELL",
+      "symbol": "SNOW",
+      "shares": 0.338999482,
+      "entry_price": 0,
+      "exit_price": 0,
+      "pnl": -4.53,
+      "pnl_pct": -0.041,
+      "timestamp": "",
+      "reason": "STOP LOSS",
+      "source": "stocks"
+    },
+    {
+      "action": "BUY",
+      "symbol": "CRWD",
+      "shares": 0.639,
+      "entry_price": 0,
+      "exit_price": 0,
+      "pnl": 0.0,
+      "pnl_pct": 0.0,
+      "timestamp": "",
+      "reason": "SIGNAL",
+      "source": "stocks"
+    },
+    {
+      "action": "SELL",
+      "symbol": "CRWD",
+      "shares": 0.532860147,
+      "entry_price": 0,
+      "exit_price": 0,
+      "pnl": 23.69,
+      "pnl_pct": 0.2336,
+      "timestamp": "",
+      "reason": "TAKE PROFIT",
+      "source": "stocks"
+    },
+    {
+      "action": "BUY",
+      "symbol": "CRWD",
+      "shares": 0.634,
+      "entry_price": 0,
+      "exit_price": 0,
+      "pnl": 0.0,
+      "pnl_pct": 0.0,
+      "timestamp": "",
+      "reason": "SIGNAL",
+      "source": "stocks"
+    },
+    {
+      "action": "BUY",
+      "symbol": "MSFT",
+      "shares": 0.2134,
+      "entry_price": 0,
+      "exit_price": 0,
+      "pnl": 0.0,
+      "pnl_pct": 0.0,
+      "timestamp": "",
+      "reason": "SIGNAL",
+      "source": "stocks"
+    },
+    {
+      "action": "SELL",
+      "symbol": "CRWD",
+      "shares": 0.548771138,
+      "entry_price": 0,
+      "exit_price": 0,
+      "pnl": 20.51,
+      "pnl_pct": 0.1947,
+      "timestamp": "",
+      "reason": "TAKE PROFIT",
+      "source": "stocks"
+    },
+    {
+      "action": "SELL",
+      "symbol": "MSFT",
+      "shares": 0.201990712,
+      "entry_price": 0,
+      "exit_price": 0,
+      "pnl": 5.54,
+      "pnl_pct": 0.0568,
+      "timestamp": "",
+      "reason": "TAKE PROFIT",
+      "source": "stocks"
+    },
+    {
+      "action": "BUY",
+      "symbol": "CRWD",
+      "shares": 0.6085,
+      "entry_price": 0,
+      "exit_price": 0,
+      "pnl": 0.0,
+      "pnl_pct": 0.0,
+      "timestamp": "",
+      "reason": "SIGNAL",
+      "source": "stocks"
+    }
+  ],
+  "last_updated": "2026-09-03T16:45:01.315731",
   "sources": {
     "stocks": {
-      "capital": 10028.27,
-      "trades": 0,
+      "capital": 10026.35,
+      "trades": 11,
       "positions": 0
     },
     "crypto": {
