@@ -60,3 +60,5 @@ python
 *.bak*
 backtesting/results/
 .env.deprecated*
+
+logs/bot_control.json
