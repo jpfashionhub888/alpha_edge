@@ -1,5 +1,5 @@
 {
-  "capital": 20026.35,
+  "capital": 20026.32,
   "starting_capital": 20000.0,
   "positions": {},
   "trade_history": [
@@ -136,10 +136,10 @@
       "source": "stocks"
     }
   ],
-  "last_updated": "2026-09-05T15:30:01.600688",
+  "last_updated": "2026-09-07T14:00:01.661168",
   "sources": {
     "stocks": {
-      "capital": 10026.35,
+      "capital": 10026.32,
       "trades": 11,
       "positions": 0
     },
