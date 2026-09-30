@@ -7,7 +7,7 @@
     "sector": "Technology",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "MSFT": {
     "prediction": 0.2013225214980086,
@@ -17,7 +17,7 @@
     "sector": "Technology",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "GOOGL": {
     "prediction": 0.32711418298471134,
@@ -27,7 +27,7 @@
     "sector": "Technology",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "AMZN": {
     "prediction": 0.541864377956685,
@@ -37,7 +37,7 @@
     "sector": "Consumer",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "NVDA": {
     "prediction": 0.3662459438566935,
@@ -47,7 +47,7 @@
     "sector": "Technology",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "META": {
     "prediction": 0.29329591576891234,
@@ -57,7 +57,7 @@
     "sector": "Communications",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "TSLA": {
     "prediction": 0.2445938792728157,
@@ -67,7 +67,7 @@
     "sector": "Consumer",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "AMD": {
     "prediction": 0.6723160937925959,
@@ -77,7 +77,7 @@
     "sector": "Technology",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "NFLX": {
     "prediction": 0.5296192259735569,
@@ -87,7 +87,7 @@
     "sector": "Communications",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "SPY": {
     "prediction": 0.12786221099913597,
@@ -97,7 +97,7 @@
     "sector": "Market",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "QQQ": {
     "prediction": 0.30117867437568535,
@@ -107,7 +107,7 @@
     "sector": "Technology",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "IWM": {
     "prediction": 0.3335712360966874,
@@ -117,7 +117,7 @@
     "sector": "Market",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "DIA": {
     "prediction": 0.3189467600175217,
@@ -127,7 +127,7 @@
     "sector": "Market",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "XLF": {
     "prediction": 0.4312709731682366,
@@ -137,7 +137,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "XLK": {
     "prediction": 0.5375319115837988,
@@ -147,7 +147,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "XLE": {
     "prediction": 0.33785023645329176,
@@ -157,7 +157,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "XLV": {
     "prediction": 0.5023902602686788,
@@ -167,7 +167,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "JPM": {
     "prediction": 0.6798114549290462,
@@ -177,7 +177,7 @@
     "sector": "Financials",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "V": {
     "prediction": 0.7221052498621294,
@@ -187,7 +187,7 @@
     "sector": "Financials",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "GS": {
     "prediction": 0.7550091955785838,
@@ -197,7 +197,7 @@
     "sector": "Financials",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "BAC": {
     "prediction": 0.3056462333834944,
@@ -207,7 +207,7 @@
     "sector": "Financials",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "MS": {
     "prediction": 0.6325244453530492,
@@ -217,7 +217,7 @@
     "sector": "Financials",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "WFC": {
     "prediction": 0.4599489834435739,
@@ -227,7 +227,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "C": {
     "prediction": 0.7892631867772368,
@@ -237,7 +237,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "AXP": {
     "prediction": 0.45527619331186653,
@@ -247,7 +247,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "BLK": {
     "prediction": 0.4557010819494951,
@@ -257,7 +257,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "JNJ": {
     "prediction": 0.18820333777113352,
@@ -267,7 +267,7 @@
     "sector": "Healthcare",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "PFE": {
     "prediction": 0.33580198116096827,
@@ -277,7 +277,7 @@
     "sector": "Healthcare",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "UNH": {
     "prediction": 0.6515694397744238,
@@ -287,7 +287,7 @@
     "sector": "Healthcare",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "ABBV": {
     "prediction": 0.30141747163271637,
@@ -297,7 +297,7 @@
     "sector": "Healthcare",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "LLY": {
     "prediction": 0.5008457846972835,
@@ -307,7 +307,7 @@
     "sector": "Healthcare",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "MRK": {
     "prediction": 0.40437886609843265,
@@ -317,7 +317,7 @@
     "sector": "Healthcare",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "MRNA": {
     "prediction": 0.1992847863669469,
@@ -327,7 +327,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "GILD": {
     "prediction": 0.3353289057679699,
@@ -337,7 +337,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "REGN": {
     "prediction": 0.28938395961034696,
@@ -347,7 +347,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "WMT": {
     "prediction": 0.8774723363936576,
@@ -357,7 +357,7 @@
     "sector": "Staples",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "COST": {
     "prediction": 0.7650305880425317,
@@ -367,7 +367,7 @@
     "sector": "Consumer",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "HD": {
     "prediction": 0.5421385513419115,
@@ -377,7 +377,7 @@
     "sector": "Consumer",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "MCD": {
     "prediction": 0.4504601662586736,
@@ -387,7 +387,7 @@
     "sector": "Consumer",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "KO": {
     "prediction": 0.4318510394296253,
@@ -397,7 +397,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "PEP": {
     "prediction": 0.579617373843817,
@@ -407,7 +407,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "PG": {
     "prediction": 0.295491407908751,
@@ -417,7 +417,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "NKE": {
     "prediction": 0.49087099014580504,
@@ -427,7 +427,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "TGT": {
     "prediction": 0.5762807997397912,
@@ -437,7 +437,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "XOM": {
     "prediction": 0.6145468847943271,
@@ -447,7 +447,7 @@
     "sector": "Energy",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "CVX": {
     "prediction": 0.5151291907842891,
@@ -457,7 +457,7 @@
     "sector": "Energy",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "OXY": {
     "prediction": 0.4568955525574136,
@@ -467,7 +467,7 @@
     "sector": "Energy",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "CAT": {
     "prediction": 0.8114314559418563,
@@ -477,7 +477,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "HON": {
     "prediction": 0.4946922283297589,
@@ -487,7 +487,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "BA": {
     "prediction": 0.5681465738197016,
@@ -497,7 +497,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "GE": {
     "prediction": 0.5354466489279753,
@@ -507,7 +507,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "LMT": {
     "prediction": 0.36950385239632844,
@@ -517,7 +517,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "TSM": {
     "prediction": 0.8096758501075778,
@@ -527,7 +527,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "INTC": {
     "prediction": 0.7263130826532753,
@@ -537,7 +537,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "QCOM": {
     "prediction": 0.5677839779806789,
@@ -547,7 +547,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "AVGO": {
     "prediction": 0.32740192074967306,
@@ -557,7 +557,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "MU": {
     "prediction": 0.6542842076236652,
@@ -567,7 +567,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "CRM": {
     "prediction": 0.26237594934946945,
@@ -577,7 +577,7 @@
     "sector": "Technology",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "SNOW": {
     "prediction": 0.14582896550076838,
@@ -587,7 +587,7 @@
     "sector": "Technology",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "NET": {
     "prediction": 0.16968602959403054,
@@ -597,7 +597,7 @@
     "sector": "Technology",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "DDOG": {
     "prediction": 0.5502570338082822,
@@ -607,7 +607,7 @@
     "sector": "Technology",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "CRWD": {
     "prediction": 0.5103266553155735,
@@ -617,7 +617,7 @@
     "sector": "Technology",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "NOW": {
     "prediction": 0.2201371606073773,
@@ -627,7 +627,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "ADBE": {
     "prediction": 0.27135458483184793,
@@ -637,7 +637,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "ORCL": {
     "prediction": 0.3466703003866232,
@@ -647,7 +647,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "INTU": {
     "prediction": 0.6544975613982906,
@@ -657,7 +657,7 @@
     "sector": "Unknown",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "SOFI": {
     "prediction": 0.25845835422631264,
@@ -667,7 +667,7 @@
     "sector": "Financials",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "PLTR": {
     "prediction": 0.24425815902566683,
@@ -677,7 +677,7 @@
     "sector": "Technology",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "RIVN": {
     "prediction": 0.5804378750835775,
@@ -687,7 +687,7 @@
     "sector": "Consumer",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "HOOD": {
     "prediction": 0.47045799117208853,
@@ -697,7 +697,7 @@
     "sector": "Financials",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   },
   "MARA": {
     "prediction": 0.49954179343783456,
@@ -707,6 +707,6 @@
     "sector": "Technology",
     "signal": "MARKET_HOLD",
     "combined": 0.0,
-    "saved_at": "2026-09-29T16:22:02.852546-04:00"
+    "saved_at": "2026-09-30T02:51:37.957453-04:00"
   }
 }
